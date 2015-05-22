@@ -16,7 +16,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 	}
 
 	public CompletableFuture<BasicMessageBean> onNewSource(
-			DataBucketBean new_bucket, IHarvestContext context) {
+			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -24,7 +24,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 						new_bucket.display_name(),
 						"onNewSource",
 						null, // message code
-						"called onNewSource",
+						"called onNewSource: " + enabled,
 						null // details
 						));
 	}
