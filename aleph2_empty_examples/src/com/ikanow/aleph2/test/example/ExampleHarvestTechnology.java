@@ -30,7 +30,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 	}
 
 	public CompletableFuture<BasicMessageBean> onUpdatedSource(
-			DataBucketBean old_bucket, DataBucketBean new_bucket,
+			DataBucketBean old_bucket, DataBucketBean new_bucket, boolean is_enabled,
 			IHarvestContext context) {
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
@@ -39,7 +39,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 						new_bucket.display_name(),
 						"onUpdatedSource",
 						null, // message code
-						"called onUpdatedSource",
+						"called onUpdatedSource " + is_enabled,
 						null // details
 						));
 	}
