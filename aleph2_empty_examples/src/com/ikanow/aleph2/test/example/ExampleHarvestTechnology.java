@@ -1,22 +1,46 @@
 package com.ikanow.aleph2.test.example;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
+import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
+import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 
 public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
+	private static final Logger _logger = LogManager.getLogger();	
 
 	public boolean canRunOnThisNode(DataBucketBean bucket) {
+		_logger.info("canRunOnThisNode");
+		
 		return true;
 	}
 
 	public CompletableFuture<BasicMessageBean> onNewSource(
-			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {
+			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {		
+		_logger.info("onNewSource" + enabled);
+
+		// Log some information about the request
+		try {
+			final String core_list = context.getHarvestContextLibraries(Optional.empty())
+										.stream().collect(Collectors.joining(", "));
+			_logger.info("Core library paths: " + core_list);
+			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)));
+			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.empty()));
+		}
+		catch (Exception e) {
+			_logger.error(ErrorUtils.getLongForm("onNewSource {0}", e));
+		}
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -31,7 +55,22 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onUpdatedSource(
 			DataBucketBean old_bucket, DataBucketBean new_bucket, boolean is_enabled,
+			Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
+		_logger.info("onUpdatedSource " + is_enabled);
+		
+		// Log some information about the request
+		try {
+			final String core_list = context.getHarvestContextLibraries(Optional.empty())
+										.stream().collect(Collectors.joining(", "));
+			_logger.info("Core library paths: " + core_list);
+			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)));
+			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.empty()));
+		}
+		catch (Exception e) {
+			_logger.error(ErrorUtils.getLongForm("onNewSource {0}", e));
+		}
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -46,6 +85,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onSuspend(
 			DataBucketBean to_suspend, IHarvestContext context) {
+		_logger.info("onSuspend");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -60,6 +101,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onResume(
 			DataBucketBean to_resume, IHarvestContext context) {
+		_logger.info("onResume");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -74,6 +117,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onPurge(DataBucketBean to_purge,
 			IHarvestContext context) {
+		_logger.info("onPurge");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -88,6 +133,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onDelete(
 			DataBucketBean to_delete, IHarvestContext context) {
+		_logger.info("onDelete");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -102,6 +149,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
+		_logger.debug("onPeriodicPoll");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -116,6 +165,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 	public CompletableFuture<BasicMessageBean> onHarvestComplete(
 			DataBucketBean completed_bucket, IHarvestContext context) {
+		_logger.info("onHarvestComplete");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
@@ -131,6 +182,8 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onTestSource(
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
+		_logger.info("onTestSource");
+		
 		return CompletableFuture.completedFuture(
 				new BasicMessageBean(
 						new Date(), // date
