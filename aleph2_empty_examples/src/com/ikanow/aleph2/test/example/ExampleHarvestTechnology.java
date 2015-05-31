@@ -34,7 +34,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 			final String core_list = context.getHarvestContextLibraries(Optional.empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
-			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)));
+			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)).get());
 			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.empty()));
 		}
 		catch (Exception e) {
@@ -64,7 +64,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 			final String core_list = context.getHarvestContextLibraries(Optional.empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
-			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)));
+			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)).get());
 			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.empty()));
 		}
 		catch (Exception e) {
