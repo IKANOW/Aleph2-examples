@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
@@ -19,7 +20,13 @@ import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 	private static final Logger _logger = LogManager.getLogger();	
 
-	public boolean canRunOnThisNode(DataBucketBean bucket) {
+	@Override
+	public void onInit(final @NonNull IHarvestContext context) {
+		_logger.info("onInit");		
+	}
+	
+	
+	public boolean canRunOnThisNode(DataBucketBean bucket, IHarvestContext context) {
 		_logger.info("canRunOnThisNode");
 		
 		return true;
