@@ -60,23 +60,19 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	@Override
 	public void onInit(IHarvestContext context) {
 		logger.info("initializing storm harvest technology");
-		//TODO get config from context
+		//TODO get config from context or YARN CONFIG
+		
 		Map<String, Object> config_map = new HashMap<String, Object>();
 		config_map.put("StormHarvestTechnologyModule." + NIMBUS_HOST, "utility-dev-db-hadoop.rr.ikanow.com");
 		//config_map.put("StormHarvestTechnologyModule." + NIMBUS_HOST, "localhost");
 		config_map.put("StormHarvestTechnologyModule." + NIMBUS_THRIFT_PORT, 6627);
 		config_map.put("StormHarvestTechnologyModule." + THRIST_TRANSPORT_PLUGIN, "backtype.storm.security.auth.SimpleTransportPlugin");
 		Config config = ConfigFactory.parseMap(config_map);
-		//Config config =  ConfigFactory.parseFile(new File("example_config_files/harvest_local_test.properties"));
 		config = config.getConfig("StormHarvestTechnologyModule");		
-		//_globals = new GlobalPropertiesBean(null, null, null, null);
-		//_globals = service_context.getGlobalProperties();		
-		//TODO globals returns back a default if its null
 		if ( config.hasPath(NIMBUS_HOST) ) {
 			logger.info("starting in remote mode v5");
 			logger.info(config.getString(NIMBUS_HOST));
 			//run in distributed mode
-			//TODO probably read the config from the yarn dir instead of passing it in like this
 			storm_controller = StormControllerUtil.getRemoteStormController(config.getString(NIMBUS_HOST), config.getInt(NIMBUS_THRIFT_PORT), config.getString(THRIST_TRANSPORT_PLUGIN));
 		} else {
 			logger.info("starting in local mode");
@@ -88,7 +84,6 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	@Override
 	public boolean canRunOnThisNode(DataBucketBean bucket,
 			IHarvestContext context) {
-		//from alex
 		//3A - this checks that the node you are running can control the external harvester ... 
 		//less important for Storm since it's distributed anyway, but eg you could check that Globals.shared_yarn_config exists?
 		return storm_controller != null;
@@ -116,7 +111,6 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	@Override
 	public @NonNull CompletableFuture<BasicMessageBean> onSuspend(
 			@NonNull DataBucketBean to_suspend, @NonNull IHarvestContext context) {
-		//TODO stop the old topology
 		//I don't think storm has a pause, so you'll have to dump the
 		//job to get it to stop the spout
 		return onDelete(to_suspend, context);
@@ -125,7 +119,6 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	@Override
 	public @NonNull CompletableFuture<BasicMessageBean> onResume(
 			@NonNull DataBucketBean to_resume, @NonNull IHarvestContext context) {
-		//TODO restart the old topology
 		//if storm doesn't have a pause, then we will just have to resend
 		return onNewSource(to_resume, context, true);		
 	}
@@ -264,16 +257,9 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		logger.info("received new source request, enabled: " + enabled);
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
 		if ( enabled ) {
-			//this will read the config from here:
-			//new_bucket.harvest_configs(); //some config will be here on how to harvest? -> there is an example alex linked in chat
-			//that he is keeping on dev.ikanow.com in the source editor called "Template V2 data bucket"
-			//this config will say where the raw data is, and what parser we should use (we get to pick the format of this e.g.
-			//we might make the config format: { source_type: file, source_path: c:/Users/Burch/Desktop/proxy.log, parser: ProxyParser }
-			//so we'll know to use a file spout, pulling from path xxx/proxy.log and parse the text input via the proxyparser
 			
 			//build out a topology for these config options
 			String job_name = createJobName(new_bucket);
-			//job_name = "test";
 			StormTopology topology = null;
 			try {
 				topology = StormHarvestTechnologyTopologyUtil.createTopology(new_bucket.harvest_configs(), job_name, context, new_bucket);
@@ -283,34 +269,20 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 				return future;
 			}
 			
-			try {
-				//for now im going to skip these 2 steps, and parse the config to build a topology and submit to
-				//my local storm cluster from here, eventually we'll still build the topology, but submit a jar rather than to
-				//the local storm cluster
+			try {				
 				//step1 create a megajar from:
 				//context.getHarvestLibraries(Optional.of(new_bucket));
 				//and whatever jars i need to read raw data, parse that data, output to context.stream();					
 				//step2 send this jar + topology to storm so it starts	
 				logger.debug("creating jar to submit");
 				final String input_jar_location = System.getProperty("java.io.tmpdir") + File.separator + job_name + ".jar";
-				//String input_jar_location = "/opt/sample_jar_files/" + job_name + ".jar";
 				List<String> jars_to_merge = new ArrayList<String>();
-				//jars_to_merge.add("/opt/sample_jar_files/sample_main.jar");
-				//jars_to_merge.add("/opt/sample_jar_files/aleph2_harvest_technology_storm_example-0.0.1-SNAPSHOT-jar-with-dependencies.jar"); //TODO remember we have to build the storm jar w/o storm deps in it
-				//jars_to_merge.add("sample_jar_files/sample_main.jar");
-				//jars_to_merge.add("sample_jar_files/aleph2_harvest_technology_storm_example-0.0.1-SNAPSHOT-jar-with-dependencies.jar"); //TODO remember we have to build the storm jar w/o storm deps in it
-				//TODO talk to alex about setting this up e.g. need \opt\aleph2-home\lib\aleph2_harvest_context_library.jar and my jar
 				jars_to_merge.addAll( context.getHarvestContextLibraries(Optional.empty()) );
 				//filter the harvester out of the harvest libraries
 				Map<String, String> harvest_libraries = context.getHarvestLibraries(Optional.of(new_bucket)).get();
+				//kick the harvest library out of our jar (it contains storm.jar which we can't send to storm)
 				List<String> harvest_library_paths = harvest_libraries.keySet().stream().filter(name -> !name.contains(new_bucket.harvest_technology_name_or_id())).map(name -> harvest_libraries.get(name)).collect(Collectors.toList());
 				jars_to_merge.addAll(harvest_library_paths);
-//				.forEach(name -> {
-//					if ( !name.contains(new_bucket.harvest_technology_name_or_id()) ) {
-//						jars_to_merge.add(harvest_libraries.get(name));
-//					}
-//				});
-				//jars_to_merge.addAll( harvest_libraries );
 				JarBuilderUtil.mergeJars(jars_to_merge, input_jar_location);
 				storm_controller.submitJob(job_name, input_jar_location, topology);
 			} catch (Exception e) {
@@ -321,7 +293,6 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		}	
 		
 		//TODO return something useful
-		//TODO when do we mark a future as complete, when it has been successfully submitted?
 		future.complete(new BasicMessageBean(new Date(), true, null, null, null, null, null));
 		return future;
 	}	

@@ -30,23 +30,6 @@ public class RemoteStormController implements IStormController  {
 	private Client client;
 	
 	public RemoteStormController(@NonNull String nimbus_host, @NonNull int nimbus_thrift_port, @NonNull String storm_thrift_transport_plugin) {
-		//classpath
-//		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-//		c1.
-//        URL[] urls = c1.getURLs(); 
-//        for(URL url: urls){
-//        	logger.info(url.getFile());
-//        }
-//        try {
-//			Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources("default.yaml");
-//			while ( resources.hasMoreElements() ) {
-//				logger.info(resources.nextElement().toString());
-//			}
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-		
 		remote_config = new HashMap<String, Object>();
 		remote_config.put(Config.NIMBUS_HOST, nimbus_host);
 		remote_config.put(Config.NIMBUS_THRIFT_PORT, nimbus_thrift_port);
