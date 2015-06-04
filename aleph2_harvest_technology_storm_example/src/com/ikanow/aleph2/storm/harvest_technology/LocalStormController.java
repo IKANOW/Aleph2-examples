@@ -1,0 +1,64 @@
+package com.ikanow.aleph2.storm.harvest_technology;
+
+import java.util.Iterator;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift7.TException;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import backtype.storm.Config;
+import backtype.storm.LocalCluster;
+import backtype.storm.generated.ClusterSummary;
+import backtype.storm.generated.KillOptions;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.TopologyInfo;
+import backtype.storm.generated.TopologySummary;
+
+public class LocalStormController implements IStormController {
+	private LocalCluster local_cluster;
+	private static final Logger logger = LogManager.getLogger();
+	
+	public LocalStormController() {
+		local_cluster = new LocalCluster();
+	}
+
+	@Override
+	public void submitJob(String job_name, String input_jar_location,
+			StormTopology topology) throws Exception {
+		logger.info("Submitting job: " + job_name);
+		Config config = new Config();
+		config.setDebug(true);
+		local_cluster.submitTopology(job_name, config, topology);
+	}
+
+	@Override
+	public void stopJob(String job_name) throws Exception {
+		logger.info("Stopping job: " + job_name);
+		KillOptions ko = new KillOptions();
+		ko.set_wait_secs(0);	
+		local_cluster.killTopologyWithOpts(getJobTopologySummaryFromJobPrefix(job_name).get_name(), ko);
+	}
+
+	@Override
+	public TopologyInfo getJobStats(String job_name) throws Exception {
+		logger.info("Looking for stats for job: " + job_name);		
+		String job_id = getJobTopologySummaryFromJobPrefix(job_name).get_id();
+		logger.info("Looking for stats with id: " + job_id);
+		if ( job_id != null )
+			return local_cluster.getTopologyInfo(job_id);			
+		return null;
+	}
+	
+	private TopologySummary getJobTopologySummaryFromJobPrefix(@NonNull String job_prefix) throws TException {
+		ClusterSummary cluster_summary = local_cluster.getClusterInfo();
+		Iterator<TopologySummary> iter = cluster_summary.get_topologies_iterator();
+		 while ( iter.hasNext() ) {
+			 TopologySummary summary = iter.next();
+			 System.out.println(summary.get_name() + summary.get_id() + summary.get_status());				 
+			 if ( summary.get_name().startsWith(job_prefix));
+			 	return summary;
+		 }	
+		 return null;
+	}
+}
