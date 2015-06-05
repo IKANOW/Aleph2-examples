@@ -5,9 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleProxyLogEntry {
-	private static final long serialVersionUID = -4524426851307154981L;
-	
+public class SampleProxyLogEntry {	
 	public static final String TIMESTAMP = "@timestamp";
 	public static final String TIMESTAMP_MS = "timestamp_ms";
 	public static final String DOCID = "docid";

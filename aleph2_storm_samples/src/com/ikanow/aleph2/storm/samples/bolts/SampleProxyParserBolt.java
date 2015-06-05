@@ -46,6 +46,7 @@ public class SampleProxyParserBolt extends BaseRichBolt {
 		_collector.ack(tuple);
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		_collector = collector;
