@@ -22,7 +22,6 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift7.TException;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.json.simple.JSONValue;
 
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
@@ -58,7 +57,7 @@ public class RemoteStormController implements IStormController  {
 	 * @param nimbus_thrift_port
 	 * @param storm_thrift_transport_plugin typically "backtype.storm.security.auth.SimpleTransportPlugin"
 	 */
-	public RemoteStormController(@NonNull String nimbus_host, @NonNull int nimbus_thrift_port, @NonNull String storm_thrift_transport_plugin) {
+	public RemoteStormController(String nimbus_host, int nimbus_thrift_port, String storm_thrift_transport_plugin) {
 		remote_config = new HashMap<String, Object>();
 		remote_config.put(Config.NIMBUS_HOST, nimbus_host);
 		remote_config.put(Config.NIMBUS_THRIFT_PORT, nimbus_thrift_port);
@@ -107,7 +106,7 @@ public class RemoteStormController implements IStormController  {
 	 * @return
 	 * @throws TException
 	 */
-	private TopologySummary getJobTopologySummaryFromJobPrefix(@NonNull String job_prefix) throws TException {
+	private TopologySummary getJobTopologySummaryFromJobPrefix(String job_prefix) throws TException {
 		ClusterSummary cluster_summary = client.getClusterInfo();
 		Iterator<TopologySummary> iter = cluster_summary.get_topologies_iterator();
 		 while ( iter.hasNext() ) {

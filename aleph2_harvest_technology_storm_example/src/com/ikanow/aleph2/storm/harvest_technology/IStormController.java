@@ -15,8 +15,6 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.harvest_technology;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyInfo;
 
@@ -36,14 +34,14 @@ public interface IStormController {
 	 * @param topology
 	 * @throws Exception
 	 */
-	void submitJob(@NonNull String job_name, @NonNull String input_jar_location, StormTopology topology) throws Exception;
+	void submitJob(String job_name, String input_jar_location, StormTopology topology) throws Exception;
 	/**
 	 * Should stop a job on the storm cluster given the job_name
 	 * 
 	 * @param job_name
 	 * @throws Exception
 	 */
-	void stopJob(@NonNull String job_name) throws Exception;
+	void stopJob(String job_name) throws Exception;
 	/**
 	 * Should return the job statistics for a job running on the storm cluster with the given job_name
 	 * 
@@ -51,5 +49,5 @@ public interface IStormController {
 	 * @return
 	 * @throws Exception
 	 */
-	TopologyInfo getJobStats(@NonNull String job_name) throws Exception;
+	TopologyInfo getJobStats(String job_name) throws Exception;
 }

@@ -20,7 +20,6 @@ import java.util.Iterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift7.TException;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
@@ -75,7 +74,7 @@ public class LocalStormController implements IStormController {
 		return null;
 	}
 	
-	private TopologySummary getJobTopologySummaryFromJobPrefix(@NonNull String job_prefix) throws TException {
+	private TopologySummary getJobTopologySummaryFromJobPrefix(String job_prefix) throws TException {
 		ClusterSummary cluster_summary = local_cluster.getClusterInfo();
 		Iterator<TopologySummary> iter = cluster_summary.get_topologies_iterator();
 		 while ( iter.hasNext() ) {

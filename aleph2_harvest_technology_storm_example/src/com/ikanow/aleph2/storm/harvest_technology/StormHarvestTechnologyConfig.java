@@ -15,9 +15,6 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.harvest_technology;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 /**
  * A wrapper for the example config you can submit in the databucketbean.
  * 
@@ -41,14 +38,14 @@ public class StormHarvestTechnologyConfig {
 	//or provide your own topology
 	private String topology_class;
 	
-	public StormHarvestTechnologyConfig(@NonNull String source_type, @NonNull String source_url, @NonNull String source_parser, @Nullable String source_output) {
+	public StormHarvestTechnologyConfig( String source_type, String source_url, String source_parser, String source_output) {
 		this.source_type = source_type;
 		this.source_url = source_url;
 		this.source_parser = source_parser;
 		this.source_output = source_output;
 	}
 	
-	public StormHarvestTechnologyConfig(@NonNull String topology_class) {
+	public StormHarvestTechnologyConfig(String topology_class) {
 		this.topology_class = topology_class;
 	}
 	

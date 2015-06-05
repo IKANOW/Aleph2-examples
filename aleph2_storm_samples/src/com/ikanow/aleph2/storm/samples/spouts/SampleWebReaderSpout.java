@@ -23,8 +23,6 @@ import java.util.Map;
 
 import jline.internal.InputStreamReader;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -46,7 +44,7 @@ public class SampleWebReaderSpout extends BaseRichSpout {
 	private BufferedReader reader;
 	private String file_location;
 
-	public SampleWebReaderSpout(@NonNull String source_url) {
+	public SampleWebReaderSpout(String source_url) {
 		file_location = source_url;
 	}
 

@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyInfo;
@@ -104,7 +103,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 	
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onUpdatedSource(
+	public CompletableFuture<BasicMessageBean> onUpdatedSource(
 			DataBucketBean old_bucket, DataBucketBean new_bucket,
 			boolean is_enabled, Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
@@ -123,23 +122,23 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onSuspend(
-			@NonNull DataBucketBean to_suspend, @NonNull IHarvestContext context) {
+	public CompletableFuture<BasicMessageBean> onSuspend(
+			DataBucketBean to_suspend, IHarvestContext context) {
 		//I don't think storm has a pause, so you'll have to dump the
 		//job to get it to stop the spout
 		return onDelete(to_suspend, context);
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onResume(
-			@NonNull DataBucketBean to_resume, @NonNull IHarvestContext context) {
+	public CompletableFuture<BasicMessageBean> onResume(
+			DataBucketBean to_resume, IHarvestContext context) {
 		//if storm doesn't have a pause, then we will just have to resend
 		return onNewSource(to_resume, context, true);		
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onPurge(
-			@NonNull DataBucketBean to_purge, @NonNull IHarvestContext context) {		
+	public CompletableFuture<BasicMessageBean> onPurge(
+			DataBucketBean to_purge, IHarvestContext context) {		
 		//purge means that someone has dumped all the data from this harvest, nothing to do on
 		//our end, just let the source keep running (e.g. like delete docs in the old harvester)
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
@@ -148,8 +147,8 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onDelete(
-			@NonNull DataBucketBean to_delete, @NonNull IHarvestContext context) {
+	public CompletableFuture<BasicMessageBean> onDelete(
+			DataBucketBean to_delete, IHarvestContext context) {
 		//TODO not sure what delete is suppose to do, stop this topology? I assume no
 		//data is being stored in the harvest tech so nothing to delete? (see purge)
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
@@ -166,9 +165,9 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onPeriodicPoll(
-			@NonNull DataBucketBean polled_bucket,
-			@NonNull IHarvestContext context) {
+	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
+			DataBucketBean polled_bucket,
+			IHarvestContext context) {
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
 		TopologyInfo top_info;
 		try {
@@ -185,9 +184,9 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onHarvestComplete(
-			@NonNull DataBucketBean completed_bucket,
-			@NonNull IHarvestContext context) {		
+	public CompletableFuture<BasicMessageBean> onHarvestComplete(
+			DataBucketBean completed_bucket,
+			IHarvestContext context) {		
 		//i guess this tell us when we are done, so kill off the topology
 		return onDelete(completed_bucket, context);		
 	}
@@ -199,7 +198,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	 * @param data_bucket
 	 * @return
 	 */
-	private static String getJobName(@NonNull DataBucketBean data_bucket) {
+	private static String getJobName(DataBucketBean data_bucket) {
 		return (JOB_NAME_PREFIX + data_bucket._id() + "_").replaceAll("\\.", "_");
 	}
 	
@@ -210,7 +209,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	 * @param data_bucket
 	 * @return
 	 */
-	private static String createJobName(@NonNull DataBucketBean data_bucket) {
+	private static String createJobName(DataBucketBean data_bucket) {
 		return (JOB_NAME_PREFIX + data_bucket._id() + "_" + UuidUtils.get().getTimeBasedUuid()).replaceAll("\\.", "_");
 	}		
 	
@@ -218,10 +217,10 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
 	
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onTestSource(
-			@NonNull DataBucketBean test_bucket,
-			@NonNull ProcessingTestSpecBean test_spec,
-			@NonNull IHarvestContext context) {		
+	public CompletableFuture<BasicMessageBean> onTestSource(
+			DataBucketBean test_bucket,
+			ProcessingTestSpecBean test_spec,
+			IHarvestContext context) {		
 		//submit a job just like a new source
 		//TODO we should set the job up w/o the output to harvest context option, if 
 		//we let users submit full topologies though we can't guarantee that I think
@@ -266,7 +265,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public @NonNull CompletableFuture<BasicMessageBean> onNewSource(
+	public CompletableFuture<BasicMessageBean> onNewSource(
 			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {
 		logger.info("received new source request, enabled: " + enabled);
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();

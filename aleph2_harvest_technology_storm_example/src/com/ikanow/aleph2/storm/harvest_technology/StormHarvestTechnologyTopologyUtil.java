@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import backtype.storm.generated.StormTopology;
 import backtype.storm.topology.TopologyBuilder;
@@ -50,7 +49,7 @@ public class StormHarvestTechnologyTopologyUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static StormTopology createTopology(@NonNull List<HarvestControlMetadataBean> harvest_configs, @NonNull String job_name, @NonNull IHarvestContext context, @NonNull DataBucketBean bucket_bean) throws Exception {
+	public static StormTopology createTopology(List<HarvestControlMetadataBean> harvest_configs, String job_name, IHarvestContext context, DataBucketBean bucket_bean) throws Exception {
 		HarvestControlMetadataBean harvest_config = harvest_configs.get(0); //dunno if we are suppose to expect more than 1
 		StormHarvestTechnologyConfig storm_config = StormHarvestTechnologyConfigUtils.parseHarvestConfig(harvest_config);
 		return createTopology(storm_config, job_name, context, bucket_bean);							
@@ -66,7 +65,7 @@ public class StormHarvestTechnologyTopologyUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	private static StormTopology createTopology(@NonNull StormHarvestTechnologyConfig storm_config, @NonNull String job_name, @NonNull IHarvestContext context, @NonNull DataBucketBean bucket_bean) throws Exception {
+	private static StormTopology createTopology(StormHarvestTechnologyConfig storm_config, String job_name, IHarvestContext context, DataBucketBean bucket_bean) throws Exception {
 		if ( storm_config.getTopology_class() != null )
 			return createTopology(storm_config.getTopology_class(), job_name, context, bucket_bean);
 		else
@@ -86,7 +85,7 @@ public class StormHarvestTechnologyTopologyUtil {
 	 * @throws IllegalAccessException
 	 */
 	@SuppressWarnings("unchecked")
-	private static StormTopology createTopology(String topology_class_name, @NonNull String job_name, @NonNull IHarvestContext context, @NonNull DataBucketBean bucket_bean) throws ClassNotFoundException, InstantiationException, IllegalAccessException {		
+	private static StormTopology createTopology(String topology_class_name, String job_name, IHarvestContext context, DataBucketBean bucket_bean) throws ClassNotFoundException, InstantiationException, IllegalAccessException {		
 		logger.info("Creating topology via class: " + topology_class_name);
 		Class<IStormHarvestTopology> topology_clazz = (Class<IStormHarvestTopology>) Class.forName(topology_class_name);
 		return topology_clazz.newInstance().getStormTopology(context.getHarvestContextSignature(Optional.of(bucket_bean), Optional.empty()), job_name, bucket_bean);
@@ -110,7 +109,7 @@ public class StormHarvestTechnologyTopologyUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	private static StormTopology createTopology(@NonNull String source_type, @NonNull String source_url, @NonNull String source_parser, @NonNull String source_output, @NonNull String job_name, @NonNull IHarvestContext context, @NonNull DataBucketBean bucket_bean) throws Exception {
+	private static StormTopology createTopology(String source_type, String source_url, String source_parser, String source_output, String job_name, IHarvestContext context, DataBucketBean bucket_bean) throws Exception {
 		logger.info(source_type + " " + source_url + " " + source_parser);
 		
 		StormTopology topology = null;
