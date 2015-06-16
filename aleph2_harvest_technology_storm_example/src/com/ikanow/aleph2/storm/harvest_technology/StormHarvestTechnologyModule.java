@@ -315,4 +315,11 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		StormHarvestTechnologyModule mod = new StormHarvestTechnologyModule();
 		mod.onInit(null);
 	}
+
+	@Override
+	public CompletableFuture<BasicMessageBean> onDecommission(
+			DataBucketBean to_decommission, IHarvestContext context) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

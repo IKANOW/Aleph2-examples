@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
@@ -21,7 +20,7 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 	private static final Logger _logger = LogManager.getLogger();	
 
 	@Override
-	public void onInit(final @NonNull IHarvestContext context) {
+	public void onInit(final IHarvestContext context) {
 		_logger.info("onInit");		
 	}
 	
@@ -198,7 +197,25 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 						test_bucket.display_name(),
 						"onTestSource",
 						null, // message code
-						"called onTestSource: " + test_spec == null ? "no test spec" : (test_spec.requested_num_objects() + " / " + test_spec.max_run_time_secs()),
+						"called onTestSource: " + (test_spec == null ? "no test spec" : (test_spec.requested_num_objects() + " / " + test_spec.max_run_time_secs())),
+						null // details
+						));
+	}
+
+
+	@Override
+	public CompletableFuture<BasicMessageBean> onDecommission(
+			DataBucketBean to_decommission, IHarvestContext context) {
+		_logger.info("onDecommission");
+
+		return CompletableFuture.completedFuture(
+				new BasicMessageBean(
+						new Date(), // date
+						true, // success
+						to_decommission.display_name(),
+						"onDecommission",
+						null, // message code
+						"called onDecommission",
 						null // details
 						));
 	}
