@@ -16,9 +16,9 @@
 package com.ikanow.aleph2.storm.harvest_technology;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +43,10 @@ import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.GlobalPropertiesBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
+import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
+import com.ikanow.aleph2.data_model.utils.ModuleUtils;
+import com.ikanow.aleph2.data_model.utils.PropertiesUtils;
 import com.ikanow.aleph2.data_model.utils.UuidUtils;
 import com.ikanow.aleph2.utils.JarBuilderUtil;
 import com.typesafe.config.Config;
@@ -73,15 +76,13 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	@Override
 	public void onInit(IHarvestContext context) {
 		logger.info("initializing storm harvest technology");
-		//TODO get config from context or YARN CONFIG
-		
-		Map<String, Object> config_map = new HashMap<String, Object>();
-		config_map.put("StormHarvestTechnologyModule." + NIMBUS_HOST, "utility-dev-db-hadoop.rr.ikanow.com");
-		//config_map.put("StormHarvestTechnologyModule." + NIMBUS_HOST, "localhost");
-		config_map.put("StormHarvestTechnologyModule." + NIMBUS_THRIFT_PORT, 6627);
-		config_map.put("StormHarvestTechnologyModule." + THRIST_TRANSPORT_PLUGIN, "backtype.storm.security.auth.SimpleTransportPlugin");
-		Config config = ConfigFactory.parseMap(config_map);
-		config = config.getConfig("StormHarvestTechnologyModule");		
+		try {
+			_globals = BeanTemplateUtils.from(PropertiesUtils.getSubConfig(ModuleUtils.getStaticConfig(), GlobalPropertiesBean.PROPERTIES_ROOT).orElse(null), GlobalPropertiesBean.class);
+		} catch (IOException e) {
+			logger.error(ErrorUtils.getLongForm("Couldn't set globals property bean in storm harvest tech onInit: {0}", e));			
+		}
+		logger.info("Loading storm config from: " + _globals.local_yarn_config_dir() + File.separator + "storm.properties");
+		Config config = ConfigFactory.parseFile(new File(_globals.local_yarn_config_dir() + File.separator + "storm.properties"));		
 		if ( config.hasPath(NIMBUS_HOST) ) {
 			logger.info("starting in remote mode v5");
 			logger.info(config.getString(NIMBUS_HOST));
