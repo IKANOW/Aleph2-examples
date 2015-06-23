@@ -26,6 +26,20 @@ import com.ikanow.aleph2.data_model.objects.data_import.HarvestControlMetadataBe
  *
  */
 public class StormHarvestTechnologyConfigUtils {	
+	/**
+	 * Helper function to parse a HarvestControlMetadataBean.  Expects there to be a config object and it
+	 * to contain either "IStormHarvestTopologyClass=something
+	 * 
+	 * or
+	 * 
+	 * source_type=something
+	 * source_url=something
+	 * source_parser=something
+	 * 
+	 * 
+	 * @param harvest_config
+	 * @return a StormHarvestTechnologyConfig object with the config fields pushed in
+	 */
 	public static StormHarvestTechnologyConfig parseHarvestConfig(HarvestControlMetadataBean harvest_config) {
 		Map<String, Object> config = harvest_config.config();
 		//TODO create some consts to reference in StormHarvestTechnologyConfig
