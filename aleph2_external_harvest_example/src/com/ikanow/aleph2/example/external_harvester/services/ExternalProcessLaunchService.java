@@ -20,10 +20,10 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
+//import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
-import com.ikanow.aleph2.data_model.utils.ContextUtils;
+//import com.ikanow.aleph2.data_model.utils.ContextUtils;
 
 public class ExternalProcessLaunchService {
 
@@ -32,7 +32,8 @@ public class ExternalProcessLaunchService {
 	
 		// Get the context (unused here)
 		
-		final IHarvestContext context = ContextUtils.getHarvestContext(args[0]);
+		//(this doesn't currently work)
+		//final IHarvestContext context = ContextUtils.getHarvestContext(args[0]);
 		
 		// Get the bucket (unused here)
 		

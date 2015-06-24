@@ -47,24 +47,33 @@ public class ProcessUtils {
 	 */
 	public static Tuple2<String, String> launchProcess(final DataBucketBean bucket, final IHarvestContext context) {
 		try {
+			// Try
+			final File run_dir = new File ("/opt/aleph2-home/run/");
+			run_dir.mkdir();
+			if (!run_dir.canWrite()) {
+				throw new RuntimeException("Can't write to: " + run_dir);
+			}
+			
 			final String classpath = Stream.concat(
 					context.getHarvestContextLibraries(Optional.empty()).stream(),
-					context.getHarvestLibraries(Optional.empty()).get().values().stream()
+					context.getHarvestLibraries(Optional.of(bucket)).get().values().stream()
 					)
 					.collect(Collectors.joining(":"))
 					;
 			
 			ProcessBuilder pb = new ProcessBuilder(
 					Arrays.<String>asList(
-							System.getenv("JAVA_HOME") + File.separator + "bin" + File.separator + "java",
+							Optional.ofNullable(System.getenv("JAVA_HOME")).orElse("/usr/")  
+								+ File.separator + "bin" + File.separator + "java",
 							"-classpath",
 							classpath,
-							"com.ikanow.aleph2.example.external_harvester.services.ExternalProcessLaunchServices",
+							"com.ikanow.aleph2.example.external_harvester.services.ExternalProcessLaunchService",
 							context.getHarvestContextSignature(Optional.of(bucket), Optional.empty()),
 							BeanTemplateUtils.toJson(bucket).toString()
 							))
 			.redirectErrorStream(true)
-			.redirectInput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
+			.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
+			//.redirectOutput(new File("/tmp/external_harvest_test.txt"))
 			;
 			
 			final Process px = pb.start();
@@ -76,10 +85,13 @@ public class ProcessUtils {
 					break;					
 				}
 			}
+			
 			String err = null;
 			String pid = null;
 			if (!px.isAlive()) {
-				err = "Unknown error: " + px.exitValue(); // (since not capturing output)
+				err = "Unknown error: " + px.exitValue() + ": " + 
+						pb.command().stream().collect(Collectors.joining(" "));
+					// (since not capturing output)
 			}
 			else {
 				pid = getPid(px);
@@ -129,7 +141,8 @@ public class ProcessUtils {
 	}
 	
 	public static String getPid(final DataBucketBean bucket) {
-		try (BufferedReader br = new BufferedReader(new FileReader(new File("/var/run/" + bucket._id())))) {
+		final File run_file = new File ("/opt/aleph2-home/run/" + bucket._id());
+		try (BufferedReader br = new BufferedReader(new FileReader(run_file))) {
 			return br.readLine();
 		}
 		catch (Exception e) {
@@ -144,7 +157,8 @@ public class ProcessUtils {
 	 * @throws UnsupportedEncodingException
 	 */
 	public static void storePid(final DataBucketBean bucket, String pid) throws FileNotFoundException, UnsupportedEncodingException {
-		try (PrintWriter writer = new PrintWriter("/var/run/" + bucket._id(), "UTF-8")) {
+		final File run_file = new File ("/opt/aleph2-home/run/" + bucket._id());
+		try (PrintWriter writer = new PrintWriter(run_file, "UTF-8")) {
 			writer.println(pid);
 		}
 	}
