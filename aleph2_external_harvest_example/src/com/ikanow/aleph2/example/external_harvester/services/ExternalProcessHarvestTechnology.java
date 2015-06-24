@@ -61,7 +61,7 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 				}
 				else {
 					return CompletableFuture.completedFuture(
-							getMessage(false, "onNewSource", "Bucket launched: " + err_or_pid._2()));								
+							getMessage(true, "onNewSource", "Bucket launched: " + err_or_pid._2()));								
 				}
 			}
 			else {
