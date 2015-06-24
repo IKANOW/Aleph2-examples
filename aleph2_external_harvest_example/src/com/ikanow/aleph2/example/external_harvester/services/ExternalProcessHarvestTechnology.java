@@ -81,8 +81,17 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 			Optional<BucketDiffBean> diff, @NonNull IHarvestContext context) {
 
 		try {
-			ProcessUtils.killProcess(ProcessUtils.getPid(old_bucket));
-			return onNewSource(new_bucket, context, is_enabled);
+			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(ProcessUtils.getPid(old_bucket));
+			if (!kill_result._2()) {
+				return CompletableFuture.completedFuture(
+						getMessage(false, "onUpdatedSource", "Bucket suspended: " + kill_result._1()));							
+			}
+			if (is_enabled) {
+				return onNewSource(new_bucket, context, is_enabled);
+			}
+			else {
+				return CompletableFuture.completedFuture(getMessage(true, "onUpdatedSource", "Bucket suspended: " + kill_result._1()));
+			}
 		}
 		catch (Exception e) {
 			return FutureUtils.returnError(e);
@@ -94,9 +103,9 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 			@NonNull DataBucketBean to_suspend, @NonNull IHarvestContext context) {
 		
 		try {
-			ProcessUtils.killProcess(ProcessUtils.getPid(to_suspend));
+			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(ProcessUtils.getPid(to_suspend));
 			return CompletableFuture.completedFuture(
-					getMessage(true, "onSuspend", "Bucket suspended"));			
+					getMessage(kill_result._2(), "onSuspend", "Bucket suspended: " + kill_result._1()));			
 		}
 		catch (Exception e) {
 			return FutureUtils.returnError(e);

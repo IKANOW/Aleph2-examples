@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
@@ -107,21 +108,40 @@ public class ProcessUtils {
 	/** Kills the specified process
 	 * @param pid
 	 */
-	public static void killProcess(final String pid) {
+	public static Tuple2<String,Boolean> killProcess(final String pid) {
 		try {
-			Runtime.getRuntime().exec("kill", Arrays.asList("-9", pid).toArray(new String[0]));
+			if (!isRunning(pid)) {
+				return Tuples._2T("(process " + pid + " already deleted)", true);
+			}
+			final Process px = new ProcessBuilder(Arrays.asList("kill", "-9", pid))
+			//.redirectErrorStream(true).inheritIO()
+									.start()
+			;
+			for (int i = 0; i < 5; ++i) {
+				try { Thread.sleep(1000L); } catch (Exception e) {}
+				if (!px.isAlive()) {
+					break;					
+				}
+			}
+			if (!px.isAlive()) {
+				return Tuples._2T("Tried to kill " + pid + ": success = " + px.exitValue(), 0 == px.exitValue());
+			}
+			else {
+				return Tuples._2T("Timed out trying to kill: " + pid, true);				
+			}
 		}
 		catch (Throwable t) {//(do nothing)
+			return Tuples._2T("Kill failed: " + pid + ": " + ErrorUtils.getLongForm("{0}", t), true);
 		}		
 	}
 	
 	/** Check if a process is running
 	 * @param pid
 	 * @return
+	 * @throws IOException 
 	 */
-	public static boolean isRunning(final String pid) {
-		//TODO: implement this for Linux
-		return true;
+	public static boolean isRunning(final String pid) throws IOException {
+		return new File("/proc/" + pid).exists();
 	}
 	
 	/** Get the pid from the process (MAY NOT WORK ON WINDOWS)
