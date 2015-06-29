@@ -71,7 +71,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	protected GlobalPropertiesBean _globals;
 	private final String NIMBUS_HOST = "nimbus_host";
 	private final String NIMBUS_THRIFT_PORT = "nimbus_thrift_port";
-	private final String THRIST_TRANSPORT_PLUGIN = "thrift_transport_plugin";
+	private final String THRIFT_TRANSPORT_PLUGIN = "thrift_transport_plugin";
 
 	@Override
 	public void onInit(IHarvestContext context) {
@@ -87,7 +87,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			logger.info("starting in remote mode v5");
 			logger.info(config.getString(NIMBUS_HOST));
 			//run in distributed mode
-			storm_controller = StormControllerUtil.getRemoteStormController(config.getString(NIMBUS_HOST), config.getInt(NIMBUS_THRIFT_PORT), config.getString(THRIST_TRANSPORT_PLUGIN));
+			storm_controller = StormControllerUtil.getRemoteStormController(config.getString(NIMBUS_HOST), config.getInt(NIMBUS_THRIFT_PORT), config.getString(THRIFT_TRANSPORT_PLUGIN));
 		} else {
 			logger.info("starting in local mode");
 			//run in local mode
