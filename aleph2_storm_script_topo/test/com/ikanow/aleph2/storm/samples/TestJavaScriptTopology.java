@@ -74,7 +74,7 @@ public class TestJavaScriptTopology {
 		// PHASE 1: GET AN IN-TECHNOLOGY CONTEXT
 		// Bucket
 		final DataBucketBean test_bucket = BeanTemplateUtils.build(DataBucketBean.class)
-				.with(DataBucketBean::_id, "testJavaScriptTopology")
+				.with(DataBucketBean::_id, "test_js_topology")
 				.with(DataBucketBean::modified, new Date())
 				.with(DataBucketBean::full_name, "/test/javascript")
 				.with("data_schema", BeanTemplateUtils.build(DataSchemaBean.class)
