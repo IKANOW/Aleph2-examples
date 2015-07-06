@@ -98,7 +98,7 @@ public class TestJavaScriptTopology {
 		
 		final backtype.storm.Config config = new backtype.storm.Config();
 		config.setDebug(true);
-		_local_cluster.submitTopology("tes_js_topology", config, topology);		
+		_local_cluster.submitTopology("test_js_topology", config, topology);		
 		Thread.sleep(5000L);
 		
 		//PHASE 3: CHECK INDEX

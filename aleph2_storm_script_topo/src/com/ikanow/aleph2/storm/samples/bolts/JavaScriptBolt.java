@@ -17,6 +17,9 @@ package com.ikanow.aleph2.storm.samples.bolts;
 
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -29,7 +32,8 @@ import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
 import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 
 public class JavaScriptBolt extends BaseRichBolt {
-	
+	private static final Logger logger = LogManager.getLogger(JavaScriptBolt.class);
+
 	/**
 	 * 
 	 */
@@ -66,6 +70,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 		String ipLine = tuple.getString(0);
 		Object retVal = getCompiledScriptFactory().executeCompiledScript(CHECKCALL,"_ip",ipLine);
+		logger.debug("Result from Script"+retVal);
 		
 		/*while ( matcher.find() ) {
 			_collector.emit(tuple, new Values( matcher.group(0).trim()));

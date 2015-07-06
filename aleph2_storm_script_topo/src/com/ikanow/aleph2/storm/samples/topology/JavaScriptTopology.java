@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import scala.Tuple2;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.topology.base.BaseRichSpout;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,10 +46,11 @@ public class JavaScriptTopology implements IEnrichmentStreamingTopology {
 	protected static ObjectMapper object_mapper = BeanTemplateUtils.configureMapper(Optional.empty());
 
 	@Override
-	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bean, IEnrichmentModuleContext context) {
+	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bucket, IEnrichmentModuleContext context) {
 		TopologyBuilder builder = new TopologyBuilder();		
-		builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
-		builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("spout");
+		//builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
+		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
+		builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("1");
 		builder.setBolt("indexer", new IndexerBolt()).shuffleGrouping("scriptBolt");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
 	}
