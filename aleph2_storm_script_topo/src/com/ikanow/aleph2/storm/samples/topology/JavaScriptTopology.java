@@ -40,7 +40,7 @@ import com.ikanow.aleph2.storm.samples.spouts.SampleFileLineReaderSpout;
  * @author Joern Freydank jfreydank@ikanow.com
  *
  */
-public class JavaScriptStormHarvestTopology implements IEnrichmentStreamingTopology {
+public class JavaScriptTopology implements IEnrichmentStreamingTopology {
 	
 	protected static ObjectMapper object_mapper = BeanTemplateUtils.configureMapper(Optional.empty());
 
@@ -48,7 +48,7 @@ public class JavaScriptStormHarvestTopology implements IEnrichmentStreamingTopol
 	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bean, IEnrichmentModuleContext context) {
 		TopologyBuilder builder = new TopologyBuilder();		
 		builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
-		builder.setBolt("scriptBolt", new JavaScriptBolt("com/ikanow/aleph2/storm/samples/js/script.properties")).shuffleGrouping("spout");
+		builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("spout");
 		builder.setBolt("indexer", new IndexerBolt()).shuffleGrouping("scriptBolt");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
 	}

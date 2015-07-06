@@ -15,6 +15,7 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.script;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,13 +36,16 @@ import org.apache.log4j.Logger;
  * @author Joern Freydank jfreydank@ikanow.com
  *
  */
-public class CompiledScriptFactory {
+public class CompiledScriptFactory implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3560458546056722085L;
 	public static int GLOBAL = 0;
 	protected static int COMBINED_PIPELINE = 1;
 //	public static int UNSTRUCTURED_GLOBAL = 2;
 	
 	private static final Logger logger = Logger.getLogger(CompiledScriptFactory.class);
-	private ScriptEngine engine = null;
 
 	protected static String JAVASCRIPT = "javascript";
 	public static int STANDALONE_TYPE=0;
@@ -49,36 +53,48 @@ public class CompiledScriptFactory {
 	public static int FUNC_TYPE=2;
 
 	
+	private transient ScriptEngine engine = null;
+	private transient ScriptContext scriptContext = null;
+	protected HashMap<Integer,CompiledScriptEntry> compiledScriptMap = null;
+	
 	private IScriptSecurityManager securityManager;
-	private ScriptContext scriptContext = null;
-	private CompiledScript checkCacheScript = null;
+	private IScriptProvider scriptProvider;
 	
 	/**
 	 * @return the engine
 	 */
 	public ScriptEngine getEngine() {
+		if(engine ==null){
+			init();
+		}
 		return engine;
+	}
+
+	public CompiledScriptFactory(){
+		
 	}
 
 	public CompiledScriptFactory(IScriptProvider scriptProvider,IScriptSecurityManager securityManager){		
 		logger.debug("CompiledScriptFactoryContructor compiling scripts from scriptProvider:"+scriptProvider);
 		this.securityManager = securityManager;
+		this.scriptProvider = scriptProvider;
+		init();
+	}
+	
+
+	protected void init(){
 		ScriptEngineManager manager = new ScriptEngineManager();
 		this.engine = manager.getEngineByName("JavaScript");	
 		this.scriptContext = engine.getContext();
-
+		this.compiledScriptMap = new HashMap<Integer,CompiledScriptEntry>();
 		List<String> scriptlets = scriptProvider.getScriptlets();
 		for (String sciptlet : scriptlets) {
 			addAndCompileScript(sciptlet,false);			
 		}
 		
 		addAndCompileScript(scriptProvider.getGlobalScript(),GLOBAL,false);			
-		// TODO commment out
-		//getScriptContext().setAttribute("_debug", true,ScriptContext.ENGINE_SCOPE);
 	}
 	
-
-	protected HashMap<Integer,CompiledScriptEntry> compiledScriptMap = new HashMap<Integer,CompiledScriptEntry>();
 	
 	protected CompiledScript addAndCompileScript(String scriptlet,int key,boolean executeCacheCheckScript){
 		CompiledScript cs = null;
@@ -101,7 +117,7 @@ public class CompiledScriptFactory {
 					script.append(scriptlet);
 				}
 				try {
-					cs = securityManager.compile(engine, script.toString());
+					cs = securityManager.compile(getEngine(), script.toString());
 					compiledScriptMap.put(key, new CompiledScriptEntry(cs,scriptType,executeCacheCheckScript));
 					logger.debug("Added compiled script,mapsize="+compiledScriptMap.size()+",key="+key+" ,script:\n"+script);
 					// debug
@@ -141,6 +157,9 @@ public class CompiledScriptFactory {
 	}
 
 	public ScriptContext getScriptContext() {
+		if(scriptContext == null){
+			init();
+		}
 		return scriptContext;
 	}
 
@@ -159,17 +178,12 @@ public class CompiledScriptFactory {
 				int key = scriptlet.hashCode();
 				CompiledScriptEntry ce = compiledScriptMap.get(key);				
 				if(ce!=null){
-					// execute cache check script with security off, which maps document into script engine and uses internal java packages
-					if(ce.isExecuteCacheCheckScript()){
-						securityManager.setSecureFlag(false);				
-						checkCacheScript.eval(scriptContext);						
-					}
 					securityManager.setSecureFlag(true);			
 					int cetype = ce.getScriptType();
 					if((cetype==STANDALONE_TYPE) || (cetype==FUNC_TYPE)){
-						retVal = ce.getCompiledScript().eval(scriptContext);
+						retVal = ce.getCompiledScript().eval(getScriptContext());
 					}else if(cetype==SCRIPT_TYPE){
-						retVal = ce.getCompiledScript().eval(scriptContext);
+						retVal = ce.getCompiledScript().eval(getScriptContext());
 					}
 				} // ce!=null
 				else{
@@ -215,7 +229,11 @@ public class CompiledScriptFactory {
 	 * @author jfreydank
 	 *
 	 */
-	  class CompiledScriptEntry{
+	  class CompiledScriptEntry implements Serializable{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5200918200005796573L;
 		private CompiledScript compiledScript;
 		private int scriptType = 0;
 		private boolean executeCacheCheckScript = false;

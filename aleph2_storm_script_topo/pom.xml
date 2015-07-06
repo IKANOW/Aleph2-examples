@@ -119,6 +119,12 @@
   		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
 	</dependency>
+ 	<dependency>
+  		<groupId>com.ikanow.aleph2</groupId>
+  		<artifactId>aleph2_streaming_enrichment_context_library</artifactId>
+  		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
 <!--  	<dependency>
   		<groupId>com.ikanow.aleph2</groupId>
   		<artifactId>aleph2_core_distributed_services_library</artifactId>
@@ -142,14 +148,22 @@
   		<artifactId>aleph2_storage_service_hdfs</artifactId>
   		<version>${aleph2.version}</version>
 		<scope>test</scope>
-  	</dependency>  	
+  	</dependency>
+  	-->  	
    	<dependency>
   		<groupId>com.ikanow.aleph2</groupId>
   		<artifactId>aleph2_management_db_service_mongodb</artifactId>
   		<version>${aleph2.version}</version>
 		<scope>test</scope>
   	</dependency>  	
-	<dependency>
+   	<dependency>
+  		<groupId>com.ikanow.aleph2</groupId>
+  		<artifactId>aleph2_search_index_service_elasticsearch</artifactId>
+  		<version>${aleph2.version}</version>
+		<scope>test</scope>
+  	</dependency>  	
+  	
+<!-- 	<dependency>
 	    <groupId>jdk.tools</groupId>
 	    <artifactId>jdk.tools</artifactId>
 	    <version>${java.version}</version>
@@ -203,13 +217,14 @@
 		<artifactId>jcl-core</artifactId>
 		<version>2.4</version>
 	</dependency>
+	-->
   	<dependency>
   		<groupId>junit</groupId>
   		<artifactId>junit</artifactId>
   		<version>4.12</version>
   		<scope>test</scope>
   	</dependency>
-  	-->
+  	
 	<dependency>
   <groupId>org.apache.storm</groupId>
   <artifactId>storm-core</artifactId>

@@ -1,5 +1,6 @@
 package com.ikanow.aleph2.storm.samples.script;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -21,19 +22,23 @@ public class PropertyBasedScriptProvider implements IScriptProvider {
 
 	protected static String GLOBAL = "global";
 	public PropertyBasedScriptProvider(String propertiesFileName){
-		loadProperties(propertiesFileName);
-		init();
+		init(propertiesFileName);
 	}
 	
 
-	protected void init(){
+	public void init(String propertiesFileName){
+		loadProperties(propertiesFileName);
+		File propFile = new File(propertiesFileName);
+		String parentFolder = propFile.getParent();
+		
 		for (Iterator<Entry<Object, Object>> it = properties.entrySet().iterator(); it.hasNext();) {
 			Entry<Object, Object> entry = it.next();
+			
 			if (entry.getKey().toString().equalsIgnoreCase(GLOBAL)){
-					globalScript = loadScriptFromResource((String)entry.getValue());
+					globalScript = loadScriptFromResource(parentFolder,(String)entry.getValue());
 			} // if
 			else{
-				String scriptlet = loadScriptFromResource((String)entry.getValue());
+				String scriptlet = loadScriptFromResource(parentFolder,(String)entry.getValue());
 				scriptlets.add(scriptlet);
 			}
 		} // for		
@@ -67,11 +72,12 @@ public class PropertyBasedScriptProvider implements IScriptProvider {
 			}
 	}
 
-	protected static String loadScriptFromResource(String resourcePathToJSFile) {
+	protected static String loadScriptFromResource(String parentFolder, String resourcePathToJSFile) {
 		String script = null;
 		if(resourcePathToJSFile!=null){
+			String filePath = (parentFolder!=null?parentFolder:"")+File.separator+resourcePathToJSFile;
 			try {
-				InputStream inStream = PropertyBasedScriptProvider.class.getResourceAsStream(resourcePathToJSFile);
+				InputStream inStream = PropertyBasedScriptProvider.class.getResourceAsStream(filePath);
 				if (inStream == null) {
 					// second try
 					inStream = new FileInputStream(resourcePathToJSFile);
