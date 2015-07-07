@@ -97,6 +97,11 @@
 	<artifactId>slf4j-api</artifactId>
 	<version>1.7.12</version>
 </dependency>
+<dependency>
+	<groupId>org.yaml</groupId>
+	<artifactId>snakeyaml</artifactId>
+	<version>1.15</version>
+</dependency>
 
   </dependencies>  
 </project>
