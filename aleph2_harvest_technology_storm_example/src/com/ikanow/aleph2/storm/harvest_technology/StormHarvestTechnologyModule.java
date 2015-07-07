@@ -16,9 +16,13 @@
 package com.ikanow.aleph2.storm.harvest_technology;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +36,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyInfo;
@@ -49,8 +54,6 @@ import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.ikanow.aleph2.data_model.utils.PropertiesUtils;
 import com.ikanow.aleph2.data_model.utils.UuidUtils;
 import com.ikanow.aleph2.utils.JarBuilderUtil;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 /**
  * IHarvestTechnologyModule is just for going from raw data to json.
@@ -70,6 +73,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	private static IStormController storm_controller;
 	protected GlobalPropertiesBean _globals;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void onInit(IHarvestContext context) {
 		logger.info("initializing storm harvest technology");
@@ -79,15 +83,25 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			logger.error(ErrorUtils.getLongForm("Couldn't set globals property bean in storm harvest tech onInit: {0}", e));			
 		}
 		logger.info("Loading storm config from: " + _globals.local_yarn_config_dir() + File.separator + "storm.yaml");
-		Config config = ConfigFactory.parseFile(new File(_globals.local_yarn_config_dir() + File.separator + "storm.yaml"));		
-		if ( config.hasPath(backtype.storm.Config.NIMBUS_HOST) ) {
+		Yaml yaml = new Yaml();
+		InputStream input;
+		Map<String, Object> object;
+		try {
+			input = new FileInputStream(new File(_globals.local_yarn_config_dir() + File.separator + "storm.yaml"));
+			object = (Map<String, Object>) yaml.load(input);
+		} catch (FileNotFoundException e) {
+			logger.error(ErrorUtils.getLongForm("Error reading storm.yaml in storm harvest tech onInit: {0}", e));
+			object = new HashMap<String, Object>();
+		}
+					
+		if ( object.containsKey(backtype.storm.Config.NIMBUS_HOST) ) {
 			logger.info("starting in remote mode v5");
-			logger.info(config.getString(backtype.storm.Config.NIMBUS_HOST));
+			logger.info(object.get(backtype.storm.Config.NIMBUS_HOST));
 			//run in distributed mode
 			storm_controller = StormControllerUtil.getRemoteStormController(
-					config.getString(backtype.storm.Config.NIMBUS_HOST), 
-					config.getInt(backtype.storm.Config.NIMBUS_THRIFT_PORT), 
-					config.getString(backtype.storm.Config.STORM_THRIFT_TRANSPORT_PLUGIN));
+					(String)object.get(backtype.storm.Config.NIMBUS_HOST), 
+					(int)object.get(backtype.storm.Config.NIMBUS_THRIFT_PORT), 
+					(String)object.get(backtype.storm.Config.STORM_THRIFT_TRANSPORT_PLUGIN));
 		} else {
 			logger.info("starting in local mode");
 			//run in local mode
