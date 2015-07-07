@@ -50,6 +50,7 @@ import com.ikanow.aleph2.storm.harvest_technology.StormHarvestTechnologyModule;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+@SuppressWarnings("unused")
 public class TestStormHarvestTechnologyModule {
 
 //	private IUuidService uuid_service = UuidUtils.get();
