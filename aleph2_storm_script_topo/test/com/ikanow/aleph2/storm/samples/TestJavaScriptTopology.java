@@ -99,7 +99,7 @@ public class TestJavaScriptTopology {
 		final backtype.storm.Config config = new backtype.storm.Config();
 		config.setDebug(true);
 		_local_cluster.submitTopology("test_js_topology", config, topology);		
-		Thread.sleep(5000L);
+		Thread.sleep(3000L);
 		
 		//PHASE 3: CHECK INDEX
 		final ISearchIndexService index_service = test_context.getService(ISearchIndexService.class, Optional.empty()).get();
@@ -111,7 +111,7 @@ public class TestJavaScriptTopology {
 		//PHASE4 : WRITE TO KAFKA
 		
 		cds.produce(KafkaUtils.bucketPathToTopicName(test_bucket.full_name()), "{\"test\":\"test1\"}");
-		Thread.sleep(9000L);
+		Thread.sleep(90000L);
 		
 		assertEquals(1L, crud_service.countObjects().get().intValue());		
 	}

@@ -70,7 +70,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 		String ipLine = tuple.getString(0);
 		Object retVal = getCompiledScriptFactory().executeCompiledScript(CHECKCALL,"_ip",ipLine);
-		logger.debug("Result from Script"+retVal);
+		logger.debug("Result from Script:"+retVal);
 		
 		/*while ( matcher.find() ) {
 			_collector.emit(tuple, new Values( matcher.group(0).trim()));
