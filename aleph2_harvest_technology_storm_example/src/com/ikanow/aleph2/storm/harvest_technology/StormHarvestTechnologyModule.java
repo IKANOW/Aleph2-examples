@@ -69,9 +69,6 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	private static final Logger logger = LogManager.getLogger();
 	private static IStormController storm_controller;
 	protected GlobalPropertiesBean _globals;
-	private final String NIMBUS_HOST = "nimbus_host";
-	private final String NIMBUS_THRIFT_PORT = "nimbus_thrift_port";
-	private final String THRIFT_TRANSPORT_PLUGIN = "thrift_transport_plugin";
 
 	@Override
 	public void onInit(IHarvestContext context) {
@@ -81,13 +78,16 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		} catch (IOException e) {
 			logger.error(ErrorUtils.getLongForm("Couldn't set globals property bean in storm harvest tech onInit: {0}", e));			
 		}
-		logger.info("Loading storm config from: " + _globals.local_yarn_config_dir() + File.separator + "storm.properties");
-		Config config = ConfigFactory.parseFile(new File(_globals.local_yarn_config_dir() + File.separator + "storm.properties"));		
-		if ( config.hasPath(NIMBUS_HOST) ) {
+		logger.info("Loading storm config from: " + _globals.local_yarn_config_dir() + File.separator + "storm.yaml");
+		Config config = ConfigFactory.parseFile(new File(_globals.local_yarn_config_dir() + File.separator + "storm.yaml"));		
+		if ( config.hasPath(backtype.storm.Config.NIMBUS_HOST) ) {
 			logger.info("starting in remote mode v5");
-			logger.info(config.getString(NIMBUS_HOST));
+			logger.info(config.getString(backtype.storm.Config.NIMBUS_HOST));
 			//run in distributed mode
-			storm_controller = StormControllerUtil.getRemoteStormController(config.getString(NIMBUS_HOST), config.getInt(NIMBUS_THRIFT_PORT), config.getString(THRIFT_TRANSPORT_PLUGIN));
+			storm_controller = StormControllerUtil.getRemoteStormController(
+					config.getString(backtype.storm.Config.NIMBUS_HOST), 
+					config.getInt(backtype.storm.Config.NIMBUS_THRIFT_PORT), 
+					config.getString(backtype.storm.Config.STORM_THRIFT_TRANSPORT_PLUGIN));
 		} else {
 			logger.info("starting in local mode");
 			//run in local mode

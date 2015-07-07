@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import com.ikanow.aleph2.utils.JarBuilderUtil;
 
+@SuppressWarnings("unused")
 public class TestJarBuilderUtil {
 
 	@BeforeClass
