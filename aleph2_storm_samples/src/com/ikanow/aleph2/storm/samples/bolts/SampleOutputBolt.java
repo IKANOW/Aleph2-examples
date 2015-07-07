@@ -15,6 +15,7 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.bolts;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,22 +39,22 @@ public class SampleOutputBolt extends BaseRichBolt {
 		this.harvest_signature = harvest_signature;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void execute(Tuple tuple) {
-		Map<String, Object> parsed_entry = (Map<String, Object>) tuple.getValue(0);
-		if ( parsed_entry != null) {
-			//instead of emiting the tuple, we save it to the harvest context
-			try {
-				IHarvestContext harvest_context = ContextUtils.getHarvestContext(harvest_signature);
-				harvest_context.sendObjectToStreamingPipeline(Optional.empty(), parsed_entry);
-				
-			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-				//TODO handle failing to get harvest context
-				e.printStackTrace();
-			}
+		String entry = tuple.getString(0);
+		//convert string to a map to send to streaming pipeline
+		Map<String, Object> parsed_entry = new HashMap<String, Object>();
+		parsed_entry.put("message", entry);
+		
+		//instead of emiting the tuple, we save it to the harvest context
+		try {
+			IHarvestContext harvest_context = ContextUtils.getHarvestContext(harvest_signature);
+			harvest_context.sendObjectToStreamingPipeline(Optional.empty(), parsed_entry);
 			
-		}		
+		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+			//TODO handle failing to get harvest context
+			e.printStackTrace();
+		}
 		
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
@@ -68,7 +69,7 @@ public class SampleOutputBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("proxy_parsed"));
+		declarer.declare(new Fields("output"));
 	}
 
 }
