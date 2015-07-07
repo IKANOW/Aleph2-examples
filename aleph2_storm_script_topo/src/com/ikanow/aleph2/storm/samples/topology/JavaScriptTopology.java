@@ -34,7 +34,6 @@ import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.JsonUtils;
 import com.ikanow.aleph2.storm.samples.bolts.IndexerBolt;
 import com.ikanow.aleph2.storm.samples.bolts.JavaScriptBolt;
-import com.ikanow.aleph2.storm.samples.spouts.SampleFileLineReaderSpout;
 /**
  * An example of a topology that is using a javascript Bolt for enrichment.
  * 

@@ -17,12 +17,21 @@ package com.ikanow.aleph2.storm.samples;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,6 +50,7 @@ import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.ikanow.aleph2.distributed_services.services.ICoreDistributedServices;
 import com.ikanow.aleph2.distributed_services.utils.KafkaUtils;
+import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 import com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -50,13 +60,19 @@ public class TestJavaScriptTopology {
 	LocalCluster _local_cluster;
 	
 	protected Injector _app_injector;
+
+	private List<String> ips;
 	
+	 
 	@Before
 	public void injectModules() throws Exception {
 		final Config config = ConfigFactory.parseFile(new File("./example_config_files/context_local_test.properties"));
 		
 		try {
 			_app_injector = ModuleUtils.createInjector(Arrays.asList(), Optional.of(config));
+			_local_cluster = new LocalCluster();
+			this.ips = readIps();
+
 		}
 		catch (Exception e) {
 			try {
@@ -66,7 +82,6 @@ public class TestJavaScriptTopology {
 				System.out.println(ErrorUtils.getLongForm("{0}", e));
 			}
 		}
-		_local_cluster = new LocalCluster();
 	}
 	
 	@Test
@@ -105,15 +120,38 @@ public class TestJavaScriptTopology {
 		final ISearchIndexService index_service = test_context.getService(ISearchIndexService.class, Optional.empty()).get();
 		final ICrudService<JsonNode> crud_service = index_service.getCrudService(JsonNode.class, test_bucket).get();
 		crud_service.deleteDatastore().get();
-		Thread.sleep(2000L);
+		Thread.sleep(1000L);
 		assertEquals(0L, crud_service.countObjects().get().intValue());
 		
 		//PHASE4 : WRITE TO KAFKA
-		
-		cds.produce(KafkaUtils.bucketPathToTopicName(test_bucket.full_name()), "{\"test\":\"test1\"}");
-		Thread.sleep(90000L);
+		int count = 0;
+		for (String ip : ips) {
+			String msg = "{\"ip\":\""+ip+"\"}";
+			// "{\"test\":\"test1\"}"
+			cds.produce(KafkaUtils.bucketPathToTopicName(test_bucket.full_name()), msg);
+			if(count>100){ break;}
+			count++;
+		}
+		Thread.sleep(9000L);
 		
 		assertEquals(1L, crud_service.countObjects().get().intValue());		
+	}
+	
+	protected List<String> readIps() throws IOException{
+		BufferedReader br  = null;
+		List<String> ips =  new ArrayList<String>();
+	    try {
+	    	br = new BufferedReader(new FileReader("./example_config_files/zeus_badips.txt"));
+	        String line = null;
+	        while ((line = br.readLine()) != null) {
+	        	if(!line.trim().startsWith("#")){
+	        		ips.add(line);
+	        	}	           
+	        }
+	    } finally {
+	        br.close();
+	    }
+		return ips;	
 	}
 	
 }

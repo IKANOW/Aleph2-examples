@@ -127,7 +127,7 @@ public class CompiledScriptFactory implements Serializable{
 					//}
 					
 				} catch (ScriptException e) {
-					logger.error("Error compiling script:\n"+scriptlet);			
+					logger.error("Error compiling script:\n"+scriptlet,e);			
 				}
 			}else{
 				cs= ce.getCompiledScript();
