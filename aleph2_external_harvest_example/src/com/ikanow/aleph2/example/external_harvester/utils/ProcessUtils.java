@@ -113,7 +113,7 @@ public class ProcessUtils {
 			if (!isRunning(pid)) {
 				return Tuples._2T("(process " + pid + " already deleted)", true);
 			}
-			final Process px = new ProcessBuilder(Arrays.asList("kill", "-9", pid))
+			final Process px = new ProcessBuilder(Arrays.asList("kill", "-15", pid))
 			//.redirectErrorStream(true).inheritIO()
 									.start()
 			;
