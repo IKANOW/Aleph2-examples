@@ -78,13 +78,21 @@ public class JavaScriptBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 		String val0 = tuple.getString(0);
 		logger.debug("JavaScriptBolt Received tuple:"+tuple+" val0:"+val0);
-		
+		LinkedHashMap<String, Object> tupelMap =tupleToLinkedHashMap(tuple);
+		String ip = (String) tupelMap.get("str");
+		if(ip!=null){
 //		Object retVal = getCompiledScriptFactory().executeCompiledScript(CHECK_CALL,"_ip",val0);
-		Object retVal = getCompiledScriptFactory().executeCompiledScript(SPLITIP_CALL,"_ip",val0);
+		Object retVal = getCompiledScriptFactory().executeCompiledScript(SPLITIP_CALL,"_ip",ip);
 		logger.debug("JavaScriptBolt Result from Script:"+retVal);
 		if(retVal instanceof Map){			
 			Map m = (Map)retVal;
-			_collector.emit(tuple, new Values( m.get("network"), m.get("subnet")));			
+			String ipNo = (String)m.get("ipNo");
+			String network = (String)m.get("network");
+			String subnet = (String)m.get("subnet");
+			if(network!=null && subnet!=null){
+			_collector.emit(tuple, new Values(network , subnet));
+			}
+		}
 		}
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
@@ -99,7 +107,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("network","subnet"));
+		declarer.declare(new Fields("ipNo","network","subnet"));
 	}
 	
 	public static LinkedHashMap<String, Object> tupleToLinkedHashMap(final Tuple t) {

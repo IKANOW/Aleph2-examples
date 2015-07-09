@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import scala.Tuple2;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.topology.base.BaseRichSpout;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +33,7 @@ import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentStreamingT
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.JsonUtils;
-import com.ikanow.aleph2.storm.samples.bolts.IndexerBolt;
+import com.ikanow.aleph2.storm.samples.bolts.ReducerCounterBolt;
 import com.ikanow.aleph2.storm.samples.bolts.JavaScriptBolt;
 /**
  * An example of a topology that is using a javascript Bolt for enrichment.
@@ -50,7 +51,8 @@ public class JavaScriptTopology implements IEnrichmentStreamingTopology {
 		//builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
 		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
 		builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("1");
-		builder.setBolt("indexer", new IndexerBolt()).shuffleGrouping("scriptBolt");
+		builder.setBolt("reducerCounter", new ReducerCounterBolt()).shuffleGrouping("scriptBolt");
+		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("reducerCounter");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
 	}
 
