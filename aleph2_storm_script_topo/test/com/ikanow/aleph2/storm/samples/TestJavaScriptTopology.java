@@ -132,7 +132,7 @@ public class TestJavaScriptTopology {
 			if(count>100){ break;}
 			count++;
 		}
-		Thread.sleep(90000L);
+		Thread.sleep(9000L);
 		
 		assertEquals(1L, crud_service.countObjects().get().intValue());		
 	}

@@ -90,7 +90,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 			String network = (String)m.get("network");
 			String subnet = (String)m.get("subnet");
 			if(network!=null && subnet!=null){
-			_collector.emit(tuple, new Values(network , subnet));
+			_collector.emit(tuple, new Values(ipNo,network , subnet));
 			}
 		}
 		}
