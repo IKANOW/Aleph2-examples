@@ -28,6 +28,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
@@ -76,6 +77,18 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	@Override
 	@SuppressWarnings("rawtypes")
 	public void execute(Tuple tuple) {
+		
+		Long timer = null;
+		try{
+			timer = tuple.getLongByField("timer");
+
+		}catch(Throwable t){}
+		
+		if(timer!=null){
+			
+		}else{
+			// must be a message from the mapper
+		
 		String val0 = tuple.getString(0);
 		logger.debug("JavaScriptBolt Received tuple:"+tuple+" val0:"+val0);
 		LinkedHashMap<String, Object> tupelMap =tupleToLinkedHashMap(tuple);
@@ -97,6 +110,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		}
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
+		} // else
 		_collector.ack(tuple);
 	}
 
