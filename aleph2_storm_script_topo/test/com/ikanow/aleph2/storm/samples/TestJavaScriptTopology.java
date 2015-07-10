@@ -52,6 +52,7 @@ import com.ikanow.aleph2.distributed_services.services.ICoreDistributedServices;
 import com.ikanow.aleph2.distributed_services.utils.KafkaUtils;
 import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 import com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology;
+import com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology2;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -107,7 +108,7 @@ public class TestJavaScriptTopology {
 		
 		//PHASE 2: CREATE TOPOLOGY AND SUBMit		
 		final ICoreDistributedServices cds = test_context.getService(ICoreDistributedServices.class, Optional.empty()).get();
-		final StormTopology topology = (StormTopology) new JavaScriptTopology()
+		final StormTopology topology = (StormTopology) new JavaScriptTopology2()
 											.getTopologyAndConfiguration(test_bucket, test_context)
 											._1();
 		
