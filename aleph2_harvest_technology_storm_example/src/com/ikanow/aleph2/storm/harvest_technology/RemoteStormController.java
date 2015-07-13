@@ -80,9 +80,14 @@ public class RemoteStormController implements IStormController  {
 
 	@Override
 	public void stopJob(String job_name) {
-		logger.info("Stopping job: " + job_name);
+		logger.info("Stopping harvester job: " + job_name);
 		try {
-			client.killTopology(getJobTopologySummaryFromJobPrefix(job_name).get_name());
+			String actual_job_name = getJobTopologySummaryFromJobPrefix(job_name).get_name();
+			logger.info("trying to kill job: " + actual_job_name);
+			if ( actual_job_name != null ) 
+				client.killTopology(actual_job_name);	
+			else
+				logger.info("no job found to kill");
 		} catch (Exception ex) {
 			//let die for now, usually happens when top doesn't exist
 			logger.info( ErrorUtils.getLongForm("Error stopping job: " + job_name + "  this is typical with storm becuase the job may not exist that we try to kill anyways {0}", ex));
@@ -113,7 +118,7 @@ public class RemoteStormController implements IStormController  {
 			 TopologySummary summary = iter.next();
 			 //WARNING: this just matches on prefix (because we don't know the unique jobid attached to the end of the job_name anymore)
 			 //this means you can false positive if you have 2 jobs one a prefix of the other e.g. job_a and job_a_1
-			 if ( summary.get_name().startsWith(job_prefix));
+			 if ( summary.get_name().startsWith(job_prefix))
 			 	return summary;
 		 }	
 		 return null;
