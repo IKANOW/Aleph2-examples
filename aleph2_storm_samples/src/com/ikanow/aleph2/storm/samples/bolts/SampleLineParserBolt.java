@@ -15,12 +15,9 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.bolts;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-
-import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
-import com.ikanow.aleph2.data_model.utils.ContextUtils;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -28,39 +25,23 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
-public class SampleOutputBolt extends BaseRichBolt {
-
-	private static final long serialVersionUID = 2023732900302096606L;
-	private OutputCollector _collector;
-	private String harvest_signature;
-
-	public SampleOutputBolt(String harvest_signature) {
-		this.harvest_signature = harvest_signature;
-	}
+public class SampleLineParserBolt extends BaseRichBolt {
+	
+	private static final long serialVersionUID = -754177901046983751L;
+	private OutputCollector _collector;	
+	private Pattern pattern = Pattern.compile("\\w+\\s*", Pattern.CASE_INSENSITIVE); //basic regex, doesn't consider non letter characters
 	
 	@Override
 	public void execute(Tuple tuple) {
 		String line = tuple.getString(0);
-		String keyA = tuple.getString(1);
-		String keyB = tuple.getString(2);
-		//convert string to a map to send to streaming pipeline
-		Map<String, Object> parsed_entry = new HashMap<String, Object>();
-		parsed_entry.put("line", line);
-		parsed_entry.put("keyA", keyA);
-		parsed_entry.put("keyB", keyB);
-		
-		//instead of emiting the tuple, we save it to the harvest context
-		try {
-			//System.out.println("sending: " + parsed_entry.toString() + " to stream");			
-			IHarvestContext harvest_context = ContextUtils.getHarvestContext(harvest_signature);
-			harvest_context.sendObjectToStreamingPipeline(Optional.empty(), parsed_entry);
-			
-		} catch (Exception e) {
-			//TODO handle failing to get harvest context
-			e.printStackTrace();
-		}
-		
+		Matcher matcher = pattern.matcher(line);
+		while ( matcher.find() ) {
+			String word = matcher.group(0).trim();
+			_collector.emit(tuple, new Values( line, word.concat("A"), word.concat("B")));
+		}		
+				
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
 		_collector.ack(tuple);
@@ -74,7 +55,6 @@ public class SampleOutputBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields());
+		declarer.declare(new Fields("line","keyA","keyB"));
 	}
-
 }

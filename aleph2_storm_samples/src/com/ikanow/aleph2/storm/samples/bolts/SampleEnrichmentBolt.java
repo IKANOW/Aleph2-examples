@@ -15,12 +15,7 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.bolts;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-
-import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
-import com.ikanow.aleph2.data_model.utils.ContextUtils;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -28,39 +23,27 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
-public class SampleOutputBolt extends BaseRichBolt {
-
-	private static final long serialVersionUID = 2023732900302096606L;
-	private OutputCollector _collector;
-	private String harvest_signature;
-
-	public SampleOutputBolt(String harvest_signature) {
-		this.harvest_signature = harvest_signature;
-	}
+public class SampleEnrichmentBolt extends BaseRichBolt {
+	
+	private static final long serialVersionUID = -754177901046983751L;
+	private OutputCollector _collector;	
 	
 	@Override
 	public void execute(Tuple tuple) {
-		String line = tuple.getString(0);
-		String keyA = tuple.getString(1);
-		String keyB = tuple.getString(2);
-		//convert string to a map to send to streaming pipeline
-		Map<String, Object> parsed_entry = new HashMap<String, Object>();
-		parsed_entry.put("line", line);
-		parsed_entry.put("keyA", keyA);
-		parsed_entry.put("keyB", keyB);
+		//collect the fields I need from the tuple
+		String keyA = tuple.getString(0);
+		String keyB = tuple.getString(1);
+		String message = tuple.getString(2);
 		
-		//instead of emiting the tuple, we save it to the harvest context
-		try {
-			//System.out.println("sending: " + parsed_entry.toString() + " to stream");			
-			IHarvestContext harvest_context = ContextUtils.getHarvestContext(harvest_signature);
-			harvest_context.sendObjectToStreamingPipeline(Optional.empty(), parsed_entry);
-			
-		} catch (Exception e) {
-			//TODO handle failing to get harvest context
-			e.printStackTrace();
-		}
+		//perform some enrichment, either from external source or just some processing
+		String enrichmentKeyA = doEnrichment(keyA, keyB);
+		String enrichmentKeyB = doEnrichment(keyB, keyA);
 		
+		//emit out the additional fields
+		_collector.emit(tuple, new Values(keyA, keyB, enrichmentKeyA, enrichmentKeyB, message));	
+				
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
 		_collector.ack(tuple);
@@ -74,7 +57,10 @@ public class SampleOutputBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields());
+		declarer.declare(new Fields("keyA","keyB","enrichmentKeyA","enrichmentKeyB","message"));
 	}
 
+	private static String doEnrichment(String A, String B) {
+		return A.concat(B);
+	}
 }
