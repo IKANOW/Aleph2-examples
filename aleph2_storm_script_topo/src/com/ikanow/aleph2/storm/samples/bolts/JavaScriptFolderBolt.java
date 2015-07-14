@@ -144,7 +144,4 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 							.collect(Collectors.toMap(f -> f, f -> t.getValueByField(f), (m1, m2) -> m1, LinkedHashMap::new));
 	}
 	
-/* public static void emit(Tuple t, OutputCollector collector,Object out){
-		collector.emit(t, new Values(out));
- }*/
 }
