@@ -36,7 +36,7 @@ public class TimerSpout extends BaseRichSpout {
 	 */
 	private static final long serialVersionUID = -6230942751188930047L;
 	protected long timeoutMillis;
-	protected long lastTime = -1;;
+	protected long lastTime = -1;
 	private SpoutOutputCollector _collector;
 
 	public TimerSpout(long timeoutMillis) {
@@ -47,7 +47,8 @@ public class TimerSpout extends BaseRichSpout {
 	public void nextTuple() {
 		long now = System.currentTimeMillis();
 		if(now-lastTime>=timeoutMillis){			
-			_collector.emit(new Values(now));			
+			_collector.emit(new Values(now));
+			lastTime = now;
 		}
 	}
 

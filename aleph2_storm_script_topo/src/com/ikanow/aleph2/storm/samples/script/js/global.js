@@ -57,32 +57,38 @@ function map(jsonIn){
 //init map
 var HashMap = Java.type("java.util.HashMap")
 var _map = new HashMap();
-var threshold = 1;
 
 function fold(mapKey,mapValueJson){
 	var mapValueObj = eval('(' + mapValueJson + ')');
 	print("fold mapKey="+mapKey+" , mapValueJson="+mapValueJson);
+	var state = _map.get(mapKey);
+	var newState = update(mapKey, state);
+	store(mapKey, newState);
 	
-	update(mapKey,mapValueJson);
 }
 
-function update(mapKey,mapValueJson){
+
+function update(mapKey,state){
 	// count for now
-	var count = _map.get(mapKey);
-	print("update mapKey="+mapKey+" , count="+count);
+	
+	var count = state
 
 	if (count == null){
 		count = 0;
 	}
 	count++;
-	_map.put(mapKey, count);	
+	return count;
 }
 
-function checkEmit(mapKey,mapValueJson) {	
-	var count = _map.get(mapKey);
+// function returns object to be emitted or null
+function checkEmit(mapKey,state) {	
+	// TODO modfify threshold
+	var threshold = 2;
+
+	var count = state;
 	
-	print("checkEmit mapKey="+mapKey+" , count="+count+",threshold="+threshold);
 	if(count >= threshold){
+		print("checkEmit mapKey="+mapKey+" , count="+count+",threshold="+threshold);
 		var countObj = {};
 		countObj["mapKey"]=mapKey;
 		countObj["mapValue"]=mapValueJson;
@@ -91,6 +97,10 @@ function checkEmit(mapKey,mapValueJson) {
 	}	
 	return null;
 	
+}
+
+function reset(mapKey) {
+	_map.put(mapKey, 0); 
 }
 
 function store(key,state) {
