@@ -15,6 +15,7 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.bolts;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,6 +49,10 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	
 	protected static String FOLD_CALL = "fold(mapKey,mapValueJson);";
 	protected static String CHECKEMIT_CALL = "checkEmit(mapKey,mapValueJson);";
+	protected static String ALLENTRIES_CALL = "allEntries();";
+	protected static String UPDATE_CALL = "update(mapKey,state);";
+	protected static String STORE_CALL = "store(mapKey,state);";
+	protected static String RESET_CALL = "reset(mapKey);";
 	
 	
 	public JavaScriptFolderBolt(String propertyFileName){		
@@ -64,6 +69,8 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 					super.init(propertyFile);
 					scriptlets.add(FOLD_CALL);
 					scriptlets.add(CHECKEMIT_CALL);
+					scriptlets.add(ALLENTRIES_CALL);
+					scriptlets.add(UPDATE_CALL);
 				}
 				
 			}, new NoSecurityManager());
@@ -74,7 +81,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	}
 	
 	@Override
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void execute(Tuple tuple) {
 		
 		Long timer = null;
@@ -84,7 +91,25 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		}catch(Throwable t){}
 		
 		if(timer!=null){
-			
+			// get all entries
+			logger.debug("JavaScriptBolt Timer"+new Date(timer));
+			Object retVal = getCompiledScriptFactory().executeCompiledScript(ALLENTRIES_CALL);
+			// Alex: else { retrieve().then(state -> store(update(input, state))).then(state -> of
+			//if state.x emit(..))
+			logger.debug("JavaScriptBolt Result from allEntries:"+retVal);
+			if(retVal instanceof Map){
+				Map m = (Map)retVal;
+				m.forEach((k,v) -> {
+					System.out.println("key: "+k+" value:"+v);
+					
+
+					Object checkEmit = getCompiledScriptFactory().executeCompiledScript(CHECKEMIT_CALL,"mapKey",k,"state",v);
+					if(checkEmit!=null){
+						_collector.emit(tuple, new Values(checkEmit));
+						getCompiledScriptFactory().executeCompiledScript(RESET_CALL,"mapKey");						
+					}
+				}); // foreach
+			}
 		}else{
 			// must be a message from the mapper
 		
@@ -96,16 +121,6 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		if(mapKey!=null && mapValueJson!=null){
 			Object retVal = getCompiledScriptFactory().executeCompiledScript(FOLD_CALL,"mapKey",mapKey,"mapValueJson",mapValueJson);
 			logger.debug("JavaScriptBolt Result from Script:"+retVal);
-/*			if(retVal instanceof Map){
-				Map m = (Map)retVal;
-				String mapKey = (String)m.get("mapKey");
-				String mapValueJson = (String)m.get("mapValueJson");
-				if(mapKey!=null && mapValueJson!=null){
-*/				
-			Object checkEmit = getCompiledScriptFactory().executeCompiledScript(CHECKEMIT_CALL,"mapKey",mapKey,"mapValueJson",mapValueJson);
-			 if(checkEmit!=null){
-					_collector.emit(tuple, new Values(checkEmit));					 			 
-			}
 		}
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
