@@ -94,7 +94,9 @@ function checkEmit(mapKey,state) {
 		countObj["mapKey"]=mapKey;
 		countObj["mapValue"]=mapValueJson;
 		countObj["count"]=count;
-		return JSON.stringify(countObj);
+		
+		//return JSON.stringify(countObj);
+		emit(JSON.stringify(countObj));
 	}	
 	return null;
 	
@@ -112,3 +114,6 @@ function allEntries() {
 	return _map; 
 }
 
+function emit(objToEmit){
+	JavaScriptFolderBolt.emit(__collector,_tuple, objToEmit);
+}

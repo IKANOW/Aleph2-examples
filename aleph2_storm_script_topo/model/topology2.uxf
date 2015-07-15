@@ -96,7 +96,7 @@ bg=yellow</panel_attributes>
       <h>60</h>
     </coordinates>
     <panel_attributes>Bolt
-TopologyEntPoint
+TopoloyStorageEndpoint
 fg=red
 bg=yellow</panel_attributes>
     <additional_attributes/>

@@ -118,7 +118,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		String mapKey = (String) tupelMap.get("mapKey");
 		String mapValueJson = (String) tupelMap.get("mapValueJson");
 		if(mapKey!=null && mapValueJson!=null){
-			Object retVal = getCompiledScriptFactory().executeCompiledScript(FOLD_CALL,"mapKey",mapKey,"mapValueJson",mapValueJson);
+			Object retVal = getCompiledScriptFactory().executeCompiledScript(FOLD_CALL,"mapKey",mapKey,"mapValueJson",mapValueJson,"_collector",_collector,"_tuple", tuple);
 			logger.debug("JavaScriptBolt Result from Script:"+retVal);
 		}
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
@@ -142,5 +142,9 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		return StreamSupport.stream(t.getFields().spliterator(), false)
 							.collect(Collectors.toMap(f -> f, f -> t.getValueByField(f), (m1, m2) -> m1, LinkedHashMap::new));
 	}
-	
+
+	public static void emit(OutputCollector collector,Tuple tuple,Object emitValue){
+		collector.emit(tuple, new Values(emitValue));
+	}
+
 }
