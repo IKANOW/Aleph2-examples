@@ -92,7 +92,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		if(timer!=null){
 			// get all entries
 			logger.debug("JavaScriptBolt Timer"+new Date(timer));
-			Object retVal = getCompiledScriptFactory().executeCompiledScript(ALLENTRIES_CALL);
+			Object retVal = getCompiledScriptFactory().executeCompiledScript(ALLENTRIES_CALL,"_collector",_collector,"_tuple", tuple);
 			// Alex: else { retrieve().then(state -> store(update(input, state))).then(state -> of
 			//if state.x emit(..))
 			logger.debug("JavaScriptBolt Result from allEntries:"+retVal);
@@ -102,7 +102,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 					System.out.println("key: "+k+" value:"+v);
 					
 
-					Object checkEmit = getCompiledScriptFactory().executeCompiledScript(CHECKEMIT_CALL,"mapKey",k,"state",v);
+					Object checkEmit = getCompiledScriptFactory().executeCompiledScript(CHECKEMIT_CALL,"mapKey",k,"state",v,"_collector",_collector,"_tuple", tuple);
 					if(checkEmit!=null){
 						_collector.emit(tuple, new Values(checkEmit));
 						getCompiledScriptFactory().executeCompiledScript(RESET_CALL,"mapKey");						

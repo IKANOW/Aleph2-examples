@@ -79,7 +79,7 @@ public class JavaScriptMapperBolt extends BaseRichBolt {
 		LinkedHashMap<String, Object> tupelMap =tupleToLinkedHashMap(tuple);
 		String jsonIn = (String) tupelMap.get("str");
 		if(jsonIn!=null){
-			Object retVal = getCompiledScriptFactory().executeCompiledScript(MAP_CALL,"jsonIn",jsonIn);
+			Object retVal = getCompiledScriptFactory().executeCompiledScript(MAP_CALL,"jsonIn",jsonIn,"_collector",_collector,"_tuple", tuple);
 			logger.debug("JavaScriptBolt Result from Script:"+retVal);
 			if(retVal instanceof Map){			
 				Map m = (Map)retVal;
