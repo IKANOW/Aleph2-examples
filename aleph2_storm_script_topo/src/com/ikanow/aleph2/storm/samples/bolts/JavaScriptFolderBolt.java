@@ -51,7 +51,6 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	protected static String CHECKEMIT_CALL = "checkEmit(mapKey,mapValueJson);";
 	protected static String ALLENTRIES_CALL = "allEntries();";
 	protected static String UPDATE_CALL = "update(mapKey,state);";
-	protected static String STORE_CALL = "store(mapKey,state);";
 	protected static String RESET_CALL = "reset(mapKey);";
 	
 	

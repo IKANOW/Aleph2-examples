@@ -27,7 +27,7 @@ function splitIP(){
 	return m;
 }
 
-// functions for Mapper and folder
+// functions for Mapper and Folder, topology2
 function map(jsonIn){
 	
 	var jsonObObj = eval('(' + jsonIn + ')');
@@ -68,6 +68,7 @@ function fold(mapKey,mapValueJson){
 }
 
 
+// user specific update function
 function update(mapKey,state){
 	// count for now
 	
@@ -80,7 +81,7 @@ function update(mapKey,state){
 	return count;
 }
 
-// function returns object to be emitted or null
+// user specific function returns object to be emitted or null
 function checkEmit(mapKey,state) {	
 	// TODO modfify threshold
 	var threshold = 2;
