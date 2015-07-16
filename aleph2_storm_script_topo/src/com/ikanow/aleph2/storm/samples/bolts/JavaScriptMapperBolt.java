@@ -35,8 +35,8 @@ import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
 import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
 import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 
-public class JavaScriptBolt extends BaseRichBolt {
-	private static final Logger logger = LogManager.getLogger(JavaScriptBolt.class);
+public class JavaScriptMapperBolt extends BaseRichBolt {
+	private static final Logger logger = LogManager.getLogger(JavaScriptMapperBolt.class);
 
 	/**
 	 * 
@@ -46,11 +46,10 @@ public class JavaScriptBolt extends BaseRichBolt {
 	protected transient CompiledScriptFactory compiledScriptFactory = null;
 	private String propertyFileName;
 	
-	protected static String CHECK_CALL = "check();";
-	protected static String SPLITIP_CALL = "splitIP();";
+	protected static String MAP_CALL = "map(jsonIn);";
 	
 	
-	public JavaScriptBolt(String propertyFileName){		
+	public JavaScriptMapperBolt(String propertyFileName){		
 		
 		this.propertyFileName  = propertyFileName;
 		
@@ -62,8 +61,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 				@Override
 				public void init(String propertyFile) {
 					super.init(propertyFile);
-					scriptlets.add(CHECK_CALL);
-					scriptlets.add(SPLITIP_CALL);					
+					scriptlets.add(MAP_CALL);
 				}
 				
 			}, new NoSecurityManager());
@@ -79,20 +77,18 @@ public class JavaScriptBolt extends BaseRichBolt {
 		String val0 = tuple.getString(0);
 		logger.debug("JavaScriptBolt Received tuple:"+tuple+" val0:"+val0);
 		LinkedHashMap<String, Object> tupelMap =tupleToLinkedHashMap(tuple);
-		String ip = (String) tupelMap.get("str");
-		if(ip!=null){
-//		Object retVal = getCompiledScriptFactory().executeCompiledScript(CHECK_CALL,"_ip",val0);
-		Object retVal = getCompiledScriptFactory().executeCompiledScript(SPLITIP_CALL,"_ip",ip);
-		logger.debug("JavaScriptBolt Result from Script:"+retVal);
-		if(retVal instanceof Map){			
-			Map m = (Map)retVal;
-			String ipNo = (String)m.get("ipNo");
-			String network = (String)m.get("network");
-			String subnet = (String)m.get("subnet");
-			if(network!=null && subnet!=null){
-			_collector.emit(tuple, new Values(ipNo,network , subnet));
+		String jsonIn = (String) tupelMap.get("str");
+		if(jsonIn!=null){
+			Object retVal = getCompiledScriptFactory().executeCompiledScript(MAP_CALL,"jsonIn",jsonIn,"_collector",_collector,"_tuple", tuple);
+			logger.debug("JavaScriptBolt Result from Script:"+retVal);
+			if(retVal instanceof Map){			
+				Map m = (Map)retVal;
+				String mapKey = (String)m.get("mapKey");
+				String mapValueJson = (String)m.get("mapValueJson");
+				if(mapKey!=null && mapValueJson!=null){
+				_collector.emit(tuple, new Values(mapKey, mapValueJson));
+				}
 			}
-		}
 		}
 		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
 		//to the spout
@@ -107,7 +103,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("ipNo","network","subnet"));
+		declarer.declare(new Fields("mapKey","mapValueJson"));
 	}
 	
 	public static LinkedHashMap<String, Object> tupleToLinkedHashMap(final Tuple t) {

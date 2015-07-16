@@ -19,8 +19,8 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.topology.TopologyBuilder;
 
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
+import com.ikanow.aleph2.storm.samples.bolts.SampleLineParserBolt;
 import com.ikanow.aleph2.storm.samples.bolts.SampleOutputBolt;
-import com.ikanow.aleph2.storm.samples.bolts.SampleWordParserBolt;
 import com.ikanow.aleph2.storm.samples.spouts.SampleWebReaderSpout;
 import com.ikanow.aleph2.storm.topology.IStormHarvestTopology;
 
@@ -37,8 +37,8 @@ public class SampleStormHarvestTopology4 implements IStormHarvestTopology {
 	public StormTopology getStormTopology(String harvest_context_signature, String job_name, DataBucketBean bucket_bean) {
 		TopologyBuilder builder = new TopologyBuilder();
 		builder.setSpout("web_spout", new SampleWebReaderSpout("https://wordpress.org/plugins/about/readme.txt"));
-		builder.setBolt("word_bolt", new SampleWordParserBolt()).shuffleGrouping("web_spout");
-		builder.setBolt("output_bolt", new SampleOutputBolt(harvest_context_signature)).shuffleGrouping("word_bolt");
+		builder.setBolt("line_bolt", new SampleLineParserBolt()).shuffleGrouping("web_spout");
+		builder.setBolt("output_bolt", new SampleOutputBolt(harvest_context_signature)).shuffleGrouping("line_bolt");
 		return builder.createTopology();
 	}
 

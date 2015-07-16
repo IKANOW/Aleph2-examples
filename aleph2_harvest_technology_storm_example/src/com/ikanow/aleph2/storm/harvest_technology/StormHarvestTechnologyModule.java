@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -41,6 +42,7 @@ import org.yaml.snakeyaml.Yaml;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyInfo;
 
+import com.google.common.collect.Sets;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
@@ -52,7 +54,6 @@ import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.ikanow.aleph2.data_model.utils.PropertiesUtils;
-import com.ikanow.aleph2.data_model.utils.UuidUtils;
 import com.ikanow.aleph2.utils.JarBuilderUtil;
 
 /**
@@ -72,6 +73,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	private static final Logger logger = LogManager.getLogger();
 	private static IStormController storm_controller;
 	protected GlobalPropertiesBean _globals;
+	private final static Set<String> dirs_to_ignore = Sets.newHashSet("org/slf4j", "org/apache/log4j");
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -130,7 +132,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			//set failure in completable future
 			logger.info("stop failed, returning that ",e);
-			stop_future.complete(new BasicMessageBean(new Date(), false, null, null, null, ErrorUtils.getLongForm("{0}", e), null));
+			stop_future.complete(new BasicMessageBean(new Date(), false, null, "updateSource", null, ErrorUtils.getLongForm("{0}", e), null));
 			return stop_future;
 		}
 		return onNewSource(new_bucket, context, is_enabled);
@@ -157,7 +159,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		//purge means that someone has dumped all the data from this harvest, nothing to do on
 		//our end, just let the source keep running (e.g. like delete docs in the old harvester)
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
-		future.complete(new BasicMessageBean(new Date(), true, null, null, null, "Nothing to do for purge", null));
+		future.complete(new BasicMessageBean(new Date(), true, null, "onPurge", null, "Nothing to do for purge", null));
 		return future;
 	}
 
@@ -171,11 +173,11 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			storm_controller.stopJob(getJobName(to_delete));
 		} catch (Exception e) {
 			logger.info("Stop completing exceptionally", e);
-			future.complete(new BasicMessageBean(new Date(), false, null, null, null, ErrorUtils.getLongForm("{0}", e), null));
+			future.complete(new BasicMessageBean(new Date(), false, null, "onDelete", null, ErrorUtils.getLongForm("{0}", e), null));
 			return future;
 		}		
 		logger.info("returning completed stop");
-		future.complete(new BasicMessageBean(new Date(), true, null, null, null, null, null));
+		future.complete(new BasicMessageBean(new Date(), true, null, "onDelete", null, null, null));
 		return future;
 	}
 
@@ -189,12 +191,12 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			 top_info = storm_controller.getJobStats(getJobName(polled_bucket));
 		} catch (Exception ex) {
 			//set failure in completable future
-			future.complete(new BasicMessageBean(new Date(), false, null, null, null, ErrorUtils.getLongForm("{0}", ex), null));
+			future.complete(new BasicMessageBean(new Date(), false, null, "onPeriodicPoll", null, ErrorUtils.getLongForm("{0}", ex), null));
 			return future;
 		}
 		//TODO see if there is any info on this buckets harvest stats, can we
 		//see how many documents have been sent via the spout or something?
-		future.complete(new BasicMessageBean(new Date(), true, null, null, null, top_info.toString(), null));
+		future.complete(new BasicMessageBean(new Date(), true, null, "onPeriodicPoll", null, top_info.toString(), null));
 		return future;
 	}
 
@@ -214,19 +216,12 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	 * @return
 	 */
 	private static String getJobName(DataBucketBean data_bucket) {
-		return (JOB_NAME_PREFIX + data_bucket._id() + "_").replaceAll("\\.", "_");
-	}
-	
-	/**
-	 * Returns back a unique version of a job name, this is used when submitting
-	 * a new job.
-	 * 
-	 * @param data_bucket
-	 * @return
-	 */
-	private static String createJobName(DataBucketBean data_bucket) {
-		return (JOB_NAME_PREFIX + data_bucket._id() + "_" + UuidUtils.get().getTimeBasedUuid()).replaceAll("\\.", "_");
+		return replaceJobCharacters(JOB_NAME_PREFIX + data_bucket._id() + "_");
 	}		
+	
+	private static String replaceJobCharacters(String job_name) {
+		return job_name.replaceAll("\\.", "_").replaceAll("__+", "_").replace(";", "__");
+	}
 	
 	//private final String job_name = "STORM_TEST_JOB_";	
 	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
@@ -246,7 +241,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		//once X # of objects have been acked, maybe theres somewhere you can see total acks?
 		
 		//set up a timer to cancel job after max runtime
-		executor.schedule(new RunnableCancelTestJob(createJobName(test_bucket), future), test_spec.max_run_time_secs(), TimeUnit.SECONDS); //schedules a job to cancel the top in 5s
+		executor.schedule(new RunnableCancelTestJob(getJobName(test_bucket), future), test_spec.max_run_time_secs(), TimeUnit.SECONDS); //schedules a job to cancel the top in 5s
 		return future;
 	}
 	
@@ -271,9 +266,9 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			try {
 				storm_controller.stopJob(job_name);
 				//TODO fill in the complete response
-				future.complete(new BasicMessageBean(new Date(), true, null, null, null, "yes it was killed", null));
+				future.complete(new BasicMessageBean(new Date(), true, null, "onTest", null, "yes it was killed", null));
 			} catch (Exception e) {
-				future.complete(new BasicMessageBean(new Date(), false, null, null, null, ErrorUtils.getLongForm("{0}", e), null));				
+				future.complete(new BasicMessageBean(new Date(), false, null, "onTest", null, ErrorUtils.getLongForm("{0}", e), null));				
 			}
 			
 		}
@@ -287,13 +282,13 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		if ( enabled ) {
 			
 			//build out a topology for these config options
-			String job_name = createJobName(new_bucket);
+			String job_name = getJobName(new_bucket);
 			StormTopology topology = null;
 			try {
 				topology = StormHarvestTechnologyTopologyUtil.createTopology(new_bucket.harvest_configs(), job_name, context, new_bucket);
 			} catch (Exception e) {
 				//set failure in completable future
-				future.complete(new BasicMessageBean(new Date(), false, null, null, null, ErrorUtils.getLongForm("{0}", e), null));
+				future.complete(new BasicMessageBean(new Date(), false, null, "onNewSource", null, ErrorUtils.getLongForm("{0}", e), null));
 				return future;
 			}
 			
@@ -311,17 +306,26 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 				//kick the harvest library out of our jar (it contains storm.jar which we can't send to storm)
 				List<String> harvest_library_paths = harvest_libraries.keySet().stream().filter(name -> !name.contains(new_bucket.harvest_technology_name_or_id())).map(name -> harvest_libraries.get(name)).collect(Collectors.toList());
 				jars_to_merge.addAll(harvest_library_paths);
-				JarBuilderUtil.mergeJars(jars_to_merge, input_jar_location);
+				JarBuilderUtil.mergeJars(jars_to_merge, input_jar_location, dirs_to_ignore);
 				storm_controller.submitJob(job_name, input_jar_location, topology);
+				
+				//verify job was assigned some executors
+				TopologyInfo info = storm_controller.getJobStats(job_name);
+				if ( info.get_executors_size() == 0 ) {
+					//no executors were available for this job, stop the job, throw an error
+					storm_controller.stopJob(job_name);
+					future.complete(new BasicMessageBean(new Date(), false, null, "onNewSource", null, "No executors were assigned to this job, typically this is because too many jobs are currently running, kill some other jobs and resubmit.", null));
+					return future;					
+				}
 			} catch (Exception e) {
 				//set failure in completable future
-				future.complete(new BasicMessageBean(new Date(), false, null, null, null, ErrorUtils.getLongForm("{0}", e), null));
+				future.complete(new BasicMessageBean(new Date(), false, null, "onNewSource", null, ErrorUtils.getLongForm("{0}", e), null));
 				return future;
 			}	
 		}	
 		
 		//TODO return something useful
-		future.complete(new BasicMessageBean(new Date(), true, null, null, null, null, null));
+		future.complete(new BasicMessageBean(new Date(), true, null, "onNewSource", null, null, null));
 		return future;
 	}	
 	

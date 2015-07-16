@@ -17,6 +17,7 @@ package com.ikanow.aleph2.storm.samples.bolts;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentModuleContext;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -43,8 +46,10 @@ public class SampleKafkaOutputBolt extends BaseRichBolt {
 	private static final long serialVersionUID = 2023732900302096606L;
 	private OutputCollector _collector;
 	public static final Logger logger = LoggerFactory.getLogger(SampleKafkaOutputBolt.class);
+	private IEnrichmentModuleContext context;
 	
 	public SampleKafkaOutputBolt() {	
+		//TODO get IEnrichmentModuleContext
 	}
 	
 	
@@ -59,7 +64,8 @@ public class SampleKafkaOutputBolt extends BaseRichBolt {
 			try {
 				JsonNode output_node = createJsonNode(keyA, keyB, message);
 				//TODO send to service we want or is there some json output?
-				
+				long id = 0; //TODO what is this suppose to be?
+				context.emitImmutableObject(id, output_node, Optional.empty(), Optional.empty());
 				_collector.ack(tuple);
 			} catch (Exception e) {
 				logger.error("Error parsing json",e);
