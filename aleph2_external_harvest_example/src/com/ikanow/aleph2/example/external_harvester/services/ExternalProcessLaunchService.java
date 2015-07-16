@@ -19,20 +19,29 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import scala.Tuple2;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IManagementDbService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IManagementCrudService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean.MasterEnrichmentType;
+import com.ikanow.aleph2.data_model.objects.shared.SharedLibraryBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
+import com.ikanow.aleph2.data_model.utils.CrudUtils;
+import com.ikanow.aleph2.example.external_harvester.data_model.GlobalConfigBean;
+import com.ikanow.aleph2.example.external_harvester.data_model.ProcessInfoBean;
 
 public class ExternalProcessLaunchService {
 	final static Logger _logger = LogManager.getLogger();
@@ -56,8 +65,30 @@ public class ExternalProcessLaunchService {
 		// Check that joins the cluster if I request the data bucket store
 		//context.getService(IManagementDbService.class, Optional.of("core_management_db")).get().getDataBucketStore();
 		//(But not if it's in read only mode)
-		final IManagementCrudService<DataBucketBean> bucket_service = context.getService(IManagementDbService.class, Optional.of("CoreManagementDbService")).get().readOnlyVersion().getDataBucketStore();
+		final IManagementCrudService<DataBucketBean> bucket_service = context.getService(IManagementDbService.class, IManagementDbService.CORE_MANAGEMENT_DB).get().readOnlyVersion().getDataBucketStore();
 		_logger.info("Getting Management DB and reading number of buckets = " + bucket_service.countObjects().get().intValue());
+		
+		// Demonstration of accessing (read only) library state information:
+		
+		final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> lib_config = ExternalProcessHarvestTechnology.getConfig(context);
+		_logger.info("Retrieved library configuration: " + lib_config._2().map(g -> BeanTemplateUtils.toJson(g).toString()).orElse("(no config)"));
+		
+		final IManagementDbService core_db = context.getService(IManagementDbService.class, IManagementDbService.CORE_MANAGEMENT_DB).get();		
+		final ICrudService<ProcessInfoBean> pid_crud = core_db.getPerLibraryState(ProcessInfoBean.class, lib_config._1(), ProcessInfoBean.PID_COLLECTION_NAME);
+
+		lib_config._2().ifPresent(gc -> {
+			if (gc.store_pids_in_db())
+				pid_crud.getObjectsBySpec(CrudUtils.allOf(ProcessInfoBean.class).when(ProcessInfoBean::bucket_name, bucket.full_name()))
+							.thenAccept(cursor -> {
+								String pids = StreamSupport.stream(cursor.spliterator(), false).map(c -> c._id()).collect(Collectors.joining(","));
+								_logger.info("Pids/hostnames for this bucket: " + pids);
+							})
+							.exceptionally(err -> {
+								_logger.error("Failed to get bucket pids", err);
+								return null;
+							});
+		});
+		
 		
 		// Just run for 10 minutes as an experiment
 		for (int i = 0; i < 60; ++i) {
