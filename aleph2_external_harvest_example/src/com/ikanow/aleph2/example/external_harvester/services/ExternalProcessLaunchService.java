@@ -47,20 +47,20 @@ public class ExternalProcessLaunchService {
 	final static Logger _logger = LogManager.getLogger();
 
 	public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JsonProcessingException, IOException, InterruptedException, ExecutionException {
-	
+		final ObjectMapper mapper = BeanTemplateUtils.configureMapper(Optional.empty());
+		
 		// Get the context (unused here)
 		
 		final IHarvestContext context = ContextUtils.getHarvestContext(args[0]);
 
+		final DataBucketBean bucket = context.getBucket().get();
+		
 		_logger.info("Launched context, eg bucket status = : " + BeanTemplateUtils.toJson(context.getBucketStatus(Optional.empty()).get()));
-		_logger.info("Retrieved bucket from CON: " + BeanTemplateUtils.toJson(context.getBucket().get()));
+		_logger.info("Retrieved bucket from CON: " + BeanTemplateUtils.toJson(bucket));
 		
 		// Get the bucket (unused here)
 		
-		final ObjectMapper mapper = BeanTemplateUtils.configureMapper(Optional.empty());
-		final DataBucketBean bucket = BeanTemplateUtils.from(mapper.readTree(args[1].getBytes()), DataBucketBean.class).get();
-
-		_logger.info("Retrieved bucket from CLI: " + BeanTemplateUtils.toJson(bucket));
+		_logger.info("Retrieved arg from CLI: " + args[1]);
 		
 		// Check that joins the cluster if I request the data bucket store
 		//context.getService(IManagementDbService.class, Optional.of("core_management_db")).get().getDataBucketStore();
