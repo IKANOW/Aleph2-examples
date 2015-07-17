@@ -101,7 +101,7 @@ public class TestJavaScriptTopology {
 		test_context.overrideSavedContext(); // (THIS IS NEEDED WHEN TESTING THE KAFKA SPOUT)
 		
 		//PHASE 2: CREATE TOPOLOGY AND SUBMit		
-		final ICoreDistributedServices cds = test_context.getService(ICoreDistributedServices.class, Optional.empty()).get();
+		final ICoreDistributedServices cds = test_context.getServiceContext().getService(ICoreDistributedServices.class, Optional.empty()).get();
 		final StormTopology topology = (StormTopology) new JavaScriptTopology2()
 											.getTopologyAndConfiguration(test_bucket, test_context)
 											._1();
@@ -112,13 +112,15 @@ public class TestJavaScriptTopology {
 		Thread.sleep(3000L);
 		
 		//PHASE 3: CHECK INDEX
-		final ISearchIndexService index_service = test_context.getService(ISearchIndexService.class, Optional.empty()).get();
+		final ISearchIndexService index_service = test_context.getServiceContext().getSearchIndexService().get();
 		final ICrudService<JsonNode> crud_service = index_service.getCrudService(JsonNode.class, test_bucket).get();
 		crud_service.deleteDatastore().get();
 		Thread.sleep(1000L);
 		assertEquals(0L, crud_service.countObjects().get().intValue());
 		
 		//PHASE4 : WRITE TO KAFKA
+		// TODO here's my example code replace with
+		//context.sendObjectToStreamingPipeline(Optional.empty(), json);
 		int count = 0;
 		for (String ip : ips) {
 			String msg = "{\"ip\":\""+ip+"\"}";
