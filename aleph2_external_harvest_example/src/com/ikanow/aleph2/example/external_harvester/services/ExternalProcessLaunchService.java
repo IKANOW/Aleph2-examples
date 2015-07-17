@@ -65,7 +65,7 @@ public class ExternalProcessLaunchService {
 		// Check that joins the cluster if I request the data bucket store
 		//context.getService(IManagementDbService.class, Optional.of("core_management_db")).get().getDataBucketStore();
 		//(But not if it's in read only mode)
-		final IManagementCrudService<DataBucketBean> bucket_service = context.getService(IManagementDbService.class, IManagementDbService.CORE_MANAGEMENT_DB).get().readOnlyVersion().getDataBucketStore();
+		final IManagementCrudService<DataBucketBean> bucket_service = context.getServiceContext().getCoreManagementDbService().readOnlyVersion().getDataBucketStore();
 		_logger.info("Getting Management DB and reading number of buckets = " + bucket_service.countObjects().get().intValue());
 		
 		// Demonstration of accessing (read only) library state information:
@@ -73,7 +73,7 @@ public class ExternalProcessLaunchService {
 		final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> lib_config = ExternalProcessHarvestTechnology.getConfig(context);
 		_logger.info("Retrieved library configuration: " + lib_config._2().map(g -> BeanTemplateUtils.toJson(g).toString()).orElse("(no config)"));
 		
-		final IManagementDbService core_db = context.getService(IManagementDbService.class, IManagementDbService.CORE_MANAGEMENT_DB).get();		
+		final IManagementDbService core_db = context.getServiceContext().getCoreManagementDbService();		
 		final ICrudService<ProcessInfoBean> pid_crud = core_db.getPerLibraryState(ProcessInfoBean.class, lib_config._1(), ProcessInfoBean.PID_COLLECTION_NAME);
 
 		lib_config._2().ifPresent(gc -> {
