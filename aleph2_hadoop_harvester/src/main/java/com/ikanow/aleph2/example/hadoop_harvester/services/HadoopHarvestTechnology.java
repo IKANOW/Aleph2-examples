@@ -25,6 +25,9 @@ import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 
+/** Harvest technology for launching jobs that use Hadoop to generate JSON 
+ * @author Alex
+ */
 public class HadoopHarvestTechnology implements IHarvestTechnologyModule {
 
 	@Override
