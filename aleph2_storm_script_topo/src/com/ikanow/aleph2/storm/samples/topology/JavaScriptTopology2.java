@@ -51,7 +51,7 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 		TopologyBuilder builder = new TopologyBuilder();		
 		//builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
 		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
-		builder.setSpout("timer", new TimerSpout(1000L));
+		builder.setSpout("timer", new TimerSpout(3000L));
 		builder.setBolt("mapperBolt", new JavaScriptMapperBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("1");
 		builder.setBolt("folderBolt", new JavaScriptFolderBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
 		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("folderBolt");

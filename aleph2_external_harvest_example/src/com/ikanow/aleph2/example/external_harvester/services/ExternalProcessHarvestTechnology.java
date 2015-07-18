@@ -15,22 +15,37 @@
  ******************************************************************************/
 package com.ikanow.aleph2.example.external_harvester.services;
 
+import java.net.InetAddress;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import scala.Tuple2;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IManagementDbService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
+import com.ikanow.aleph2.data_model.objects.shared.SharedLibraryBean;
+import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
+import com.ikanow.aleph2.data_model.utils.CrudUtils;
 import com.ikanow.aleph2.data_model.utils.FutureUtils;
+import com.ikanow.aleph2.data_model.utils.Tuples;
 import com.ikanow.aleph2.example.external_harvester.utils.ProcessUtils;
+import com.ikanow.aleph2.example.external_harvester.data_model.GlobalConfigBean;
+import com.ikanow.aleph2.example.external_harvester.data_model.ProcessInfoBean;
+
+import java.util.Arrays;
 
 public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModule {
+	protected static Logger _logger = LogManager.getLogger(); 
 
 	//////////////////////////////////////////////////////////////////////////////////
 	
@@ -51,6 +66,7 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 			DataBucketBean new_bucket,
 			IHarvestContext context, boolean enabled) {
 		try {
+			final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> global_config = getConfig(context);
 			if (enabled) {
 				Tuple2<String, String> err_or_pid = ProcessUtils.launchProcess(new_bucket, context);
 				if (null != err_or_pid._1()) {
@@ -58,6 +74,11 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 							getMessage(false, "onNewSource", "Bucket error: " + err_or_pid._1()));				
 				}
 				else {
+					// (log)
+					global_config._2().ifPresent(g -> {
+						if (g.store_pids_in_db()) updateProcessDatabase(err_or_pid._2(), new_bucket.full_name(), global_config._1(), context, true);
+					});		
+					
 					return CompletableFuture.completedFuture(
 							getMessage(true, "onNewSource", "Bucket launched: " + err_or_pid._2()));								
 				}
@@ -79,7 +100,15 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 			Optional<BucketDiffBean> diff, IHarvestContext context) {
 
 		try {
-			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(ProcessUtils.getPid(old_bucket));
+			final String pid_to_suspend = ProcessUtils.getPid(old_bucket);
+			final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> global_config = getConfig(context);
+			
+			//kill/log
+			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(pid_to_suspend);
+			global_config._2().ifPresent(g -> {
+				if (g.store_pids_in_db()) updateProcessDatabase(pid_to_suspend, old_bucket.full_name(), global_config._1(), context, false);
+			});
+			
 			if (!kill_result._2()) {
 				return CompletableFuture.completedFuture(
 						getMessage(false, "onUpdatedSource", "Bucket suspended: " + kill_result._1()));							
@@ -101,7 +130,15 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 			DataBucketBean to_suspend, IHarvestContext context) {
 		
 		try {
-			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(ProcessUtils.getPid(to_suspend));
+			final String pid_to_suspend = ProcessUtils.getPid(to_suspend);
+			final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> global_config = getConfig(context);
+			
+			//kill/log
+			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(pid_to_suspend);
+			global_config._2().ifPresent(g -> {
+				if (g.store_pids_in_db()) updateProcessDatabase(pid_to_suspend, to_suspend.full_name(), global_config._1(), context, false);
+			});
+			
 			return CompletableFuture.completedFuture(
 					getMessage(kill_result._2(), "onSuspend", "Bucket suspended: " + kill_result._1()));			
 		}
@@ -126,10 +163,72 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 
 	// UTILS
 	
-	BasicMessageBean getMessage(final boolean success, final String source, final String message) {
+	protected BasicMessageBean getMessage(final boolean success, final String source, final String message) {
 		return new BasicMessageBean(new Date(), success, "ExternalProcessHarvestTechnology", source, 
 				null, message, null);		
 	}
+	
+	public static Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> getConfig(final IHarvestContext context) {
+		final SharedLibraryBean lib = context.getLibraryConfig();
+		return Tuples._2T(lib, Optional.ofNullable(lib.library_config())
+					.map(j -> BeanTemplateUtils.from(j, GlobalConfigBean.class).get()));
+	}
+	
+	protected void updateProcessDatabase(final String pid, final String bucket_name, final SharedLibraryBean lib, final IHarvestContext context, boolean add_not_remove) {
+		
+		final IManagementDbService core_db = context.getServiceContext().getCoreManagementDbService();
+		
+		final ICrudService<ProcessInfoBean> pid_crud = core_db.getPerLibraryState(ProcessInfoBean.class, lib, ProcessInfoBean.PID_COLLECTION_NAME);
+		
+		pid_crud.optimizeQuery(Arrays.asList("pid", "hostname"));
+		pid_crud.optimizeQuery(Arrays.asList("bucket_name"));
+		
+		final String hostname = getHostname();
+		
+		if (add_not_remove) {
+			final ProcessInfoBean pid_info = new ProcessInfoBean(pid, hostname, bucket_name);
+			pid_crud.storeObject(pid_info, true).thenAccept(__ -> {
+				_logger.info("Saved PID|host|bucket: " + pid + "|" + hostname + "|" + bucket_name);
+			})
+			.exceptionally(err -> {
+				_logger.error("Failed to save PID|host|bucket: " + pid + "|" + hostname + "|" + bucket_name, err);
+				return null;
+			})
+			;
+		}
+		else { // remove not add!
+			pid_crud.deleteObjectBySpec(CrudUtils.allOf(ProcessInfoBean.class).when(ProcessInfoBean::pid, pid).when(ProcessInfoBean::hostname, hostname))
+				.thenAccept(ret -> {
+					if (ret) {
+						_logger.info("Removed PID|host|bucket: " + pid + "|" + hostname + "|" + bucket_name);						
+					}
+					else {
+						_logger.warn("Not present, ignored: PID|host|bucket: " + pid + "|" + hostname + "|" + bucket_name);						
+					}
+				})
+				.exceptionally(err -> {
+					_logger.error("Failed to remove PID|host|bucket: " + pid + "|" + hostname + "|" + bucket_name, err);
+					return null;
+				})
+			;
+		}		
+	}
+	
+	private static String _hostname;
+	/** Returns the hostname
+	 * @return
+	 */
+	public static String getHostname() {
+		// (just get the hostname once)
+		if (null == _hostname) {
+			try {
+				_hostname = InetAddress.getLocalHost().getHostName();
+			} catch (Exception e) {
+				_hostname = "UNKNOWN";
+			}
+		}		
+		return _hostname;
+	}//TESTED		
 	
 	//////////////////////////////////////////////////////////////////////////////////
 

@@ -32,11 +32,10 @@ import scala.Tuple2;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
-import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.Tuples;
 
-/** Utilities for manaing external processes
+/** Utilities for managing external processes
  * @author alex
  */
 public class ProcessUtils {
@@ -70,7 +69,7 @@ public class ProcessUtils {
 							classpath,
 							"com.ikanow.aleph2.example.external_harvester.services.ExternalProcessLaunchService",
 							context.getHarvestContextSignature(Optional.of(bucket), Optional.empty()),
-							BeanTemplateUtils.toJson(bucket).toString()
+							"test_argument"
 							))
 			.redirectErrorStream(true)
 			.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)

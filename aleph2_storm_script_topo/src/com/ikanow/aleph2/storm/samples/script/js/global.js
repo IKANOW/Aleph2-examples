@@ -27,7 +27,7 @@ function splitIP(){
 	return m;
 }
 
-// functions for Mapper and folder
+// functions for Mapper and Folder, topology2
 function map(jsonIn){
 	
 	var jsonObObj = eval('(' + jsonIn + ')');
@@ -57,40 +57,53 @@ function map(jsonIn){
 //init map
 var HashMap = Java.type("java.util.HashMap")
 var _map = new HashMap();
-var threshold = 1;
 
 function fold(mapKey,mapValueJson){
 	var mapValueObj = eval('(' + mapValueJson + ')');
 	print("fold mapKey="+mapKey+" , mapValueJson="+mapValueJson);
+	var state = _map.get(mapKey);
+	var newState = update(mapKey, state);
+	store(mapKey, newState);
 	
-	update(mapKey,mapValueJson);
 }
 
-function update(mapKey,mapValueJson){
+
+// user specific update function
+function update(mapKey,state){
 	// count for now
-	var count = _map.get(mapKey);
-	print("update mapKey="+mapKey+" , count="+count);
+	
+	var count = state
 
 	if (count == null){
 		count = 0;
 	}
 	count++;
-	_map.put(mapKey, count);	
+	return count;
 }
 
-function checkEmit(mapKey,mapValueJson) {	
-	var count = _map.get(mapKey);
+// user specific function returns object to be emitted or null
+function checkEmit(mapKey,state) {	
+	// TODO modfify threshold
+	var threshold = 2;
+
+	var count = state;
 	
-	print("checkEmit mapKey="+mapKey+" , count="+count+",threshold="+threshold);
 	if(count >= threshold){
+		print("checkEmit mapKey="+mapKey+" , count="+count+",threshold="+threshold);
 		var countObj = {};
 		countObj["mapKey"]=mapKey;
 		countObj["mapValue"]=mapValueJson;
 		countObj["count"]=count;
-		return JSON.stringify(countObj);
+		
+		//return JSON.stringify(countObj);
+		emit(JSON.stringify(countObj));
 	}	
 	return null;
 	
+}
+
+function reset(mapKey) {
+	_map.put(mapKey, 0); 
 }
 
 function store(key,state) {
@@ -101,3 +114,6 @@ function allEntries() {
 	return _map; 
 }
 
+function emit(objToEmit){
+	JavaScriptFolderBolt.emit(__collector,_tuple, objToEmit);
+}
