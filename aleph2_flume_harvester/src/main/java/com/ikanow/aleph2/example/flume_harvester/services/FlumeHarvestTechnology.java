@@ -15,8 +15,12 @@
  ******************************************************************************/
 package com.ikanow.aleph2.example.flume_harvester.services;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import org.apache.commons.io.FileUtils;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
@@ -24,6 +28,9 @@ import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
+import com.ikanow.aleph2.data_model.utils.Lambdas;
+import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
+import com.ikanow.aleph2.example.flume_harvester.utils.FlumeUtils;
 
 /** Flume harvester entry points
  * @author Alex
@@ -32,20 +39,50 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 
 	@Override
 	public void onInit(IHarvestContext context) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public boolean canRunOnThisNode(DataBucketBean bucket,
 			IHarvestContext context) {
-		// TODO Auto-generated method stub
+		
+		//TODO: check if globals exist
+		
 		return false;
 	}
 
+	protected void startAgent(FlumeBucketConfigBean config, IHarvestContext context) throws IOException {
+		
+		// Is morphlines configured?
+		final Optional<String> morphlines_file = Optional.ofNullable(config.morphlines_config())
+				.flatMap(Lambdas.wrap_u(m_cfg -> {
+					final File tmp_morph = File.createTempFile("aleph2_flume", ".config");
+					final Optional<String> morph_cfg = FlumeUtils.createMorphlinesConfig(config);
+					return morph_cfg.map(Lambdas.wrap_u(mcfg -> {
+						FileUtils.writeStringToFile(tmp_morph, mcfg);	
+						return tmp_morph.toString();
+					}));
+					
+				}));		
+		File tmp_flume = File.createTempFile("aleph2_flume", ".config");
+		final String agent_name = ""; //TODO unique from bucket name as per usual..
+		final String flume_config = FlumeUtils.createFlumeConfig(agent_name, 1, config, 
+													context.getHarvestContextSignature(Optional.empty(), Optional.empty()), 
+													morphlines_file);
+		FileUtils.writeStringToFile(tmp_flume, flume_config);
+		
+		//TODO copy tmp_flume to some bucket unique name in location
+	}
+	
+	protected void stopAgent() {
+		//TODO delete some bucket unique name in location
+	}
+	
 	@Override
 	public CompletableFuture<BasicMessageBean> onNewSource(
 			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {
+		
+		
+		
 		// TODO Auto-generated method stub
 		return null;
 	}
