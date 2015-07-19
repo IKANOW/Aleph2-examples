@@ -21,12 +21,15 @@ import java.util.Optional;
  * @author Alex
  */
 public class FlumeGlobalConfigBean {
-
-	public String flume_service_path() { return flume_service_path; }
-	public String flume_config_path() { return flume_config_path; }
+	public static final String __DEFAULT_FLUME_CONFIG_PATH = "/etc/flume/config";
+	public static final String __DEFAULT_FLUME_SERVICE_PATH = "/usr/hdp/current/flume/bin/";	
+	public static final String __DEFAULT_FLUME_PLUGIN_PATH = "TODO";	
 	
+	public String flume_config_path() { return Optional.ofNullable(flume_config_path).orElse(__DEFAULT_FLUME_CONFIG_PATH); }
+	public String flume_service_path() { return Optional.ofNullable(flume_service_path).orElse(__DEFAULT_FLUME_SERVICE_PATH); }
+	
+	public String flume_plugin_path() { return Optional.ofNullable(flume_plugin_path).orElse(__DEFAULT_FLUME_PLUGIN_PATH); }
 	public boolean add_self_to_flume_classpath() { return Optional.ofNullable(add_self_to_flume_classpath).orElse(false); }	
-	public String flume_plugin_path() { return flume_plugin_path; }
 
 	private String flume_service_path;
 	private String flume_config_path;
