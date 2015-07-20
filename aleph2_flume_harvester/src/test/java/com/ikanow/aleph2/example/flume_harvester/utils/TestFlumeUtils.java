@@ -51,11 +51,11 @@ public class TestFlumeUtils {
 		final String json_test_results_2 = Resources.toString(Resources.getResource("TestFlumeUtils_flume2_results.properties"), Charsets.UTF_8).replaceAll("[\r\n]+", "\n");
 		
 		final FlumeBucketConfigBean bucket_config_1 = BeanTemplateUtils.from(json_test1, FlumeBucketConfigBean.class).get();
-		assertEquals(json_test_results_1, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed", 1, bucket_config_1, "test_signature", Optional.empty())
+		assertEquals(json_test_results_1, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed_1", bucket_config_1, "test_signature", Optional.empty())
 				.replace(HostInformationUtils.getHostname(), "HOSTNAME").replaceAll("[\r\n]+", "\n"));
 		
 		final FlumeBucketConfigBean bucket_config_2 = BeanTemplateUtils.from(json_test2, FlumeBucketConfigBean.class).get();
-		assertEquals(json_test_results_2, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed", 2, bucket_config_2, "test_signature", Optional.of("/test/morphline/path"))
+		assertEquals(json_test_results_2, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed_2", bucket_config_2, "test_signature", Optional.of("/test/morphline/path"))
 				.replaceAll("[\r\n]+", "\n"));
 	}
 	

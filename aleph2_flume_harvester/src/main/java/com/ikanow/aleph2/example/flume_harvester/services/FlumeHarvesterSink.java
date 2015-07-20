@@ -108,8 +108,6 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")));
 		}
 		catch (Exception e) {
-			/**/
-			e.printStackTrace();
 			return Optional.empty();
 		}
 	}

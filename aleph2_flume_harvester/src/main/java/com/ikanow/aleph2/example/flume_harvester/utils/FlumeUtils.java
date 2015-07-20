@@ -62,13 +62,13 @@ public class FlumeUtils {
 	 * @param morphlines_config_path
 	 * @return
 	 */
-	public static String createFlumeConfig(String agent_name, int cfg_num, 
+	public static String createFlumeConfig(String agent_name, 
 											final FlumeBucketConfigBean bucket_config, 
 											final String context_signature,
 											final Optional<String> morphlines_config_path)
 	{
 		final String sub_prefix = Optional.ofNullable(bucket_config.substitution_prefix()).orElse("$$$$");
-		final String agent_prefix = getAgentName(agent_name, cfg_num) + ".";
+		final String agent_prefix = agent_name + ".";
 		
 		final boolean sink_present = Optional.ofNullable(bucket_config.flume_config())
 												.map(m -> m.containsKey("sinks"))
@@ -125,9 +125,6 @@ public class FlumeUtils {
 						;
 	}
 	
-	public static String getAgentName(final String agent_name, final int cfg_num) {
-		return (agent_name + "_" + cfg_num);
-	}
 	public static String decodeValue(final String val, final String sub_prefix, Optional<String> morphline_cfg_path, String sig) {
 		return val.replace(sub_prefix + "signature", encodeSignature(sig))
 					.replace(sub_prefix + "morphline", morphline_cfg_path.orElse(""))

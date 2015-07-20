@@ -105,7 +105,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 					
 				}));		
 		final File tmp_flume = createTempFile("aleph2_flume_", agent_name);
-		final String flume_config = FlumeUtils.createFlumeConfig(agent_name, agent_num, config, 
+		final String flume_config = FlumeUtils.createFlumeConfig(agent_name, config, 
 													context.getHarvestContextSignature(Optional.of(bucket), Optional.empty()), 
 													morphlines_file);
 		FileUtils.writeStringToFile(tmp_flume, flume_config);
