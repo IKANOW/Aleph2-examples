@@ -17,10 +17,7 @@ package com.ikanow.aleph2.example.flume_harvester.utils;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,6 +55,8 @@ public class FlumeUtils {
 						;
 	}
 	
+	//TODO: user has to spec aleph2_sink (can add the tech info at the end I think)
+	
 	/** Creates the flume config
 	 * @param bucket_config
 	 * @param morphlines_config_path
@@ -75,11 +74,22 @@ public class FlumeUtils {
 												.map(m -> m.containsKey("sinks"))
 												.orElse(false);
 				
-		final Set<String> sinks = Optional.ofNullable(bucket_config.flume_config())
-											.map(m -> (String) m.get("sinks"))
-											.map(s -> Arrays.stream(s.split("\\s+"))
-															.collect(Collectors.toSet()))
-											.orElse(Collections.emptySet());
+		final String[] channels = Optional.ofNullable(bucket_config.flume_config())
+									.map(m -> m.get("channels"))
+									.map(c -> c.split("\\s+"))
+									.orElse(new String[0]);
+		
+		//TODO (ALEPH-10 add to test case)
+		if ((channels.length > 1) && !sink_present) {
+			throw new RuntimeException("If have multiple channels then cannot use implicit sink");
+		}
+		
+		//(not needed currently)
+//		final Set<String> sinks = Optional.ofNullable(bucket_config.flume_config())
+//											.map(m -> (String) m.get("sinks"))
+//											.map(s -> Arrays.stream(s.split("\\s+"))
+//															.collect(Collectors.toSet()))
+//											.orElse(Collections.emptySet());
 		
 		return Optional.of(Optional.ofNullable(bucket_config.flume_config_str()))
 						.map(opt -> opt.map(ss -> ss + "\n").orElse(""))
@@ -100,11 +110,10 @@ public class FlumeUtils {
 									? s
 									: (s + "\n"
 										+ agent_prefix + "sinks=aleph2_sink"
-											+ "\n")
-							)
-						.map(s -> sinks.contains("aleph2_sink")
-									? s
-									: (s + "\n"
+											+ "\n"
+										+ agent_prefix + "sinks.aleph2_sink."
+											+ "channel=" + channels[0]
+											+ "\n"
 										+ agent_prefix + "sinks.aleph2_sink."
 											+ "type=com.ikanow.aleph2.example.flume_harvester.services.FlumeHarvesterSink"
 											+ "\n"

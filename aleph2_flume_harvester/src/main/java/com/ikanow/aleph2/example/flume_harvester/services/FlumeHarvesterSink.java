@@ -26,18 +26,22 @@ import org.apache.flume.conf.Configurable;
 import org.apache.flume.sink.AbstractSink;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
+import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
 import com.ikanow.aleph2.example.flume_harvester.utils.FlumeUtils;
 
-/** Harvest sink
+/** Harvest sink - will provide some basic parsing (and maybe JS manipulation functionality in the future)
  * @author alex
  */
 public class FlumeHarvesterSink extends AbstractSink implements Configurable {
-
-	IHarvestContext _context;
+	final protected static ObjectMapper _mapper = BeanTemplateUtils.configureMapper(Optional.empty());
+	
+	IHarvestContext _context;	
 	FlumeBucketConfigBean _config;
 	
 	/* (non-Javadoc)
@@ -50,7 +54,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 							FlumeUtils.decodeSignature(flume_context.getString("context_signature", ""))))
 					.get();
 		
-		//TODO get _config from bucket...
+		//TODO (ALEPH-10) get _config from bucket...
 	}
 
 	/* (non-Javadoc)
@@ -92,8 +96,22 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		return status;
 	}
 
-	protected Optional<JsonNode> getEventJson(final Event e, final FlumeBucketConfigBean config) {
-		return null;
+	/** Uses whatever parser is configured to create a JsonNode out of the object
+	 *  TODO (ALEPH-10): for now just does a simple JSON mapping
+	 * @param e
+	 * @param config
+	 * @return
+	 */
+	protected Optional<JsonNode> getEventJson(final Event evt, final FlumeBucketConfigBean config) {
+		try {
+			final JsonNode initial = _mapper.convertValue(evt.getHeaders(), JsonNode.class);
+			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")));
+		}
+		catch (Exception e) {
+			/**/
+			e.printStackTrace();
+			return Optional.empty();
+		}
 	}
 
 }

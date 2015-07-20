@@ -13,7 +13,6 @@
 		"channels:mem:transactionCapacity": "100",
 		"channels:mem:test2": "replacement2:$$$$hostname.",
 		
-		"sources:file_in:channels": "mem",
-		"sinks:aleph2_sink:channels": "mem"
+		"sources:file_in:channels": "mem"
 	}
 }
