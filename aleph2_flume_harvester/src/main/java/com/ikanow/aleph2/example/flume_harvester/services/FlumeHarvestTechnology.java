@@ -50,7 +50,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 		return false;
 	}
 
-	protected void startAgent(FlumeBucketConfigBean config, IHarvestContext context) throws IOException {
+	protected void startAgent(final DataBucketBean bucket, final FlumeBucketConfigBean config, final IHarvestContext context) throws IOException {
 		
 		// Is morphlines configured?
 		final Optional<String> morphlines_file = Optional.ofNullable(config.morphlines_config())
@@ -64,7 +64,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 					
 				}));		
 		File tmp_flume = File.createTempFile("aleph2_flume", ".config");
-		final String agent_name = ""; //TODO unique from bucket name as per usual..
+		final String agent_name = FlumeUtils.getConfigName(bucket.full_name(), Optional.empty());
 		final String flume_config = FlumeUtils.createFlumeConfig(agent_name, 1, config, 
 													context.getHarvestContextSignature(Optional.empty(), Optional.empty()), 
 													morphlines_file);
