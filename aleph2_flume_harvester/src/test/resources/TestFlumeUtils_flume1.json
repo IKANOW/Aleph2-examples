@@ -4,14 +4,14 @@
 		"channels": "mem",
 		
 		"sources:file_in:type": "netcat",
-		"sources:file_in:bin": "localhost",
-		"sources:file_in:port": "44444"
-		"sources:file_in:test1": "replacement1:$$$$signature"
+		"sources:file_in:bind": "localhost",
+		"sources:file_in:port": "44444",
+		"sources:file_in:test1": "replacement1:$$$$signature",
 		
 		"channels:mem:type": "memory",
 		"channels:mem:capacity": "1000",
 		"channels:mem:transactionCapacity": "100",
-		"channels:mem:test2": "replacement2:$$$$hostname."
+		"channels:mem:test2": "replacement2:$$$$hostname.",
 		
 		"sources:file_in:channels": "mem",
 		"sinks:aleph2_sink:channels": "mem"

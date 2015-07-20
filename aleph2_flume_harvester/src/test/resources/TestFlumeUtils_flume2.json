@@ -4,18 +4,18 @@
 	"flume_config": {
 		"sources": "file_in",
 		"channels": "mem",
-		"sinks": "aleph2_sink"
+		"sinks": "aleph2_sink",
 		
 		"sources:file_in:type": "netcat",
-		"sources:file_in:bin": "localhost",
-		"sources:file_in:port": "44444"
-		"sources:file_in:test1": "not_replaced$$$$signature"
+		"sources:file_in:bind": "localhost",
+		"sources:file_in:port": "44444",
+		"sources:file_in:test1": "not_replaced$$$$signature",
 		
 		"channels:mem:type": "memory",
 		"channels:mem:capacity": "1000",
 		"channels:mem:transactionCapacity": "100",
 		
-		"sinks:aleph2_sink:test2": "$2$morphline"
+		"sinks:aleph2_sink:test2": "$2$morphline",
 		
 		"sources:file_in:channels": "mem",
 		"sinks:aleph2_sink:channels": "mem"

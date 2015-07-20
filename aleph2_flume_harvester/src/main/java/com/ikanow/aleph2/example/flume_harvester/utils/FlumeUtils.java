@@ -46,8 +46,8 @@ public class FlumeUtils {
 	 */
 	public static Optional<String> createMorphlinesConfig(final FlumeBucketConfigBean bucket_config)
 	{
-		return Optional.of(bucket_config.morphlines_config_str())
-						.map(s -> Optional.ofNullable(s).map(ss -> ss + "\n").orElse(""))
+		return Optional.of(Optional.ofNullable(bucket_config.morphlines_config_str()))
+						.map(opt -> opt.map(ss -> ss + "\n").orElse(""))
 						.map(s -> s + 
 								Optional.ofNullable(bucket_config.morphlines_config())
 										.map(o -> _mapper.convertValue(o, JsonNode.class)
@@ -81,8 +81,8 @@ public class FlumeUtils {
 															.collect(Collectors.toSet()))
 											.orElse(Collections.emptySet());
 		
-		return Optional.of(bucket_config.flume_config_str())
-						.map(s -> Optional.ofNullable(s).map(ss -> ss + "\n").orElse(""))
+		return Optional.of(Optional.ofNullable(bucket_config.flume_config_str()))
+						.map(opt -> opt.map(ss -> ss + "\n").orElse(""))
 						.map(s -> s + 
 								Optional.ofNullable(bucket_config.flume_config())
 										.map(cfg -> cfg.entrySet().stream()
@@ -102,13 +102,13 @@ public class FlumeUtils {
 										+ agent_prefix + "sinks=aleph2_sink"
 											+ "\n")
 							)
-						.map(s -> !sinks.contains("aleph2_sink")
+						.map(s -> sinks.contains("aleph2_sink")
 									? s
 									: (s + "\n"
-										+ agent_prefix + "aleph2_sink."
+										+ agent_prefix + "sinks.aleph2_sink."
 											+ "type=com.ikanow.aleph2.example.flume_harvester.services.FlumeHarvesterSink"
 											+ "\n"
-										+ agent_prefix + "aleph2_sink."
+										+ agent_prefix + "sinks.aleph2_sink."
 											+ "context_signature=" + encodeSignature(context_signature)
 											+ "\n")
 						)
@@ -121,7 +121,7 @@ public class FlumeUtils {
 	}
 	public static String decodeValue(final String val, final String sub_prefix, Optional<String> morphline_cfg_path, String sig) {
 		return val.replace(sub_prefix + "signature", encodeSignature(sig))
-					.replace(sub_prefix + "morphline", morphline_cfg_path.get())
+					.replace(sub_prefix + "morphline", morphline_cfg_path.orElse(""))
 					.replace(sub_prefix + "hostname", HostInformationUtils.getHostname());
 	}
 	public static String decodeKey(final String key) {
