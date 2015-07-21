@@ -176,7 +176,7 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 	
 	protected void updateProcessDatabase(final String pid, final String bucket_name, final SharedLibraryBean lib, final IHarvestContext context, boolean add_not_remove) {
 		
-		final IManagementDbService core_db = context.getService(IManagementDbService.class, IManagementDbService.CORE_MANAGEMENT_DB).get();
+		final IManagementDbService core_db = context.getServiceContext().getCoreManagementDbService();
 		
 		final ICrudService<ProcessInfoBean> pid_crud = core_db.getPerLibraryState(ProcessInfoBean.class, lib, ProcessInfoBean.PID_COLLECTION_NAME);
 		
