@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import backtype.storm.LocalCluster;
@@ -80,6 +81,7 @@ public class TestJavaScriptTopology {
 	}
 	
 	@Test
+	@Ignore
 	public void testJavaScriptTopology() throws InterruptedException, ExecutionException {
 		// PHASE 1: GET AN IN-TECHNOLOGY CONTEXT
 		// Bucket

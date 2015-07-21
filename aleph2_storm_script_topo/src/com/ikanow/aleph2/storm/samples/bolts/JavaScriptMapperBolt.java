@@ -32,8 +32,8 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
+import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
 import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
-import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 
 public class JavaScriptMapperBolt extends BaseRichBolt {
 	private static final Logger logger = LogManager.getLogger(JavaScriptMapperBolt.class);
@@ -44,28 +44,21 @@ public class JavaScriptMapperBolt extends BaseRichBolt {
 	private static final long serialVersionUID = -17206092588932701L;
 	private OutputCollector _collector;	
 	protected transient CompiledScriptFactory compiledScriptFactory = null;
-	private String propertyFileName;
+
+	protected IScriptProvider scriptProvider;
 	
-	protected static String MAP_CALL = "map(jsonIn);";
+	public static String MAP_CALL = "map(jsonIn);";
 	
 	
-	public JavaScriptMapperBolt(String propertyFileName){		
-		
-		this.propertyFileName  = propertyFileName;
+	public JavaScriptMapperBolt(IScriptProvider scriptProvider){		
+		this.scriptProvider = scriptProvider;
 		
 	}
 	
 	protected CompiledScriptFactory getCompiledScriptFactory(){
 		if(compiledScriptFactory == null){
-			this.compiledScriptFactory = new CompiledScriptFactory(new PropertyBasedScriptProvider(propertyFileName){
-				@Override
-				public void init(String propertyFile) {
-					super.init(propertyFile);
-					scriptlets.add(MAP_CALL);
-				}
-				
-			}, new NoSecurityManager());
-
+			scriptProvider.getScriptlets().add(MAP_CALL);
+			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider,new NoSecurityManager());
 			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);
 		}
 		return compiledScriptFactory;
