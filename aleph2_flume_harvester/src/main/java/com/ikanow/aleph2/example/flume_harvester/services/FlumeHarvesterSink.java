@@ -15,6 +15,7 @@
  ******************************************************************************/
 package com.ikanow.aleph2.example.flume_harvester.services;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.apache.flume.Channel;
@@ -105,7 +106,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	protected Optional<JsonNode> getEventJson(final Event evt, final FlumeBucketConfigBean config) {
 		try {
 			final JsonNode initial = _mapper.convertValue(evt.getHeaders(), JsonNode.class);
-			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")));
+			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")).put("@timestamp", LocalDateTime.now().toString()));
 		}
 		catch (Exception e) {
 			return Optional.empty();
