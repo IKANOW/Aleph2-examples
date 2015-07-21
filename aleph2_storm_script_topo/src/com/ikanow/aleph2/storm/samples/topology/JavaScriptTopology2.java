@@ -35,6 +35,8 @@ import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.JsonUtils;
 import com.ikanow.aleph2.storm.samples.bolts.JavaScriptFolderBolt;
 import com.ikanow.aleph2.storm.samples.bolts.JavaScriptMapperBolt;
+import com.ikanow.aleph2.storm.samples.script.JavaScriptProviderBean;
+import com.ikanow.aleph2.storm.samples.script.js.BeanBasedScriptProvider;
 import com.ikanow.aleph2.storm.samples.spouts.TimerSpout;
 /**
  * An example of a topology that is using a javascript Bolt for enrichment.
@@ -52,8 +54,12 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 		//builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
 		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
 		builder.setSpout("timer", new TimerSpout(3000L));
-		builder.setBolt("mapperBolt", new JavaScriptMapperBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("1");
-		builder.setBolt("folderBolt", new JavaScriptFolderBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
+		JavaScriptProviderBean  providerBean = BeanTemplateUtils.from(bucket.streaming_enrichment_topology().config(),JavaScriptProviderBean.class).get();
+		BeanBasedScriptProvider mapperScriptProvider = new BeanBasedScriptProvider(providerBean);
+		BeanBasedScriptProvider folderScriptProvider = new BeanBasedScriptProvider(providerBean);
+		builder.setBolt("mapperBolt", new JavaScriptMapperBolt(mapperScriptProvider)).shuffleGrouping("1");
+		
+		builder.setBolt("folderBolt", new JavaScriptFolderBolt(folderScriptProvider)).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
 		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("folderBolt");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
 	}

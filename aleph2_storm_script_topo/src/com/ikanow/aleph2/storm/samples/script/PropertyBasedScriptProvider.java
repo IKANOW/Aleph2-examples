@@ -3,6 +3,7 @@ package com.ikanow.aleph2.storm.samples.script;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -13,7 +14,12 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class PropertyBasedScriptProvider implements IScriptProvider {
+public class PropertyBasedScriptProvider implements IScriptProvider, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8941606773988212019L;
+
 	private static final Logger logger = LogManager.getLogger(PropertyBasedScriptProvider.class);
 
 	protected Properties properties;

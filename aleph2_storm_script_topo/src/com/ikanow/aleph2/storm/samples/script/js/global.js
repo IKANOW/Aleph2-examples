@@ -82,7 +82,7 @@ function update(mapKey,state){
 }
 
 // user specific function returns object to be emitted or null
-function checkEmit(mapKey,state) {	
+function checkEmit(mapKey,state) {
 	// TODO modfify threshold
 	var threshold = 2;
 
@@ -95,7 +95,6 @@ function checkEmit(mapKey,state) {
 		countObj["mapValue"]=mapValueJson;
 		countObj["count"]=count;
 		
-		//return JSON.stringify(countObj);
 		emit(JSON.stringify(countObj));
 	}	
 	return null;

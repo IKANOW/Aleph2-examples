@@ -33,8 +33,8 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
+import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
 import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
-import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 
 public class JavaScriptFolderBolt extends BaseRichBolt {
 	private static final Logger logger = LogManager.getLogger(JavaScriptFolderBolt.class);
@@ -45,7 +45,8 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	private static final long serialVersionUID = -17206092588932701L;
 	private OutputCollector _collector;	
 	protected transient CompiledScriptFactory compiledScriptFactory = null;
-	private String propertyFileName;
+
+	protected IScriptProvider scriptProvider;
 	
 	protected static String FOLD_CALL = "fold(mapKey,mapValueJson);";
 	protected static String CHECKEMIT_CALL = "checkEmit(mapKey,mapValueJson);";
@@ -54,27 +55,21 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	protected static String RESET_CALL = "reset(mapKey);";
 	
 	
-	public JavaScriptFolderBolt(String propertyFileName){		
-		
-		this.propertyFileName  = propertyFileName;
+	public JavaScriptFolderBolt(IScriptProvider scriptProvider){		
+		this.scriptProvider = scriptProvider;
 		
 	}
 	
 	protected CompiledScriptFactory getCompiledScriptFactory(){
 		if(compiledScriptFactory == null){
-			this.compiledScriptFactory = new CompiledScriptFactory(new PropertyBasedScriptProvider(propertyFileName){
-				@Override
-				public void init(String propertyFile) {
-					super.init(propertyFile);
-					scriptlets.add(FOLD_CALL);
-					scriptlets.add(CHECKEMIT_CALL);
-					scriptlets.add(ALLENTRIES_CALL);
-					scriptlets.add(UPDATE_CALL);
-				}
-				
-			}, new NoSecurityManager());
+			
+			scriptProvider.getScriptlets().add(FOLD_CALL);
+			scriptProvider.getScriptlets().add(CHECKEMIT_CALL);
+			scriptProvider.getScriptlets().add(ALLENTRIES_CALL);
+			scriptProvider.getScriptlets().add(UPDATE_CALL);
 
-			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);			
+			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider,new NoSecurityManager());
+			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);
 		}
 		return compiledScriptFactory;
 	}
@@ -100,13 +95,8 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 				Map m = (Map)retVal;
 				m.forEach((k,v) -> {
 					System.out.println("key: "+k+" value:"+v);
-					
-
 					Object checkEmit = getCompiledScriptFactory().executeCompiledScript(CHECKEMIT_CALL,"mapKey",k,"state",v,"_collector",_collector,"_tuple", tuple);
-					if(checkEmit!=null){
-						_collector.emit(tuple, new Values(checkEmit));
-						getCompiledScriptFactory().executeCompiledScript(RESET_CALL,"mapKey");						
-					}
+					
 				}); // foreach
 			}
 		}else{
