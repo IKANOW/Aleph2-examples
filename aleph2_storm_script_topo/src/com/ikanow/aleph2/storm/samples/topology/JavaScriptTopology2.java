@@ -36,6 +36,7 @@ import com.ikanow.aleph2.data_model.utils.JsonUtils;
 import com.ikanow.aleph2.storm.samples.bolts.JavaScriptFolderBolt;
 import com.ikanow.aleph2.storm.samples.bolts.JavaScriptMapperBolt;
 import com.ikanow.aleph2.storm.samples.script.JavaScriptProviderBean;
+import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 import com.ikanow.aleph2.storm.samples.script.js.BeanBasedScriptProvider;
 import com.ikanow.aleph2.storm.samples.spouts.TimerSpout;
 /**
@@ -55,6 +56,9 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
 		builder.setSpout("timer", new TimerSpout(3000L));
 		JavaScriptProviderBean  providerBean = BeanTemplateUtils.from(bucket.streaming_enrichment_topology().config(),JavaScriptProviderBean.class).get();
+		if (null == providerBean.getGlobalScript()) {
+			providerBean.setGlobalScript(new PropertyBasedScriptProvider("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties").getGlobalScript());
+		}
 		BeanBasedScriptProvider mapperScriptProvider = new BeanBasedScriptProvider(providerBean);
 		BeanBasedScriptProvider folderScriptProvider = new BeanBasedScriptProvider(providerBean);
 		builder.setBolt("mapperBolt", new JavaScriptMapperBolt(mapperScriptProvider)).shuffleGrouping("1");

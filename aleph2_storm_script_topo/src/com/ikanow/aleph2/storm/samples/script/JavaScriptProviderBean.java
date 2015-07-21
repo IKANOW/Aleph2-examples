@@ -23,6 +23,13 @@ public class JavaScriptProviderBean implements Serializable{
 	public void setGlobalScript(String globalScript) {
 		this.globalScript = globalScript;
 	}
+	public String getUserScript() {
+		return userScript;
+	}
+	public void setUserScript(String userScript) {
+		this.userScript = userScript;
+	}
 	String globalScript = null;
+	String userScript = null;
 	
 }

@@ -3,6 +3,7 @@ package com.ikanow.aleph2.storm.samples.script.js;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
 import com.ikanow.aleph2.storm.samples.script.JavaScriptProviderBean;
@@ -32,7 +33,7 @@ public class BeanBasedScriptProvider implements IScriptProvider,Serializable {
 
 	@Override
 	public String getGlobalScript() {
-		return providerBean.getGlobalScript();
+		return providerBean.getGlobalScript() + "\n" + Optional.ofNullable(providerBean.getUserScript()).orElse("");
 	}
 
 }
