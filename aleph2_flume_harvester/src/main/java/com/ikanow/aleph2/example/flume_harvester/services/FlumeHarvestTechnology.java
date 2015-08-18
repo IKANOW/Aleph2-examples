@@ -220,8 +220,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 		}
 	}
 
-	@Override
-	public CompletableFuture<BasicMessageBean> onSuspend(
+	protected CompletableFuture<BasicMessageBean> onSuspend(
 			DataBucketBean to_suspend, IHarvestContext context) {
 		try {
 			int stopped = removeAgentConfigs(to_suspend, 1);
@@ -250,12 +249,6 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 		else {
 			return onSuspend(new_bucket, context);
 		}
-	}
-
-	@Override
-	public CompletableFuture<BasicMessageBean> onResume(
-			DataBucketBean to_resume, IHarvestContext context) {
-		return onNewSource(to_resume, context, true);
 	}
 
 	@Override

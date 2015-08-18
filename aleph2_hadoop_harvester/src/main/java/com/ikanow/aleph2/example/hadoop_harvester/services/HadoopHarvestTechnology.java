@@ -60,20 +60,6 @@ public class HadoopHarvestTechnology implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public CompletableFuture<BasicMessageBean> onSuspend(
-			DataBucketBean to_suspend, IHarvestContext context) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public CompletableFuture<BasicMessageBean> onResume(
-			DataBucketBean to_resume, IHarvestContext context) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public CompletableFuture<BasicMessageBean> onPurge(DataBucketBean to_purge,
 			IHarvestContext context) {
 		// TODO Auto-generated method stub

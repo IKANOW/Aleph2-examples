@@ -139,21 +139,6 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 	}
 
 	@Override
-	public CompletableFuture<BasicMessageBean> onSuspend(
-			DataBucketBean to_suspend, IHarvestContext context) {
-		//I don't think storm has a pause, so you'll have to dump the
-		//job to get it to stop the spout
-		return onDelete(to_suspend, context);
-	}
-
-	@Override
-	public CompletableFuture<BasicMessageBean> onResume(
-			DataBucketBean to_resume, IHarvestContext context) {
-		//if storm doesn't have a pause, then we will just have to resend
-		return onNewSource(to_resume, context, true);		
-	}
-
-	@Override
 	public CompletableFuture<BasicMessageBean> onPurge(
 			DataBucketBean to_purge, IHarvestContext context) {		
 		//purge means that someone has dumped all the data from this harvest, nothing to do on

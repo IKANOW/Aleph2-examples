@@ -125,8 +125,7 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 		}
 	}
 
-	@Override
-	public CompletableFuture<BasicMessageBean> onSuspend(
+	protected CompletableFuture<BasicMessageBean> onSuspend(
 			DataBucketBean to_suspend, IHarvestContext context) {
 		
 		try {
@@ -145,12 +144,6 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 		catch (Exception e) {
 			return FutureUtils.returnError(e);
 		}
-	}
-
-	@Override
-	public CompletableFuture<BasicMessageBean> onResume(
-			DataBucketBean to_resume, IHarvestContext context) {
-		return onNewSource(to_resume, context, true);
 	}
 
 	@Override
