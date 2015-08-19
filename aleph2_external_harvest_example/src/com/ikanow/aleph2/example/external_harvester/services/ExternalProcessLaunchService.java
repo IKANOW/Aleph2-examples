@@ -31,7 +31,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IManagementDbService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IManagementCrudService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
@@ -73,8 +72,13 @@ public class ExternalProcessLaunchService {
 		final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> lib_config = ExternalProcessHarvestTechnology.getConfig(context);
 		_logger.info("Retrieved library configuration: " + lib_config._2().map(g -> BeanTemplateUtils.toJson(g).toString()).orElse("(no config)"));
 		
-		final IManagementDbService core_db = context.getServiceContext().getCoreManagementDbService();		
-		final ICrudService<ProcessInfoBean> pid_crud = core_db.getPerLibraryState(ProcessInfoBean.class, lib_config._1(), ProcessInfoBean.PID_COLLECTION_NAME);
+		// 1) Preferred method of getting per library state: 
+		final ICrudService<ProcessInfoBean> pid_crud = context.getGlobalHarvestTechnologyObjectStore(ProcessInfoBean.class, ProcessInfoBean.PID_COLLECTION_NAME);
+		// 2) Lower level way:
+		//final IManagementDbService core_db = context.getServiceContext().getCoreManagementDbService();
+		//final ICrudService<ProcessInfoBean> pid_crud = core_db.getPerLibraryState(ProcessInfoBean.class, lib_config._1(), ProcessInfoBean.PID_COLLECTION_NAME);
+		// 3) Alternatively (this construct is how you get per bucket state also):
+		//final ICrudService<ProcessInfoBean> pid_crud = context.getBucketObjectStore(ProcessInfoBean.class, Optional.empty(), ProcessInfoBean.PID_COLLECTION_NAME, Optional.of(AssetStateDirectoryBean.StateDirectoryType.library));
 
 		lib_config._2().ifPresent(gc -> {
 			if (gc.store_pids_in_db())
