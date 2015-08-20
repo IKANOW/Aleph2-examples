@@ -1,5 +1,6 @@
 package com.ikanow.aleph2.storm.samples.topology;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,8 +33,15 @@ public class SampleStormStreamTopology1 implements IEnrichmentStreamingTopology 
 	@Override
 	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(final DataBucketBean bucket, final IEnrichmentModuleContext context) {		
 		final TopologyBuilder builder = new TopologyBuilder();
-		builder.setSpout("default_aleph2_kafka_spout", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
-		builder.setBolt("sample_conversion_bolt", new SampleConversionBolt()).localOrShuffleGrouping("default_aleph2_kafka_spout");
+		
+		final Collection<Tuple2<BaseRichSpout, String>>  entry_points = context.getTopologyEntryPoints(BaseRichSpout.class, Optional.of(bucket));				
+		entry_points.forEach(spout_name -> builder.setSpout(spout_name._2(), spout_name._1()));
+		entry_points.stream().reduce(
+				builder.setBolt("sample_conversion_bolt", new SampleConversionBolt()),
+				(acc, v) -> acc.localOrShuffleGrouping(v._2()),
+				(acc1, acc2) -> acc1 // (not possible in practice)
+				) ;
+
 		builder.setBolt("sample_enrichment_bolt", new SampleEnrichmentBolt()).localOrShuffleGrouping("sample_conversion_bolt");
 		builder.setBolt("default_aleph2_output_spout", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("sample_enrichment_bolt");
 		return Tuples._2T(builder.createTopology(), Collections.emptyMap());

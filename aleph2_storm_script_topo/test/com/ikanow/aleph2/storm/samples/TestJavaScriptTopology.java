@@ -148,7 +148,7 @@ public class TestJavaScriptTopology {
 	        	}	           
 	        }
 	    } finally {
-	        br.close();
+	        if (null != br) br.close();
 	    }
 		return ips;	
 	}

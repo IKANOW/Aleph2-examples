@@ -54,7 +54,8 @@ public class ReducerCounterBolt extends BaseRichBolt {
 		 * */
 		 String ipNo = tuple.getString(0);
 		 String network = tuple.getString(1);
-		 String subnet = tuple.getString(2);
+		 @SuppressWarnings("unused")
+		String subnet = tuple.getString(2);
 		 Long netCount = networkCounters.get(network);
 		 netCount++;
 		 networkCounters.put(network, netCount);

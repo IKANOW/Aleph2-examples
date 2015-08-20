@@ -69,9 +69,7 @@ public class PropertyBasedScriptProvider implements IScriptProvider, Serializabl
 					// second try
 					inStream = new FileInputStream(propertiesFileName);
 				}
-				if (inStream != null) {
-					properties.load(inStream);						
-				}
+				properties.load(inStream);						
 
 			} catch (Throwable t) {
 				logger.error("Caught exception loading properties:", t);
@@ -88,9 +86,7 @@ public class PropertyBasedScriptProvider implements IScriptProvider, Serializabl
 					// second try
 					inStream = new FileInputStream(resourcePathToJSFile);
 				}
-				if (inStream != null) {
-					script = IOUtils.toString(inStream, "UTF-8");
-				}
+				script = IOUtils.toString(inStream, "UTF-8");
 
 			} catch (Throwable t) {
 				logger.error("Caught exception loading resource:", t);

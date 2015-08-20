@@ -95,6 +95,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 				Map m = (Map)retVal;
 				m.forEach((k,v) -> {
 					System.out.println("key: "+k+" value:"+v);
+					@SuppressWarnings("unused")
 					Object checkEmit = getCompiledScriptFactory().executeCompiledScript(CHECKEMIT_CALL,"mapKey",k,"state",v,"_collector",_collector,"_tuple", tuple);
 					
 				}); // foreach

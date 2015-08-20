@@ -56,6 +56,7 @@ public class JavaScriptBolt extends BaseRichBolt {
 		
 	}
 	
+	@SuppressWarnings("serial")
 	protected CompiledScriptFactory getCompiledScriptFactory(){
 		if(compiledScriptFactory == null){
 			this.compiledScriptFactory = new CompiledScriptFactory(new PropertyBasedScriptProvider(propertyFileName){

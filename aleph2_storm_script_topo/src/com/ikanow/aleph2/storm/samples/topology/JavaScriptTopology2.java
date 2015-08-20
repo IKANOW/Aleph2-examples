@@ -15,6 +15,7 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.topology;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -52,8 +53,7 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 	@Override
 	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bucket, IEnrichmentModuleContext context) {
 		TopologyBuilder builder = new TopologyBuilder();		
-		//builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
-		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
+		
 		builder.setSpout("timer", new TimerSpout(3000L));
 		JavaScriptProviderBean  providerBean = BeanTemplateUtils.from(bucket.streaming_enrichment_topology().config(),JavaScriptProviderBean.class).get();
 		if (null == providerBean.getGlobalScript()) {
@@ -61,8 +61,14 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 		}
 		BeanBasedScriptProvider mapperScriptProvider = new BeanBasedScriptProvider(providerBean);
 		BeanBasedScriptProvider folderScriptProvider = new BeanBasedScriptProvider(providerBean);
-		builder.setBolt("mapperBolt", new JavaScriptMapperBolt(mapperScriptProvider)).shuffleGrouping("1");
 		
+		final Collection<Tuple2<BaseRichSpout, String>>  entry_points = context.getTopologyEntryPoints(BaseRichSpout.class, Optional.of(bucket));				
+		entry_points.forEach(spout_name -> builder.setSpout(spout_name._2(), spout_name._1()));
+		entry_points.stream().reduce(
+				builder.setBolt("mapperBolt", new JavaScriptMapperBolt(mapperScriptProvider)),
+				(acc, v) -> acc.shuffleGrouping(v._2()),
+				(acc1, acc2) -> acc1 // (not possible in practice)
+				) ;				
 		builder.setBolt("folderBolt", new JavaScriptFolderBolt(folderScriptProvider)).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
 		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("folderBolt");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());

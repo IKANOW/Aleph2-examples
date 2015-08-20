@@ -15,6 +15,7 @@
 ******************************************************************************/
 package com.ikanow.aleph2.storm.samples.topology;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -48,9 +49,14 @@ public class JavaScriptTopology implements IEnrichmentStreamingTopology {
 	@Override
 	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bucket, IEnrichmentModuleContext context) {
 		TopologyBuilder builder = new TopologyBuilder();		
-		//builder.setSpout("spout", new SampleFileLineReaderSpout("sample_log_files/proxy_small_sample.log"));
-		builder.setSpout("1", context.getTopologyEntryPoint(BaseRichSpout.class, Optional.of(bucket)));
-		builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")).shuffleGrouping("1");
+		
+		final Collection<Tuple2<BaseRichSpout, String>>  entry_points = context.getTopologyEntryPoints(BaseRichSpout.class, Optional.of(bucket));				
+		entry_points.forEach(spout_name -> builder.setSpout(spout_name._2(), spout_name._1()));
+		entry_points.stream().reduce(
+				builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")),
+				(acc, v) -> acc.shuffleGrouping(v._2()),
+				(acc1, acc2) -> acc1 // (not possible in practice)
+				) ;		
 		builder.setBolt("reducerCounter", new ReducerCounterBolt()).shuffleGrouping("scriptBolt");
 		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("reducerCounter");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
