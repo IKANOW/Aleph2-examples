@@ -55,6 +55,7 @@ import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.ikanow.aleph2.data_model.utils.PropertiesUtils;
 import com.ikanow.aleph2.utils.JarBuilderUtil;
+import com.ikanow.aleph2.utils.StormControllerUtil;
 
 /**
  * IHarvestTechnologyModule is just for going from raw data to json.
@@ -155,7 +156,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		//data is being stored in the harvest tech so nothing to delete? (see purge)
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
 		try {
-			storm_controller.stopJob(getJobName(to_delete));
+			StormControllerUtil.stopJob(storm_controller, getJobName(to_delete));
 		} catch (Exception e) {
 			logger.info("Stop completing exceptionally", e);
 			future.complete(new BasicMessageBean(new Date(), false, null, "onDelete", null, ErrorUtils.getLongForm("{0}", e), null));
@@ -173,7 +174,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		CompletableFuture<BasicMessageBean> future = new CompletableFuture<BasicMessageBean>();
 		TopologyInfo top_info;
 		try {
-			 top_info = storm_controller.getJobStats(getJobName(polled_bucket));
+			 top_info = StormControllerUtil.getJobStats(storm_controller, getJobName(polled_bucket));
 		} catch (Exception ex) {
 			//set failure in completable future
 			future.complete(new BasicMessageBean(new Date(), false, null, "onPeriodicPoll", null, ErrorUtils.getLongForm("{0}", ex), null));
@@ -216,14 +217,12 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			DataBucketBean test_bucket,
 			ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {		
-		//submit a job just like a new source
-		//TODO we should set the job up w/o the output to harvest context option, if 
-		//we let users submit full topologies though we can't guarantee that I think
-		//we need to use a derived id for the jobname because this job could be running
-		//and we want to push test
+		//submit a job just like a new source		
 		CompletableFuture<BasicMessageBean> future = onNewSource(test_bucket, context, true);
+		
 		//test_spec.requested_num_objects() //TODO I can't find a way to see how many objects have been harvested, so I don't have a good way to stop it
-		//once X # of objects have been acked, maybe theres somewhere you can see total acks?
+		//once X # of objects have been acked, maybe there is somewhere you can see total acks?
+		//TODO find if there is a way to cancel after requested num objects harvested
 		
 		//set up a timer to cancel job after max runtime
 		executor.schedule(new RunnableCancelTestJob(getJobName(test_bucket), future), test_spec.max_run_time_secs(), TimeUnit.SECONDS); //schedules a job to cancel the top in 5s
@@ -249,7 +248,7 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		public void run() {
 			logger.info("killing job: " + job_name);
 			try {
-				storm_controller.stopJob(job_name);
+				StormControllerUtil.stopJob(storm_controller, job_name);
 				//TODO fill in the complete response
 				future.complete(new BasicMessageBean(new Date(), true, null, "onTest", null, "yes it was killed", null));
 			} catch (Exception e) {
@@ -292,13 +291,13 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 				List<String> harvest_library_paths = harvest_libraries.keySet().stream().filter(name -> !name.contains(new_bucket.harvest_technology_name_or_id())).map(name -> harvest_libraries.get(name)).collect(Collectors.toList());
 				jars_to_merge.addAll(harvest_library_paths);
 				JarBuilderUtil.mergeJars(jars_to_merge, input_jar_location, dirs_to_ignore);
-				storm_controller.submitJob(job_name, input_jar_location, topology);
+				StormControllerUtil.startJob(storm_controller, job_name, input_jar_location, topology);
 				
 				//verify job was assigned some executors
-				TopologyInfo info = storm_controller.getJobStats(job_name);
+				TopologyInfo info = StormControllerUtil.getJobStats(storm_controller, job_name);
 				if ( info.get_executors_size() == 0 ) {
 					//no executors were available for this job, stop the job, throw an error
-					storm_controller.stopJob(job_name);
+					StormControllerUtil.stopJob(storm_controller, job_name);
 					future.complete(new BasicMessageBean(new Date(), false, null, "onNewSource", null, "No executors were assigned to this job, typically this is because too many jobs are currently running, kill some other jobs and resubmit.", null));
 					return future;					
 				}

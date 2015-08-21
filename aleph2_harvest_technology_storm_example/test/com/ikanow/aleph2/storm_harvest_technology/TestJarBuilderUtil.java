@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -30,6 +31,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
 import com.ikanow.aleph2.utils.JarBuilderUtil;
 
 @SuppressWarnings("unused")
@@ -51,25 +53,26 @@ public class TestJarBuilderUtil {
 	public void tearDown() throws Exception {
 	}
 
-//	@Test
-//	public void test() throws IOException {
-//		List<String> jar_files_to_merge = new ArrayList<String>();
-//				
-//		//give sample harvest lib jar file
-//		jar_files_to_merge.add("sample_jar_files/sample_main.jar");
-//		//give sample jar file
-//		jar_files_to_merge.add("sample_jar_files/sample_lib.jar");		
-//				
-//		//merge both jars
-//		JarBuilderUtil.mergeJars(jar_files_to_merge, "sample_jar_files/output.jar");
-//		
-//		//these 2 steps are remotestorm controller -> submitjob()
-//		//submit jar to storm
-//		//submit topology to storm
-//		
-//		
-//		//assertTrue(JarBuilderUtil.createJar());
-//	}
+	@Test
+	public void test() throws IOException {
+		Set<String> dirs_to_ignore = Sets.newHashSet("org/slf4j", "org/apache/log4j");
+		List<String> jar_files_to_merge = new ArrayList<String>();
+				
+		//give sample harvest lib jar file
+		jar_files_to_merge.add("sample_jar_files/sample_main.jar");
+		//give sample jar file
+		jar_files_to_merge.add("sample_jar_files/sample_lib.jar");		
+				
+		//merge both jars
+		JarBuilderUtil.mergeJars(jar_files_to_merge, "sample_jar_files/output.jar", dirs_to_ignore);
+		
+		//these 2 steps are remotestorm controller -> submitjob()
+		//submit jar to storm
+		//submit topology to storm
+		
+		
+		//assertTrue(JarBuilderUtil.createJar());
+	}
 //	
 //	@Test
 //	public void testMergingJars() throws IOException {
