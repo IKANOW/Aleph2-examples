@@ -41,6 +41,7 @@ import com.ikanow.aleph2.data_import.context.stream_enrichment.utils.ErrorUtils;
 import com.ikanow.aleph2.data_import.services.StreamingEnrichmentContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IDataWriteService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
@@ -115,7 +116,10 @@ public class TestJavaScriptTopology {
 		
 		//PHASE 3: CHECK INDEX
 		final ISearchIndexService index_service = test_context.getServiceContext().getSearchIndexService().get();
-		final ICrudService<JsonNode> crud_service = index_service.getCrudService(JsonNode.class, test_bucket).get();
+		final ICrudService<JsonNode> crud_service = 
+											index_service.getDataService()
+													.flatMap(s -> s.getWritableDataService(JsonNode.class, test_bucket, Optional.empty(), Optional.empty()))
+													.flatMap(IDataWriteService::getCrudService).get();
 		crud_service.deleteDatastore().get();
 		Thread.sleep(1000L);
 		assertEquals(0L, crud_service.countObjects().get().intValue());
