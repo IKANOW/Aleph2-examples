@@ -24,16 +24,24 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import scala.Tuple2;
 
+import com.google.common.collect.ImmutableSet;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
+import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IUnderlyingService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
+import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
+import com.ikanow.aleph2.data_model.utils.Patterns;
 import com.ikanow.aleph2.data_model.utils.Tuples;
+import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeGlobalConfigBean;
 
 /** Utilities for managing external processes
@@ -55,8 +63,15 @@ public class FlumeLaunchUtils {
 				throw new RuntimeException("Can't write to: " + run_dir);
 			}
 			
+			// Get bucket-specific flume:
+			Optional<FlumeBucketConfigBean> config = Optional.of(bucket) 							
+					.map(b -> b.harvest_configs()).filter(h -> h.isEmpty())
+					.map(h -> h.iterator().next()).map(hcfg -> hcfg.config())
+					.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
+					;
+			
 			final String classpath = Stream.concat(
-					context.getHarvestContextLibraries(Optional.empty()).stream(),
+					context.getHarvestContextLibraries(getContextLibraries(config)).stream(),
 					context.getHarvestLibraries(Optional.of(bucket)).get().values().stream()
 					)
 					.collect(Collectors.joining(":"))
@@ -179,5 +194,28 @@ public class FlumeLaunchUtils {
 		try (PrintWriter writer = new PrintWriter(run_file, "UTF-8")) {
 			writer.println(pid);
 		}
+	}
+
+	/** Utility used in a couple of places to add classes to the flume-side process
+	 * @param config
+	 * @return
+	 */
+	public static Optional<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>> getContextLibraries(final Optional<FlumeBucketConfigBean> config) {
+		final Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>> extra_services = 
+				config.map(cfg -> cfg.output()).map(output -> output.direct_output()).orElse(Collections.emptySet())
+					.stream()
+					.flatMap(s -> Patterns.match(s).<Stream<Class<? extends IUnderlyingService>>>andReturn()
+											.when(ss -> ss.equalsIgnoreCase("search_index_schema"), __ -> Stream.of(ISearchIndexService.class))
+											//(others are provided)
+											.otherwise(__ -> Stream.empty())
+											)
+					.reduce(
+							ImmutableSet.<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>builder(),
+							(acc, v) -> acc.add(Tuples._2T(v, Optional.empty())),
+							(acc1, acc2) -> acc1 // not possible in practice
+					)
+					.build()
+					;
+		return extra_services.isEmpty() ? Optional.empty() : Optional.of(extra_services);
 	}
 }

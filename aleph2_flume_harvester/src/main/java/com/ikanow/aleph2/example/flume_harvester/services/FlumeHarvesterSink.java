@@ -16,7 +16,11 @@
 package com.ikanow.aleph2.example.flume_harvester.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.flume.Channel;
 import org.apache.flume.Context;
@@ -26,6 +30,9 @@ import org.apache.flume.Transaction;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.sink.AbstractSink;
 
+import au.com.bytecode.opencsv.CSVParser;
+
+import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -33,8 +40,14 @@ import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
+import com.ikanow.aleph2.data_model.utils.Optionals;
+import com.ikanow.aleph2.data_model.utils.Patterns;
+import com.ikanow.aleph2.data_model.utils.TimeUtils;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
+import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean.OutputConfig.CsvConfig;
 import com.ikanow.aleph2.example.flume_harvester.utils.FlumeUtils;
+
+import fj.data.Validation;
 
 /** Harvest sink - will provide some basic parsing (and maybe JS manipulation functionality in the future)
  * @author alex
@@ -43,7 +56,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	final protected static ObjectMapper _mapper = BeanTemplateUtils.configureMapper(Optional.empty());
 	
 	IHarvestContext _context;	
-	FlumeBucketConfigBean _config;
+	Optional<FlumeBucketConfigBean> _config;
 	
 	/* (non-Javadoc)
 	 * @see org.apache.flume.conf.Configurable#configure(org.apache.flume.Context)
@@ -54,8 +67,13 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 					ContextUtils.getHarvestContext(
 							FlumeUtils.decodeSignature(flume_context.getString("context_signature", ""))))
 					.get();
-		
-		//TODO (ALEPH-10) get _config from bucket...
+
+		// Get config from bucket 
+		_config = _context.getBucket()
+							.map(b -> b.harvest_configs()).filter(h -> h.isEmpty())
+							.map(h -> h.iterator().next()).map(hcfg -> hcfg.config())
+							.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
+							;
 	}
 
 	/* (non-Javadoc)
@@ -103,14 +121,94 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	 * @param config
 	 * @return
 	 */
-	protected Optional<JsonNode> getEventJson(final Event evt, final FlumeBucketConfigBean config) {
+	protected Optional<JsonNode> getEventJson(final Event evt, final Optional<FlumeBucketConfigBean> config) {
+		if (config.isPresent()) {
+			final FlumeBucketConfigBean cfg = config.get();
+			if (null != cfg.output()) {
+				if (null != cfg.output().csv()) {
+					return getCsvEventJson(evt, cfg.output().csv());
+				}
+			}
+		}
+		// Backstop:
+		return getDefaultEventJson(evt);
+	}
+	protected Optional<JsonNode> getDefaultEventJson(final Event evt) {
 		try {
 			final JsonNode initial = _mapper.convertValue(evt.getHeaders(), JsonNode.class);
 			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")).put("@timestamp", LocalDateTime.now().toString()));
 		}
 		catch (Exception e) {
 			return Optional.empty();
-		}
+		}		
 	}
-
+	
+	protected CSVParser _parser = null;
+	protected ArrayList<String> _headers;
+	protected Pattern _ignore_regex; 
+	
+	/** Generates a 
+	 * @param evt
+	 * @param config
+	 * @return
+	 */
+	protected Optional<JsonNode> getCsvEventJson(final Event evt, CsvConfig config) {
+		if (null == _parser) {
+			// Lazy initialization:
+			_parser = new CSVParser(Optional.ofNullable(config.separator().charAt(0)).orElse(','),
+									Optional.ofNullable(config.quote_char().charAt(0)).orElse('"'),
+									Optional.ofNullable(config.escape_char().charAt(0)).orElse('\\'));
+			_headers = new ArrayList<String>(Optionals.ofNullable(config.header_fields()));
+			
+			Optional.ofNullable(config.ignore_regex()).ifPresent(regex -> _ignore_regex = Pattern.compile(regex));
+		}
+		try {
+			final String line = new String(evt.getBody(), "UTF-8");
+			if ((null != _ignore_regex) && _ignore_regex.matcher(line).matches()) {
+				return Optional.empty();
+			}
+			final String[] fields = _parser.parseLine(line);
+			final ObjectNode ret_val = StreamUtils.zipWithIndex(Arrays.stream(fields))
+				.reduce(_mapper.createObjectNode(), 
+						(acc, v) -> {
+							if (v.getIndex() >= _headers.size()) return acc;
+							else {
+								final String field_name = _headers.get((int)v.getIndex());
+								if ((null == field_name) || field_name.isEmpty()) {
+									return acc;
+								}
+								else {
+									try {
+										return Patterns.match((String) config.non_string_types().get(field_name)).<ObjectNode>andReturn()
+														.when(t -> null == t, __ -> acc.put(field_name, v.getValue())) //(string)
+														.when(t -> t.equalsIgnoreCase("long"),		__ -> acc.put(field_name, Long.parseLong(v.getValue())))
+														.when(t -> t.equalsIgnoreCase("int") || t.equalsIgnoreCase("integer"), 
+																									__ -> acc.put(field_name, Integer.parseInt(v.getValue())))
+														.when(t -> t.equalsIgnoreCase("double") || t.equalsIgnoreCase("numeric"), 
+																									__ -> acc.put(field_name, Double.parseDouble(v.getValue())))
+														.when(t -> t.equalsIgnoreCase("float"),		__ -> acc.put(field_name, Float.parseFloat(v.getValue())))
+														.when(t -> t.equalsIgnoreCase("boolean"),	__ -> acc.put(field_name, Boolean.parseBoolean(v.getValue())))
+														.when(t -> t.equalsIgnoreCase("hex"),		__ -> acc.put(field_name, Long.parseLong(v.getValue(), 16)))
+														.when(t -> t.equalsIgnoreCase("date"),		__ -> { 
+															Validation<String, Date> res = TimeUtils.getSchedule(v.getValue(), Optional.empty());
+															return res.validation(left -> acc, right -> acc.put(field_name, right.toString()));
+														})
+														.otherwise(__ -> acc.put(field_name, v.getValue())) // (string)
+														;
+									}
+									catch (Exception e) {
+										return acc;
+									}
+									//return acc.put(field_name, v.getValue());
+								}
+							}
+						},
+						(acc1, acc2) -> acc1); // (can't occur in practice)
+			;
+			return Optional.of(ret_val);
+		}
+		catch (Exception e) {
+			return Optional.empty();
+		}		
+	}
 }

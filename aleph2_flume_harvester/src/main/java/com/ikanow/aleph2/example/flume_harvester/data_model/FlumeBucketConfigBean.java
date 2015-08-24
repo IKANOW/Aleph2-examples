@@ -15,9 +15,11 @@
  ******************************************************************************/
 package com.ikanow.aleph2.example.flume_harvester.data_model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Per bucket configuration
  * @author alex
@@ -29,12 +31,13 @@ public class FlumeBucketConfigBean {
 	public Map<String, Object> morphlines_config() { return morphlines_config; }
 	public String flume_config_str() { return flume_config_str; }
 	public String morphlines_config_str() { return morphlines_config_str; }
+	public OutputConfig output() { return output; }
 	
 	public static class OutputConfig {
 		public static class JsonConfig {
 			public JsonPolicy json_policy() { return Optional.ofNullable(json_policy).orElse(JsonPolicy.body_plus_headers); }
 			public String include_body_with_name() { return include_body_with_name; }
-			public String add_time_with_name() { return add_time_with_name; }	
+			public String add_time_with_name() { return add_time_with_name; }
 			
 			enum JsonPolicy { body, body_plus_headers, event, event_no_body };
 			private JsonPolicy json_policy;
@@ -47,22 +50,26 @@ public class FlumeBucketConfigBean {
 			public String ignore_regex() { return ignore_regex; }
 			public String escape_char() { return Optional.ofNullable(escape_char).orElse("\\"); }
 			public String quote_char() { return Optional.ofNullable(quote_char).orElse("\""); }
+			public Map<String, String> non_string_types() { return Optional.ofNullable(non_string_types).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
 			
 			private String separator;
 			private List<String> header_fields;
 			private String ignore_regex;
 			private String escape_char;
 			private String quote_char;
+			private Map<String, String> non_string_types; // "int", "long", "boolean", "double", "hex", "date"
 		}
-		public OutputConfig output() { return output; }
 		public JsonConfig json() { return json; }
 		public CsvConfig csv() { return csv; }
+		public Set<String> direct_output() { return direct_output; }
 		
-		private OutputConfig output;
 		private JsonConfig json;
 		private CsvConfig csv;
+		
+		private Set<String> direct_output; // ("search_index_service[.<non_default_service>]", "storage_service", etc)
 	}
 	
+	private OutputConfig output;
 	private String substitution_prefix;
 	private Map<String, String> flume_config;
 	private Map<String, Object> morphlines_config;	

@@ -106,13 +106,13 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 				}));		
 		final File tmp_flume = createTempFile("aleph2_flume_", agent_name);
 		final String flume_config = FlumeUtils.createFlumeConfig(agent_name, config, 
-													context.getHarvestContextSignature(Optional.of(bucket), Optional.empty()), 
+													context.getHarvestContextSignature(Optional.of(bucket), FlumeLaunchUtils.getContextLibraries(Optional.of(config))), 
 													morphlines_file);
 		FileUtils.writeStringToFile(tmp_flume, flume_config);
 		
 		return Tuples._2T(agent_name, tmp_flume);
 	}
-	
+		
 	/** Stops any agents associated with this bucket
 	 *  NOTE: currently only one config is allowed per agent
 	 * @param bucket
