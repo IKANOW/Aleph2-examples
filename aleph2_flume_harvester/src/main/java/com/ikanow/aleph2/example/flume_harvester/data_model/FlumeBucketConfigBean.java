@@ -35,16 +35,17 @@ public class FlumeBucketConfigBean {
 	
 	public static class OutputConfig {
 		public static class JsonConfig {
+			public boolean enabled() { return enabled == null ? true : enabled; }
 			public JsonPolicy json_policy() { return Optional.ofNullable(json_policy).orElse(JsonPolicy.body_plus_headers); }
 			public String include_body_with_name() { return include_body_with_name; }
-			public String add_time_with_name() { return add_time_with_name; }
 			
-			enum JsonPolicy { body, body_plus_headers, event, event_no_body };
+			private Boolean enabled;
+			public enum JsonPolicy { body, body_plus_headers, event, event_no_body };
 			private JsonPolicy json_policy;
 			private String include_body_with_name;
-			private String add_time_with_name;
 		}
 		public static class CsvConfig {
+			public boolean enabled() { return enabled == null ? true : enabled; }
 			public String separator() { return Optional.ofNullable(separator).orElse(","); }
 			public List<String> header_fields() { return header_fields; }
 			public String ignore_regex() { return ignore_regex; }
@@ -53,6 +54,7 @@ public class FlumeBucketConfigBean {
 			public Map<String, String> non_string_types() { return Optional.ofNullable(non_string_types).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
 			public Map<String, List<String>> non_string_type_map() { return Optional.ofNullable(non_string_type_map).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
 			
+			private Boolean enabled;
 			private String separator;
 			private List<String> header_fields;
 			private String ignore_regex;
@@ -64,11 +66,13 @@ public class FlumeBucketConfigBean {
 		public JsonConfig json() { return json; }
 		public CsvConfig csv() { return csv; }
 		public Set<String> direct_output() { return direct_output; }
+		public String add_time_with_name() { return add_time_with_name; }
 		
 		private JsonConfig json;
 		private CsvConfig csv;
 		
 		private Set<String> direct_output; // ("search_index_service[.<non_default_service>]", "storage_service", etc)
+		private String add_time_with_name;
 	}
 	
 	private OutputConfig output;

@@ -57,6 +57,7 @@ import com.ikanow.aleph2.data_model.utils.TimeUtils;
 import com.ikanow.aleph2.data_model.utils.Tuples;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean.OutputConfig.CsvConfig;
+import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean.OutputConfig.JsonConfig;
 import com.ikanow.aleph2.example.flume_harvester.utils.FlumeUtils;
 
 import fj.data.Validation;
@@ -72,7 +73,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	IHarvestContext _context;	
 	Optional<FlumeBucketConfigBean> _config;
 	DataBucketBean _bucket;
-	String _time_field;
+	Optional<String> _time_field;
 	
 	/* (non-Javadoc)
 	 * @see org.apache.flume.conf.Configurable#configure(org.apache.flume.Context)
@@ -101,8 +102,15 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		//DEBUG
 		//_logger.info("_config = " + _config.map(BeanTemplateUtils::toJson).map(JsonNode::toString).orElse("(not present)"));		
 		
+		//TODO: if temporal schema is enabled and has a time_field then use that if time field not manually set
+		_time_field = _config.flatMap(cfg -> Optionals.of(() -> cfg.output().add_time_with_name())).map(Optional::of) // prio #1: if manually specified
+								.orElse(Optionals.of(() -> _bucket.data_schema().temporal_schema())
+												.filter(schema -> Optional.ofNullable(schema.enabled()).orElse(true)) // prio #2: (but only if temporal enabled)...
+												.map(schema -> schema.time_field()) // ...use the time field
+										)
+				;
 		
-		_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field()).orElse("@timestamp");
+		_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field());
 		
 		//DEBUG
 		//_logger.info("_time_field = " + _time_field);		
@@ -124,7 +132,15 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 
 			final Event event = ch.take();
 
-			Optional<JsonNode> maybe_json_event = getEventJson(event, _config);
+			final Optional<JsonNode> maybe_json_event = 
+								getEventJson(event, _config)
+										// Extra step
+										.map(json -> _time_field
+														.filter(tf -> !json.has(tf)) // (ie filter out JSON objects with the timestamp field, those are passed unchanged by the orElse 
+														.<JsonNode>map(tf -> ((ObjectNode) json).put(tf, LocalDateTime.now().toString())) // put the timestamp field in
+													.orElse(json))
+										;
+			
 			maybe_json_event.ifPresent(json_event -> {
 				if (_config.map(cfg -> cfg.output()).map(out -> out.direct_output()).isPresent())
 				{
@@ -164,8 +180,11 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		if (config.isPresent()) {
 			final FlumeBucketConfigBean cfg = config.get();
 			if (null != cfg.output()) {
-				if (null != cfg.output().csv()) {
+				if (null != cfg.output().csv() && cfg.output().csv().enabled()) {
 					return getCsvEventJson(evt, cfg.output().csv());
+				}
+				else if (null != cfg.output().json() && cfg.output().json().enabled()) {
+					return getJsonEventJson(evt, cfg.output().json());
 				}
 			}
 		}
@@ -181,11 +200,65 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	protected Optional<JsonNode> getDefaultEventJson(final Event evt) {
 		try {
 			final JsonNode initial = _mapper.convertValue(evt.getHeaders(), JsonNode.class);
-			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")).put(_time_field, LocalDateTime.now().toString()));
+			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")));
 		}
 		catch (Exception e) {
 			return Optional.empty();
 		}		
+	}
+	
+	/** State object for JSON output
+	 * @author Alex
+	 */
+	public static class JsonState {
+		public JsonConfig.JsonPolicy policy;
+		public String include_body_with_name;
+	};
+	protected final SetOnce<JsonState> _json = new SetOnce<>();
+	/** Generates a JSON object assuming the event body is a JSON object 
+	 * @param evt
+	 * @param config
+	 * @return
+	 */
+	protected Optional<JsonNode> getJsonEventJson(final Event evt, JsonConfig config) {
+		try {
+			// Lazy initialization
+			if (!_json.isSet()) {
+				final JsonState json = new JsonState();
+				json.policy = config.json_policy();
+				json.include_body_with_name = Optional.ofNullable(config.include_body_with_name()).orElse("message");
+				_json.set(json);
+			}
+			
+			// Different cases depending on policy
+			
+			final JsonState json = _json.get();
+			if (JsonConfig.JsonPolicy.body == json.policy) {
+				final String body = new String(evt.getBody(), "UTF-8");
+				final JsonNode initial = _mapper.readValue(body, JsonNode.class);
+				return Optional.of(initial);
+			}
+			else if (JsonConfig.JsonPolicy.body_plus_headers == json.policy) {
+				final String body = new String(evt.getBody(), "UTF-8");
+				final ObjectNode initial = (ObjectNode) _mapper.readValue(body, JsonNode.class);
+				final JsonNode to_return = evt.getHeaders().entrySet().stream().reduce(initial, (acc, v) -> acc.put(v.getKey(), v.getValue()), (acc1, acc2) -> acc1);
+				return Optional.of(to_return);				
+			}
+			else if (JsonConfig.JsonPolicy.event == json.policy) {
+				final String body = new String(evt.getBody(), "UTF-8");
+				final ObjectNode initial = (ObjectNode) _mapper.convertValue(evt.getHeaders(), JsonNode.class);
+				return Optional.of(initial.put(json.include_body_with_name, body));
+			}
+			else if (JsonConfig.JsonPolicy.event_no_body == json.policy) {				
+				final JsonNode initial = _mapper.convertValue(evt.getHeaders(), JsonNode.class);
+				return Optional.of(initial);
+			}
+			else return Optional.empty(); // not support/possible
+			
+		}
+		catch (Throwable t) {
+			return Optional.empty();
+		}
 	}
 	
 	/** State object for CSV output
@@ -240,7 +313,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 								}
 								else {
 									try {
-										return Patterns.match((String) config.non_string_types().get(field_name)).<ObjectNode>andReturn()
+										return Patterns.match((String) csv.type_map.get(field_name)).<ObjectNode>andReturn()
 														.when(t -> null == t, __ -> acc.put(field_name, v.getValue())) //(string)
 														.when(t -> t.equalsIgnoreCase("long"),		__ -> acc.put(field_name, Long.parseLong(v.getValue())))
 														.when(t -> t.equalsIgnoreCase("int") || t.equalsIgnoreCase("integer"), 
@@ -266,10 +339,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 						},
 						(acc1, acc2) -> acc1); // (can't occur in practice)
 			;
-			if (!ret_val.has(_time_field)) { // (append the time field)
-				return Optional.of(ret_val.put(_time_field, LocalDateTime.now().toString()));
-			}
-			else return Optional.of(ret_val);
+			return Optional.of(ret_val);
 		}
 		catch (Exception e) {
 			return Optional.empty();

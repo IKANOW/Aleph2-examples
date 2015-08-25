@@ -69,8 +69,10 @@ public class FlumeLaunchUtils {
 			
 			// Get bucket-specific flume:
 			Optional<FlumeBucketConfigBean> config = Optional.of(bucket) 							
-					.map(b -> b.harvest_configs()).filter(h -> h.isEmpty())
-					.map(h -> h.iterator().next()).map(hcfg -> hcfg.config())
+					.map(b -> b.harvest_configs())
+					.filter(h -> !h.isEmpty())
+					.map(h -> h.iterator().next())
+					.map(hcfg -> hcfg.config())
 					.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
 					;
 			
