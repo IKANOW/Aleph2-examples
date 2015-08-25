@@ -51,6 +51,7 @@ public class FlumeBucketConfigBean {
 			public String escape_char() { return Optional.ofNullable(escape_char).orElse("\\"); }
 			public String quote_char() { return Optional.ofNullable(quote_char).orElse("\""); }
 			public Map<String, String> non_string_types() { return Optional.ofNullable(non_string_types).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
+			public Map<String, List<String>> non_string_type_map() { return Optional.ofNullable(non_string_type_map).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
 			
 			private String separator;
 			private List<String> header_fields;
@@ -58,6 +59,7 @@ public class FlumeBucketConfigBean {
 			private String escape_char;
 			private String quote_char;
 			private Map<String, String> non_string_types; // "int", "long", "boolean", "double", "hex", "date"
+			private Map<String, List<String>> non_string_type_map; // as above except "int": [ "field1", "field2", ... ]
 		}
 		public JsonConfig json() { return json; }
 		public CsvConfig csv() { return csv; }

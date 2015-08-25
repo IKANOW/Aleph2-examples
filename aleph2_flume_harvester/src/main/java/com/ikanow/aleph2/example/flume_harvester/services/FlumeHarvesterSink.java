@@ -19,8 +19,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.flume.Channel;
 import org.apache.flume.Context;
@@ -29,7 +31,10 @@ import org.apache.flume.EventDeliveryException;
 import org.apache.flume.Transaction;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.sink.AbstractSink;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import scala.Tuple2;
 import au.com.bytecode.opencsv.CSVParser;
 
 import com.codepoetics.protonpack.StreamUtils;
@@ -37,12 +42,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
+import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IDataServiceProvider;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IDataWriteService;
+import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.Patterns;
+import com.ikanow.aleph2.data_model.utils.SetOnce;
 import com.ikanow.aleph2.data_model.utils.TimeUtils;
+import com.ikanow.aleph2.data_model.utils.Tuples;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean.OutputConfig.CsvConfig;
 import com.ikanow.aleph2.example.flume_harvester.utils.FlumeUtils;
@@ -53,10 +65,14 @@ import fj.data.Validation;
  * @author alex
  */
 public class FlumeHarvesterSink extends AbstractSink implements Configurable {
+	final static protected Logger _logger = LogManager.getLogger();
+	
 	final protected static ObjectMapper _mapper = BeanTemplateUtils.configureMapper(Optional.empty());
 	
 	IHarvestContext _context;	
 	Optional<FlumeBucketConfigBean> _config;
+	DataBucketBean _bucket;
+	String _time_field;
 	
 	/* (non-Javadoc)
 	 * @see org.apache.flume.conf.Configurable#configure(org.apache.flume.Context)
@@ -68,12 +84,28 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 							FlumeUtils.decodeSignature(flume_context.getString("context_signature", ""))))
 					.get();
 
+		_bucket = _context.getBucket().get();
+		
+		//DEBUG
+		//_logger.info("Bucket = " + BeanTemplateUtils.toJson(_bucket));
+		
 		// Get config from bucket 
-		_config = _context.getBucket()
-							.map(b -> b.harvest_configs()).filter(h -> h.isEmpty())
-							.map(h -> h.iterator().next()).map(hcfg -> hcfg.config())
+		_config = Optional.of(_bucket)
+							.map(b -> b.harvest_configs())
+							.filter(h -> !h.isEmpty())
+							.map(h -> h.iterator().next())
+							.map(hcfg -> hcfg.config())
 							.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
 							;
+
+		//DEBUG
+		//_logger.info("_config = " + _config.map(BeanTemplateUtils::toJson).map(JsonNode::toString).orElse("(not present)"));		
+		
+		
+		_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field()).orElse("@timestamp");
+		
+		//DEBUG
+		//_logger.info("_time_field = " + _time_field);		
 	}
 
 	/* (non-Javadoc)
@@ -84,18 +116,25 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		Status status = null;
 
 		// Start transaction
-		Channel ch = getChannel();
-		Transaction txn = ch.getTransaction();
+		final Channel ch = getChannel();
+		final Transaction txn = ch.getTransaction();
 		txn.begin();
 		try {
 			// This try clause includes whatever Channel operations you want to do
 
-			Event event = ch.take();
+			final Event event = ch.take();
 
 			Optional<JsonNode> maybe_json_event = getEventJson(event, _config);
-			maybe_json_event.ifPresent(json_event -> 
-				_context.sendObjectToStreamingPipeline(Optional.empty(), json_event));
-
+			maybe_json_event.ifPresent(json_event -> {
+				if (_config.map(cfg -> cfg.output()).map(out -> out.direct_output()).isPresent())
+				{
+					this.directOutput(json_event, _config.get(), _bucket);
+				}
+				else { //TODO: streaming vs batch 				
+					_context.sendObjectToStreamingPipeline(Optional.empty(), json_event);
+				}
+			});
+		
 			txn.commit();
 			status = Status.READY;
 		} catch (Throwable t) {
@@ -133,47 +172,69 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		// Backstop:
 		return getDefaultEventJson(evt);
 	}
+	
+	/** Default output - creates a JSON object with "message" containing the body of the event, and a timestamp
+	 * TODO (ALEPH-10): make @timestamp derived (eg from temporal schema?)
+	 * @param evt
+	 * @return
+	 */
 	protected Optional<JsonNode> getDefaultEventJson(final Event evt) {
 		try {
 			final JsonNode initial = _mapper.convertValue(evt.getHeaders(), JsonNode.class);
-			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")).put("@timestamp", LocalDateTime.now().toString()));
+			return Optional.of(((ObjectNode)initial).put("message", new String(evt.getBody(), "UTF-8")).put(_time_field, LocalDateTime.now().toString()));
 		}
 		catch (Exception e) {
 			return Optional.empty();
 		}		
 	}
 	
-	protected CSVParser _parser = null;
-	protected ArrayList<String> _headers;
-	protected Pattern _ignore_regex; 
+	/** State object for CSV output
+	 * @author Alex
+	 */
+	public static class CsvState {
+		public CSVParser parser = null;
+		public ArrayList<String> headers;
+		public Pattern ignore_regex;
+		public Map<String, String> type_map;
+	};
+	protected final SetOnce<CsvState> _csv = new SetOnce<>();
 	
-	/** Generates a 
+	/** Generates a JSON object assuming the event body is a CSV 
 	 * @param evt
 	 * @param config
 	 * @return
 	 */
 	protected Optional<JsonNode> getCsvEventJson(final Event evt, CsvConfig config) {
-		if (null == _parser) {
+		if (!_csv.isSet()) {
+			final CsvState csv = new CsvState();
 			// Lazy initialization:
-			_parser = new CSVParser(Optional.ofNullable(config.separator().charAt(0)).orElse(','),
+			csv.parser = new CSVParser(Optional.ofNullable(config.separator().charAt(0)).orElse(','),
 									Optional.ofNullable(config.quote_char().charAt(0)).orElse('"'),
 									Optional.ofNullable(config.escape_char().charAt(0)).orElse('\\'));
-			_headers = new ArrayList<String>(Optionals.ofNullable(config.header_fields()));
+			csv.headers = new ArrayList<String>(Optionals.ofNullable(config.header_fields()));
 			
-			Optional.ofNullable(config.ignore_regex()).ifPresent(regex -> _ignore_regex = Pattern.compile(regex));
+			csv.type_map = !config.non_string_types().isEmpty()
+					? config.non_string_types()
+					: config.non_string_type_map().entrySet().stream() // (reverse the order of the map to get fieldname -> type)
+							.<Tuple2<String, String>>flatMap(kv -> kv.getValue().stream().map(v -> Tuples._2T(kv.getKey(), v)))
+							.collect(Collectors.toMap(t2 -> t2._2().toString(), t2 -> t2._1().toString()));								
+					
+			Optional.ofNullable(config.ignore_regex()).ifPresent(regex -> csv.ignore_regex = Pattern.compile(regex));
+			_csv.set(csv);
 		}
 		try {
+			final CsvState csv = _csv.get();
 			final String line = new String(evt.getBody(), "UTF-8");
-			if ((null != _ignore_regex) && _ignore_regex.matcher(line).matches()) {
+			if ((null != csv.ignore_regex) && csv.ignore_regex.matcher(line).matches()) {
 				return Optional.empty();
 			}
-			final String[] fields = _parser.parseLine(line);
+			final String[] fields = csv.parser.parseLine(line);
 			final ObjectNode ret_val = StreamUtils.zipWithIndex(Arrays.stream(fields))
 				.reduce(_mapper.createObjectNode(), 
 						(acc, v) -> {
-							if (v.getIndex() >= _headers.size()) return acc;
+							if (v.getIndex() >= csv.headers.size()) return acc;
 							else {
-								final String field_name = _headers.get((int)v.getIndex());
+								final String field_name = csv.headers.get((int)v.getIndex());
 								if ((null == field_name) || field_name.isEmpty()) {
 									return acc;
 								}
@@ -205,10 +266,96 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 						},
 						(acc1, acc2) -> acc1); // (can't occur in practice)
 			;
-			return Optional.of(ret_val);
+			if (!ret_val.has(_time_field)) { // (append the time field)
+				return Optional.of(ret_val.put(_time_field, LocalDateTime.now().toString()));
+			}
+			else return Optional.of(ret_val);
 		}
 		catch (Exception e) {
 			return Optional.empty();
 		}		
+	}
+	
+	/** State object for direct output
+	 * @author Alex
+	 */
+	public static class DirectOutputState {
+		public Optional<IDataWriteService<JsonNode>> search_index_service;
+		public Optional<IDataWriteService.IBatchSubservice<JsonNode>> batch_search_index_service;
+		public Optional<IDataWriteService<JsonNode>> storage_service;
+		public Optional<IDataWriteService.IBatchSubservice<JsonNode>> batch_storage_service;
+		public boolean also_stream;
+	}
+	final protected SetOnce<DirectOutputState> _direct = new SetOnce<>(); 
+	
+	/** Outputs data directly into the Aleph2 data services without going via batch or streaming enrichment
+	 * @param json
+	 * @param config
+	 */
+	protected void directOutput(final JsonNode json, FlumeBucketConfigBean config, final DataBucketBean bucket) {
+		
+		// Lazy initialization
+		
+		if (!_direct.isSet()) { 
+			final DirectOutputState direct = new DirectOutputState();
+			final Optional<ISearchIndexService> search_index_service = 
+					(config.output().direct_output().contains("search_index_service") 
+							? _context.getServiceContext().getSearchIndexService()
+							: Optional.empty());
+			
+			direct.search_index_service = 
+					search_index_service
+						.flatMap(IDataServiceProvider::getDataService)
+						.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.empty(), Optional.empty()))
+						;
+			
+			direct.batch_search_index_service = direct.search_index_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+			
+			final Optional<IStorageService> storage_service = 
+					(config.output().direct_output().contains("storage_service")
+							? Optional.of(_context.getServiceContext().getStorageService())
+							: Optional.empty());
+					
+			direct.storage_service = 
+					storage_service
+						.flatMap(IDataServiceProvider::getDataService)
+						.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.empty(), Optional.empty()))
+						;
+
+			direct.batch_storage_service = direct.storage_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+			
+			direct.also_stream = config.output().direct_output().contains("stream");
+					
+			_direct.set(direct);
+		}
+		final DirectOutputState direct = _direct.get();
+		
+		// Search index service
+		
+		direct.search_index_service.ifPresent(search_index_service -> {
+			if (direct.batch_search_index_service.isPresent()) {
+				direct.batch_search_index_service.get().storeObject(json);
+			}
+			else {
+				search_index_service.storeObject(json);
+			}
+		});
+		
+		// Storage service
+		
+		direct.storage_service.ifPresent(storage_service -> {
+			if (direct.batch_storage_service.isPresent()) {
+				direct.batch_storage_service.get().storeObject(json);
+			}
+			else {
+				storage_service.storeObject(json);
+			}
+		});
+
+		// Streaming
+		
+		if (direct.also_stream) {
+			_context.sendObjectToStreamingPipeline(Optional.empty(), json);
+		}
 	}
 }

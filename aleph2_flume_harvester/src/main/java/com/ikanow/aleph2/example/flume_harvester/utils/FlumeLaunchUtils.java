@@ -30,6 +30,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import scala.Tuple2;
 
 import com.google.common.collect.ImmutableSet;
@@ -48,6 +51,7 @@ import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeGlobalConfigBea
  * @author alex
  */
 public class FlumeLaunchUtils {
+	final static protected Logger _logger = LogManager.getLogger();
 
 	/** Launches a process, returns any error in _1(), the pid in _2()
 	 * @param bucket
@@ -205,7 +209,7 @@ public class FlumeLaunchUtils {
 				config.map(cfg -> cfg.output()).map(output -> output.direct_output()).orElse(Collections.emptySet())
 					.stream()
 					.flatMap(s -> Patterns.match(s).<Stream<Class<? extends IUnderlyingService>>>andReturn()
-											.when(ss -> ss.equalsIgnoreCase("search_index_schema"), __ -> Stream.of(ISearchIndexService.class))
+											.when(ss -> ss.equalsIgnoreCase("search_index_service"), __ -> Stream.of(ISearchIndexService.class))
 											//(others are provided)
 											.otherwise(__ -> Stream.empty())
 											)
@@ -216,6 +220,7 @@ public class FlumeLaunchUtils {
 					)
 					.build()
 					;
+		
 		return extra_services.isEmpty() ? Optional.empty() : Optional.of(extra_services);
 	}
 }
