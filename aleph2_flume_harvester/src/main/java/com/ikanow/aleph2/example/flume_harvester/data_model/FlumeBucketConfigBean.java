@@ -26,6 +26,7 @@ import java.util.Set;
  */
 public class FlumeBucketConfigBean {
 
+	public InputConfig input() { return input; }
 	public String substitution_prefix() { return substitution_prefix; }
 	public Map<String, String> flume_config() { return flume_config; }
 	public Map<String, Object> morphlines_config() { return morphlines_config; }
@@ -33,6 +34,23 @@ public class FlumeBucketConfigBean {
 	public String morphlines_config_str() { return morphlines_config_str; }
 	public OutputConfig output() { return output; }
 	
+	public static class InputConfig {
+		public static class SpoolDirConfig {
+			public boolean enabled() { return enabled == null ? true : enabled; }
+			public String path() { return path; }
+			public String tracker_dir() { return tracker_dir; }
+			public String ignore_pattern() { return ignore_pattern; }
+			public boolean delete_on_ingest() { return Optional.ofNullable(delete_on_ingest).orElse(true); }
+			
+			private Boolean enabled;
+			private String path;
+			private String tracker_dir;
+			private String ignore_pattern;
+			private Boolean delete_on_ingest;
+		}		
+		public List<SpoolDirConfig> spool_dirs() { return Optional.ofNullable(spool_dirs).map(Collections::unmodifiableList).orElse(Collections.emptyList()); }
+		private List<SpoolDirConfig> spool_dirs;
+	}
 	public static class OutputConfig {
 		public static class JsonConfig {
 			public boolean enabled() { return enabled == null ? true : enabled; }
@@ -75,6 +93,7 @@ public class FlumeBucketConfigBean {
 		private String add_time_with_name;
 	}
 	
+	private InputConfig input;
 	private OutputConfig output;
 	private String substitution_prefix;
 	private Map<String, String> flume_config;

@@ -17,15 +17,22 @@ package com.ikanow.aleph2.example.flume_harvester.utils;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
+import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.UuidUtils;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
+import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean.InputConfig.SpoolDirConfig;
 
 /** Utilities for building Flume agent configurations
  * @author alex
@@ -43,6 +50,8 @@ public class FlumeUtils {
 	 */
 	public static Optional<String> createMorphlinesConfig(final FlumeBucketConfigBean bucket_config)
 	{
+		//TODO (ALEPH-10): security
+		
 		return Optional.of(Optional.ofNullable(bucket_config.morphlines_config_str()))
 						.map(opt -> opt.map(ss -> ss + "\n").orElse(""))
 						.map(s -> s + 
@@ -55,18 +64,74 @@ public class FlumeUtils {
 						;
 	}
 	
-	//TODO: user has to spec aleph2_sink (can add the tech info at the end I think)
-	
-	/** Creates the flume config
+	/** Auto-generates the flume config from an input block
 	 * @param bucket_config
 	 * @param morphlines_config_path
 	 * @return
 	 */
-	public static String createFlumeConfig(String agent_name, 
-											final FlumeBucketConfigBean bucket_config, 
+	public static FlumeBucketConfigBean createAutoFlumeConfig(final FlumeBucketConfigBean bucket_config) {
+		//TODO (ALEPH-10): eventually add support for additiona short cuts here
+		//TODO (ALEPH-10): security
+		
+		final Collection<SpoolDirConfig> dirs = Optional.ofNullable(bucket_config.input()).map(i -> Optionals.ofNullable(i.spool_dirs()))
+												.orElse(Collections.emptyList())
+												.stream()
+												.filter(SpoolDirConfig::enabled) // (defaults to true)
+												.collect(Collectors.toList())
+												;
+		final AtomicInteger counter = new AtomicInteger(0); 
+		
+		if (!dirs.isEmpty()) {
+			final ImmutableMap<String, String> new_flume_builder
+				= dirs.stream()
+						.reduce(
+								ImmutableMap.<String, String>builder()
+									// defaults
+									.put("channels", "mem")
+									.put("channels:mem:capacity", "1000")
+									.put("channels:mem:transactionCapacity", "100")
+									.put("channels:mem:type", "memory")
+								,
+								(acc, v) -> {
+									final int count = counter.incrementAndGet();
+									return acc
+											.put("sources:file_in_" + count + ":type", "spooldir")
+											.put("sources:file_in_" + count + ":channels", "mem")
+											.put("sources:file_in_" + count + ":deletePolicy", v.delete_on_ingest() ? "immediate" : "never")
+											.put("sources:file_in_" + count + ":spoolDir", v.path())
+											.put("sources:file_in_" + count + ":ignorePattern", Optional.ofNullable(v.ignore_pattern()).orElse("^$"));
+								}
+								,
+								(acc1, acc2) -> acc1 // (can't happen in practice)	
+								)
+								.put("sources", StreamUtils.zipWithIndex(dirs.stream()).map(i -> ("file_in_" + (1+i.getIndex()))).collect(Collectors.joining(" ")))
+								.build();
+								;
+
+			// Clone the config with the new flume config
+			return BeanTemplateUtils.clone(bucket_config).with(FlumeBucketConfigBean::flume_config, new_flume_builder).done();
+		}
+		else { // Leave unchanged
+			return bucket_config;
+		}		
+	}
+	
+	
+	/** Creates the flume config
+	 * @param aagent_name
+	 * @param bucket_config
+	 * @param context_signature
+	 * @param morphlines_config_path
+	 * @return
+	 */
+	public static String createFlumeConfig(final String agent_name, 
+											final FlumeBucketConfigBean bucket_config_in, 
 											final String context_signature,
 											final Optional<String> morphlines_config_path)
 	{
+		//TODO (ALEPH-10): security
+		final FlumeBucketConfigBean bucket_config = createAutoFlumeConfig(bucket_config_in);
+		
 		final String sub_prefix = Optional.ofNullable(bucket_config.substitution_prefix()).orElse("$$$$");
 		final String agent_prefix = agent_name + ".";
 		
