@@ -72,6 +72,7 @@ public class ExampleClientService {
 		
 		_core_mgmt_db = _context.getCoreManagementDbService();
 		// One annoyance that we're working on is that you can't access some of the services' methods in the constructor, so you have to do something like this
+		// ModuleUtils.getAppInjector().thenAccept(__ -> _bucket_crud_service = _core_mgmt_db.readOnlyVersion().getBucketCrudService())
 	}
 	
 	/** Illustrate use of the CRUD service
