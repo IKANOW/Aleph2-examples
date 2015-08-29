@@ -60,6 +60,7 @@ import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBea
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean.OutputConfig.JsonConfig;
 import com.ikanow.aleph2.example.flume_harvester.utils.FlumeUtils;
 
+import fj.data.Either;
 import fj.data.Validation;
 
 /** Harvest sink - will provide some basic parsing (and maybe JS manipulation functionality in the future)
@@ -147,7 +148,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 					this.directOutput(json_event, _config.get(), _bucket);
 				}
 				else { //TODO: streaming vs batch 				
-					_context.sendObjectToStreamingPipeline(Optional.empty(), json_event);
+					_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json_event));
 				}
 			});
 		
@@ -425,7 +426,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		// Streaming
 		
 		if (direct.also_stream) {
-			_context.sendObjectToStreamingPipeline(Optional.empty(), json);
+			_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json));
 		}
 	}
 }

@@ -42,6 +42,8 @@ import com.ikanow.aleph2.data_model.utils.CrudUtils;
 import com.ikanow.aleph2.example.external_harvester.data_model.GlobalConfigBean;
 import com.ikanow.aleph2.example.external_harvester.data_model.ProcessInfoBean;
 
+import fj.data.Either;
+
 public class ExternalProcessLaunchService {
 	final static Logger _logger = LogManager.getLogger();
 
@@ -102,7 +104,7 @@ public class ExternalProcessLaunchService {
 				// Send an object to kafka
 				final JsonNode json = mapper.createObjectNode().put("@timestamp", new Date().getTime()).put("test_str", "test" + i).put("test_int", i);
 				_logger.info("Sending object to kafka: " + json);
-				context.sendObjectToStreamingPipeline(Optional.empty(), json);
+				context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json));
 			}			
 			_logger.info("(sleeping: " + i + ")");
 			try { Thread.sleep(10L*1000L); } catch (Exception e) {}

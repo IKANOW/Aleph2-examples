@@ -22,6 +22,7 @@ import java.util.Optional;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
 
+import fj.data.Either;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -54,7 +55,7 @@ public class SampleOutputBolt extends BaseRichBolt {
 		try {
 			//System.out.println("sending: " + parsed_entry.toString() + " to stream");			
 			IHarvestContext harvest_context = ContextUtils.getHarvestContext(harvest_signature);
-			harvest_context.sendObjectToStreamingPipeline(Optional.empty(), parsed_entry);
+			harvest_context.sendObjectToStreamingPipeline(Optional.empty(), Either.right(parsed_entry));
 			
 		} catch (Exception e) {
 			//TODO handle failing to get harvest context
