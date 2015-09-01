@@ -29,6 +29,7 @@ public class FlumeBucketConfigBean {
 	public InputConfig input() { return input; }
 	public String substitution_prefix() { return substitution_prefix; }
 	public Map<String, String> flume_config() { return flume_config; }
+	public Map<String, Object> flume_config_test_overrides() { return flume_config_test_overrides; } // (use {} to delete a field from flume_config)
 	public Map<String, Object> morphlines_config() { return morphlines_config; }
 	public String flume_config_str() { return flume_config_str; }
 	public String morphlines_config_str() { return morphlines_config_str; }
@@ -38,12 +39,14 @@ public class FlumeBucketConfigBean {
 		public static class SpoolDirConfig {
 			public boolean enabled() { return enabled == null ? true : enabled; }
 			public String path() { return path; }
+			public String test_src_path() { return test_src_path; }
 			public String tracker_dir() { return tracker_dir; }
 			public String ignore_pattern() { return ignore_pattern; }
 			public boolean delete_on_ingest() { return Optional.ofNullable(delete_on_ingest).orElse(true); }
 			
 			private Boolean enabled;
 			private String path;
+			private String test_src_path;
 			private String tracker_dir;
 			private String ignore_pattern;
 			private Boolean delete_on_ingest;
@@ -97,6 +100,7 @@ public class FlumeBucketConfigBean {
 	private OutputConfig output;
 	private String substitution_prefix;
 	private Map<String, String> flume_config;
+	private Map<String, Object> flume_config_test_overrides;
 	private Map<String, Object> morphlines_config;	
 	private String flume_config_str;
 	private String morphlines_config_str;

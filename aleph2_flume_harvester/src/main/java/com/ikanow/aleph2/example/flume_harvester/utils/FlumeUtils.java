@@ -15,19 +15,28 @@
  ******************************************************************************/
 package com.ikanow.aleph2.example.flume_harvester.utils;
 
+import java.io.File;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.apache.commons.io.FileUtils;
 
 import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
+import com.ikanow.aleph2.data_model.utils.BucketUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.UuidUtils;
@@ -64,21 +73,70 @@ public class FlumeUtils {
 						;
 	}
 	
-	/** Auto-generates the flume config from an input block
+	/** Utility to get the list of spool dirs
 	 * @param bucket_config
-	 * @param morphlines_config_path
 	 * @return
 	 */
-	public static FlumeBucketConfigBean createAutoFlumeConfig(final FlumeBucketConfigBean bucket_config) {
+	public static Collection<SpoolDirConfig> getSpoolDirs(final FlumeBucketConfigBean bucket_config) {
+		final Collection<SpoolDirConfig> dirs = Optional.ofNullable(bucket_config.input()).map(i -> Optionals.ofNullable(i.spool_dirs()))
+				.orElse(Collections.emptyList())
+				.stream()
+				.filter(SpoolDirConfig::enabled) // (defaults to true)
+				.collect(Collectors.toList())
+				;		
+		return dirs;
+	}
+	
+	/** Utility to get the name of the test output dir
+	 * @param bucket
+	 * @return
+	 */
+	public static String getTestDirSuffix(final DataBucketBean bucket) {
+		return BucketUtils.getUniqueSignature(bucket.full_name(), Optional.empty());
+	}
+	
+	/** Utility to get the name of the tracking dir
+	 * @param bucket
+	 * @return
+	 */
+	public static String getTrackingDirSuffix(final DataBucketBean bucket) {
+		return ".spool_" + bucket._id();
+	}
+	
+	/** Utility to delete generate directories
+	 * @param bucket
+	 * @param spool_dirs
+	 */
+	public static void deleteGeneratedDirs(final DataBucketBean bucket, final FlumeBucketConfigBean bucket_config, boolean test_mode) {
+		deleteGeneratedDirs(bucket, getSpoolDirs(bucket_config), test_mode);
+	}
+	
+	/** Utility to delete generate directories
+	 * @param bucket
+	 * @param spool_dirs
+	 */
+	public static void deleteGeneratedDirs(final DataBucketBean bucket, final Collection<SpoolDirConfig> spool_dirs, boolean test_mode) {
+		spool_dirs.stream()
+			.forEach(v -> {
+				if (test_mode) {
+					FileUtils.deleteQuietly(new File(v.path() + "/" + getTestDirSuffix(bucket)));
+				}
+				FileUtils.deleteQuietly(new File(v.path() + "/" + getTrackingDirSuffix(bucket)));
+			});
+	}
+	
+	/** Auto-generates the flume config from an input block
+	 *  If it's in test mode it also deletes the trackerDir (so this can be used for purging)
+	 * @param bucket_config
+	 * @param morphlines_config_path
+	 * @param test_mode
+	 * @return
+	 */
+	public static FlumeBucketConfigBean createAutoFlumeConfig(final DataBucketBean bucket, final FlumeBucketConfigBean bucket_config, final boolean test_mode) {
 		//TODO (ALEPH-10): eventually add support for additiona short cuts here
 		//TODO (ALEPH-10): security
 		
-		final Collection<SpoolDirConfig> dirs = Optional.ofNullable(bucket_config.input()).map(i -> Optionals.ofNullable(i.spool_dirs()))
-												.orElse(Collections.emptyList())
-												.stream()
-												.filter(SpoolDirConfig::enabled) // (defaults to true)
-												.collect(Collectors.toList())
-												;
+		final Collection<SpoolDirConfig> dirs = getSpoolDirs(bucket_config);
 		final AtomicInteger counter = new AtomicInteger(0); 
 		
 		if (!dirs.isEmpty()) {
@@ -94,11 +152,17 @@ public class FlumeUtils {
 								,
 								(acc, v) -> {
 									final int count = counter.incrementAndGet();
+									
+									// (some tidy up that occurs in test mode)
 									return acc
 											.put("sources:file_in_" + count + ":type", "spooldir")
 											.put("sources:file_in_" + count + ":channels", "mem")
-											.put("sources:file_in_" + count + ":deletePolicy", v.delete_on_ingest() ? "immediate" : "never")
-											.put("sources:file_in_" + count + ":spoolDir", v.path())
+											.put("sources:file_in_" + count + ":trackerDir", getTrackingDirSuffix(bucket))
+											.put("sources:file_in_" + count + ":deletePolicy", (v.delete_on_ingest() ? "immediate" : "never"))
+											.put("sources:file_in_" + count + ":spoolDir", 
+													test_mode
+													? v.path() + "/" + getTestDirSuffix(bucket)
+													: v.path())
 											.put("sources:file_in_" + count + ":ignorePattern", Optional.ofNullable(v.ignore_pattern()).orElse("^$"));
 								}
 								,
@@ -125,21 +189,44 @@ public class FlumeUtils {
 	 * @return
 	 */
 	public static String createFlumeConfig(final String agent_name, 
+											final DataBucketBean bucket,
 											final FlumeBucketConfigBean bucket_config_in, 
 											final String context_signature,
-											final Optional<String> morphlines_config_path)
+											final Optional<String> morphlines_config_path,
+											final boolean test_mode)
 	{
 		//TODO (ALEPH-10): security
-		final FlumeBucketConfigBean bucket_config = createAutoFlumeConfig(bucket_config_in);
+		final FlumeBucketConfigBean bucket_config = createAutoFlumeConfig(bucket, bucket_config_in, test_mode);
+		
+		// Handle test mode changes (a set of user overrides)
+		final Map<String, String> flume_config = Lambdas.get(() -> {
+			if (test_mode) { // overwrite using test overwrites
+				return Stream.concat(
+						Optional.ofNullable(bucket_config.flume_config()).orElse(Collections.emptyMap()).entrySet().stream(),
+						Optional.ofNullable(bucket_config.flume_config_test_overrides()).orElse(Collections.emptyMap()).entrySet().stream()
+					)
+					.collect(
+							() -> new HashMap<String, String>(), 
+							(acc, kv) -> { 
+								final String val = kv.getValue() instanceof String ? (String) kv.getValue() : null;
+								acc.put(kv.getKey(), val); 
+							},
+							(acc1, acc2) ->  acc1.putAll(acc2)
+							)
+					;
+			}
+			else return bucket_config.flume_config();
+		});
+		
 		
 		final String sub_prefix = Optional.ofNullable(bucket_config.substitution_prefix()).orElse("$$$$");
 		final String agent_prefix = agent_name + ".";
 		
-		final boolean sink_present = Optional.ofNullable(bucket_config.flume_config())
+		final boolean sink_present = Optional.ofNullable(flume_config)
 												.map(m -> m.containsKey("sinks"))
 												.orElse(false);
 				
-		final String[] channels = Optional.ofNullable(bucket_config.flume_config())
+		final String[] channels = Optional.ofNullable(flume_config)
 									.map(m -> m.get("channels"))
 									.map(c -> c.split("\\s+"))
 									.orElse(new String[0]);
@@ -150,7 +237,7 @@ public class FlumeUtils {
 		}
 		
 		//(not needed currently)
-//		final Set<String> sinks = Optional.ofNullable(bucket_config.flume_config())
+//		final Set<String> sinks = Optional.ofNullable(flume_config)
 //											.map(m -> (String) m.get("sinks"))
 //											.map(s -> Arrays.stream(s.split("\\s+"))
 //															.collect(Collectors.toSet()))
@@ -159,8 +246,9 @@ public class FlumeUtils {
 		return Optional.of(Optional.ofNullable(bucket_config.flume_config_str()))
 						.map(opt -> opt.map(ss -> ss + "\n").orElse(""))
 						.map(s -> s + 
-								Optional.ofNullable(bucket_config.flume_config())
+								Optional.ofNullable(flume_config)
 										.map(cfg -> cfg.entrySet().stream()
+														.filter(kv -> null != kv.getValue()) // (fields nulled out by the test override)
 														.map(kv -> agent_prefix 
 																+ decodeKey(kv.getKey())
 																+ "="
@@ -205,6 +293,19 @@ public class FlumeUtils {
 		return Lambdas.wrap_u(() -> URLDecoder.decode(encoded_sig, "UTF-8")).get();
 	}
 
+	//////////////////////////////////////////////////////////////////////////////
+	
+	public static List<FlumeBucketConfigBean> getAgents(final DataBucketBean bucket) {
+		return Optional.ofNullable(bucket.harvest_configs()).orElse(Collections.emptyList())
+				.stream()
+				.limit(1) //TODO (ALEPH-10): see updateAgentConfig only handle one at a time
+				.filter(hcfg -> Optional.ofNullable(hcfg.enabled()).orElse(true)) // enabled
+				.filter(hcfg -> null != hcfg.config()) // config enabled
+				.map(hcfg -> BeanTemplateUtils.from(hcfg.config(), FlumeBucketConfigBean.class).get())
+				.collect(Collectors.toList())
+				;
+	}
+	
 	//////////////////////////////////////////////////////////////////////////////
 	
 	// CONFIGURATION NAME

@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.example.flume_harvester.data_model.FlumeBucketConfigBean;
 
@@ -46,16 +47,17 @@ public class TestFlumeUtils {
 	public void test_mainFlumeConfig() throws IOException {
 	
 		final String json_test1 = Resources.toString(Resources.getResource("TestFlumeUtils_flume1.json"), Charsets.UTF_8);
-		final String json_test_results_1 = Resources.toString(Resources.getResource("TestFlumeUtils_flume1_results.properties"), Charsets.UTF_8).replaceAll("[\r\n]+", "\n");
+		final String json_test_results_1 = Resources.toString(Resources.getResource("TestFlumeUtils_flume1_results.properties"), Charsets.UTF_8).replaceAll("[\r\n]+", "\n").replaceAll("(?m)^\\s*#.*(?:\r?\n)?", "");
 		final String json_test2 = Resources.toString(Resources.getResource("TestFlumeUtils_flume2.json"), Charsets.UTF_8);
-		final String json_test_results_2 = Resources.toString(Resources.getResource("TestFlumeUtils_flume2_results.properties"), Charsets.UTF_8).replaceAll("[\r\n]+", "\n");
+		final String json_test_results_2 = Resources.toString(Resources.getResource("TestFlumeUtils_flume2_results.properties"), Charsets.UTF_8).replaceAll("[\r\n]+", "\n").replaceAll("(?m)^\\s*#.*(?:\r?\n)?", "");
 		
+		final DataBucketBean bucket = BeanTemplateUtils.build(DataBucketBean.class).with(DataBucketBean::_id, "test1").with(DataBucketBean::full_name, "/test/1").done().get();
 		final FlumeBucketConfigBean bucket_config_1 = BeanTemplateUtils.from(json_test1, FlumeBucketConfigBean.class).get();
-		assertEquals(json_test_results_1, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed_1", bucket_config_1, "test_signature", Optional.empty())
+		assertEquals(json_test_results_1, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed_1", bucket, bucket_config_1, "test_signature", Optional.empty(), false)
 				.replace(HostInformationUtils.getHostname(), "HOSTNAME").replaceAll("[\r\n]+", "\n"));
 		
 		final FlumeBucketConfigBean bucket_config_2 = BeanTemplateUtils.from(json_test2, FlumeBucketConfigBean.class).get();
-		assertEquals(json_test_results_2, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed_2", bucket_config_2, "test_signature", Optional.of("/test/morphline/path"))
+		assertEquals(json_test_results_2, FlumeUtils.createFlumeConfig("test_ext_c1651d4c69ed_2", bucket, bucket_config_2, "test_signature", Optional.of("/test/morphline/path"), false)
 				.replaceAll("[\r\n]+", "\n"));
 	}
 	

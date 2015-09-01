@@ -1,6 +1,6 @@
 {
 	"substitution_prefix": "$2$",
-	"flume_config_str": "########################\n#TEST",
+	"flume_config_str": "test.field=test",
 	"flume_config": {
 		"sources": "file_in",
 		"channels": "mem",
