@@ -68,36 +68,37 @@ public class TestExampleClientService {
 	
 	@Test
 	public void test_doSomething() throws InterruptedException, ExecutionException {
-
-		// (non guice way of creating the test service)
-		
-		final ExampleClientService test_service = new ExampleClientService(_context);
-
-		// Here's an example of using generic access to a CRUD service
-		final ICrudService<JsonNode> json_crud1 =  _core_mgmt_db.getPerLibraryState(ExampleBean.class, ExampleClientService.CRUD_LOCATION, Optional.of("test1")).getRawService();
-		json_crud1.deleteDatastore().get(); // ensure it's empty
-		
-		final ICrudService<JsonNode> json_crud2 =  _core_mgmt_db.getPerLibraryState(JsonNode.class, ExampleClientService.CRUD_LOCATION, Optional.of("test2"));
-		json_crud2.deleteDatastore().get(); // ensure it's empty
+		//cleaning up our test dbs, to ensure they are empty
+		_core_mgmt_db.getPerLibraryState(ExampleBean.class, ExampleClientService.CRUD_LOCATION, Optional.of("test1")).deleteDatastore().get();
+		_core_mgmt_db.getPerLibraryState(JsonNode.class, ExampleClientService.CRUD_LOCATION, Optional.of("test2")).deleteDatastore().get();
 		
 		// Get the directory and check it's empy
 		final ICrudService<AssetStateDirectoryBean> collections = _core_mgmt_db.getPerLibraryState(AssetStateDirectoryBean.class, ExampleClientService.CRUD_LOCATION, Optional.empty());
-		// (json_crud1 and json_crud2 are now dead)
-		
 		assertEquals("Starting state cleared", 0, collections.countObjects().get().intValue());
 		
-		test_service.doSomething("test1", "test_id_1", "value1").get();
-		
-		assertEquals("Added a collection", 1, collections.countObjects().get().intValue());
+		// (non guice way of creating the test service)		
+		final ExampleClientService test_service = new ExampleClientService(_context);
 
+		// Here's an example of using generic access to a CRUD service
+		//2 examples of crud pointing to test1
+		final ICrudService<ExampleBean> bean_crud1 =  _core_mgmt_db.getPerLibraryState(ExampleBean.class, ExampleClientService.CRUD_LOCATION, Optional.of("test1"));				
 		final ICrudService<JsonNode> json_crud1a =  _core_mgmt_db.getPerLibraryState(ExampleBean.class, ExampleClientService.CRUD_LOCATION, Optional.of("test1")).getRawService();
 		
-		assertEquals("Added an object to collection", 1, json_crud1a.countObjects().get().intValue());		
+		//crud pointing to test2
+		final ICrudService<JsonNode> json_crud2 =  _core_mgmt_db.getPerLibraryState(JsonNode.class, ExampleClientService.CRUD_LOCATION, Optional.of("test2"));
 		
+		//we now have 2 collections, even though we have 3 crud services
+		assertEquals("Added a collection", 2, collections.countObjects().get().intValue());
+		
+		//push something in test1
+		test_service.doSomething("test1", "test_id_1", "value1").get();					
+		assertEquals("Added an object to collection", 1, bean_crud1.countObjects().get().intValue());
+		assertEquals("Added an object to collection", 1, json_crud1a.countObjects().get().intValue());
+		assertEquals("Other collection is still empty", 0, json_crud2.countObjects().get().intValue());	
+		
+		//push something in test2
 		test_service.doSomething("test2", "test_id_2", "value2").get();
-		
+		assertEquals("Added an object to collection", 1, json_crud2.countObjects().get().intValue());		
 		assertEquals(Arrays.asList("test1", "test2"), test_service.enumerate_collections_sync());
-		
-		//etc
 	}	
 }
