@@ -15,11 +15,12 @@
  ******************************************************************************/
 package com.ikanow.aleph2.examples.client.services;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -33,8 +34,16 @@ import com.ikanow.aleph2.data_model.interfaces.data_services.IManagementDbServic
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.data_model.objects.shared.AssetStateDirectoryBean;
+import com.ikanow.aleph2.data_model.objects.shared.SharedLibraryBean;
+import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
+import com.ikanow.aleph2.data_model.utils.CrudUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
+import com.ikanow.aleph2.data_model.utils.UuidUtils;
+import com.ikanow.aleph2.data_model.utils.CrudUtils.BeanUpdateComponent;
+import com.ikanow.aleph2.data_model.utils.CrudUtils.QueryComponent;
 import com.ikanow.aleph2.examples.client.data_model.ExampleBean;
+import com.ikanow.aleph2.examples.client.data_model.ExampleComplexBean;
+import com.ikanow.aleph2.examples.client.data_model.ExampleSubBean;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
@@ -101,4 +110,55 @@ public class TestExampleClientService {
 		assertEquals("Added an object to collection", 1, json_crud2.countObjects().get().intValue());		
 		assertEquals(Arrays.asList("test1", "test2"), test_service.enumerate_collections_sync());
 	}	
+	
+	@Test
+	public void CRUDTest() throws InterruptedException, ExecutionException {
+		//this example runs through the crud operations on a more complex bean object
+		//first clear out the collection to make sure we are starting from scratch
+		final SharedLibraryBean CRUD_LOCATION = BeanTemplateUtils.build(SharedLibraryBean.class).with(SharedLibraryBean::path_name, "my_db").done().get();
+		_core_mgmt_db.getPerLibraryState(ExampleComplexBean.class, CRUD_LOCATION, Optional.of("test1")).deleteDatastore().get();
+	
+		//STEP 1: create the crud service so we can access our collection
+		final ICrudService<ExampleComplexBean> bean_crud = _core_mgmt_db.getPerLibraryState(ExampleComplexBean.class, CRUD_LOCATION, Optional.of("test1"));
+		assertEquals("Collection shoudl be empty", 0, bean_crud.countObjects().get().intValue());
+		
+		//STEP 2: create and insert a bean into collection
+		//create sub object
+		final ExampleSubBean sub_bean = BeanTemplateUtils.build(ExampleSubBean.class)
+				.with(ExampleSubBean::field1, "sub field 1")
+				.with(ExampleSubBean::field2, new Date())
+				.with(ExampleSubBean::field3, System.currentTimeMillis())
+				.done().get();
+		//create bean
+		final String id = UuidUtils.get().getRandomUuid();
+		final ExampleComplexBean bean = BeanTemplateUtils.build(ExampleComplexBean.class)
+				.with(ExampleComplexBean::_id, id)
+				.with(ExampleComplexBean::value, "some value")
+				.with(ExampleComplexBean::sub_object, sub_bean)
+				.done().get();
+		//insert
+		bean_crud.storeObject(bean).get();
+		
+		//STEP 3: find our bean in collection
+		//search via id
+		assertEquals("Retrieved bean should have this value", bean_crud.getObjectById(id).get().get().value(), "some value");
+		//search via query		
+		QueryComponent<ExampleComplexBean> query = CrudUtils.allOf(ExampleComplexBean.class)
+				.when(ExampleComplexBean::value, "some value");			
+		assertEquals("Retrieved bean should have this value", bean_crud.getObjectBySpec(query).get().get().value(), "some value");
+		
+		//STEP 4: update our bean
+		BeanUpdateComponent<ExampleComplexBean> update = CrudUtils.update(ExampleComplexBean.class)
+				.set(ExampleComplexBean::value, "some new value");
+		assertTrue(bean_crud.updateObjectById(id, update).get());
+		
+		//STEP 5: retrieve updated bean
+		QueryComponent<ExampleComplexBean> query1 = CrudUtils.allOf(ExampleComplexBean.class)
+				.when(ExampleComplexBean::value, "some new value");
+		assertEquals("Retrieved bean should have this value", bean_crud.getObjectBySpec(query1).get().get().value(), "some new value");
+		
+		//STEP 6: delete bean
+		bean_crud.deleteObjectById(id).get();
+		assertEquals("Collection should be empty now", bean_crud.countObjects().get().longValue(), 0L);		
+	}
 }
