@@ -390,7 +390,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 			direct.storage_service = 
 					storage_service
 						.flatMap(IDataServiceProvider::getDataService)
-						.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.empty(), Optional.empty()))
+						.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.of(IStorageService.StorageStage.processed.toString()), Optional.empty()))
 						;
 
 			direct.batch_storage_service = direct.storage_service.flatMap(IDataWriteService::getBatchWriteSubservice);
