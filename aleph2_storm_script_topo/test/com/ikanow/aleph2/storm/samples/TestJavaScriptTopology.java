@@ -131,7 +131,7 @@ public class TestJavaScriptTopology {
 		for (String ip : ips) {
 			String msg = "{\"ip\":\""+ip+"\"}";
 			// "{\"test\":\"test1\"}"
-			cds.produce(KafkaUtils.bucketPathToTopicName(test_bucket.full_name()), msg);
+			cds.produce(KafkaUtils.bucketPathToTopicName(test_bucket.full_name(), Optional.empty()), msg);
 			if(count>100){ break;}
 			count++;
 		}

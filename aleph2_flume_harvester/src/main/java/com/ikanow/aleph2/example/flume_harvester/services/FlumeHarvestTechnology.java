@@ -215,7 +215,9 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 				
 				@SuppressWarnings("unused")
 				final int stopped = removeAgentConfigs(new_bucket, 1);
-				FlumeLaunchUtils.killProcess(FlumeLaunchUtils.getPid(new_bucket)); //(safe side, always kill - should fail harmlessly if px already dead....)
+				
+				final Tuple2<String, Boolean> delete_result = FlumeLaunchUtils.killProcess(FlumeLaunchUtils.getPid(new_bucket)); 
+					//(safe side, always kill - should fail harmlessly if px already dead....)
 				
 				final List<Tuple2<String, File>> agent_paths = 
 						StreamUtils.zip(agents.stream(), Stream.iterate(1, i -> i+1), (a, b) -> Tuples._2T(a, b))
@@ -228,15 +230,15 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 																.collect(Collectors.toList());
 
 				if (err_pids.isEmpty()) {
-					return CompletableFuture.completedFuture(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "onNewSource", "Found no valid Flume configs"));									
+					return CompletableFuture.completedFuture(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "onNewSource", "Found no valid Flume configs " + delete_result._1()));									
 				}
 				else {
 					final Tuple2<String, String> err_pid = err_pids.get(0);
 					if (null != err_pid._1()) {
-						return CompletableFuture.completedFuture(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket error: " + err_pid._1()));				
+						return CompletableFuture.completedFuture(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket error: " + err_pid._1() + " " + delete_result._1()));				
 					}
 					else {
-						return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket launched: " + err_pid._2()));								
+						return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket launched: " + err_pid._2() + " " + delete_result._1()));								
 						
 					}
 				}

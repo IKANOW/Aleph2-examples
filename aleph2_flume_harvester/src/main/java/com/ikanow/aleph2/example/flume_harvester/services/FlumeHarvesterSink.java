@@ -81,40 +81,43 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	 */
 	@Override
 	public void configure(Context flume_context) {
-		_context = Lambdas.wrap_u(() ->
-					ContextUtils.getHarvestContext(
-							FlumeUtils.decodeSignature(flume_context.getString("context_signature", ""))))
-					.get();
-
-		_bucket = _context.getBucket().get();
-		
-		//DEBUG
-		//_logger.info("Bucket = " + BeanTemplateUtils.toJson(_bucket));
-		
-		// Get config from bucket 
-		_config = Optional.of(_bucket)
-							.map(b -> b.harvest_configs())
-							.filter(h -> !h.isEmpty())
-							.map(h -> h.iterator().next())
-							.map(hcfg -> hcfg.config())
-							.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
-							;
-
-		//DEBUG
-		//_logger.info("_config = " + _config.map(BeanTemplateUtils::toJson).map(JsonNode::toString).orElse("(not present)"));		
-		
-		//TODO: if temporal schema is enabled and has a time_field then use that if time field not manually set
-		_time_field = _config.flatMap(cfg -> Optionals.of(() -> cfg.output().add_time_with_name())).map(Optional::of) // prio #1: if manually specified
-								.orElse(Optionals.of(() -> _bucket.data_schema().temporal_schema())
-												.filter(schema -> Optional.ofNullable(schema.enabled()).orElse(true)) // prio #2: (but only if temporal enabled)...
-												.map(schema -> schema.time_field()) // ...use the time field
-										)
-				;
-		
-		_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field());
-		
-		//DEBUG
-		//_logger.info("_time_field = " + _time_field);		
+		try {
+			_context = Lambdas.wrap_u(() ->
+						ContextUtils.getHarvestContext(
+								FlumeUtils.decodeSignature(flume_context.getString("context_signature", ""))))
+						.get();
+	
+			_bucket = _context.getBucket().get();
+			
+			_logger.debug("Bucket = " + BeanTemplateUtils.toJson(_bucket));
+			
+			// Get config from bucket 
+			_config = Optional.of(_bucket)
+								.map(b -> b.harvest_configs())
+								.filter(h -> !h.isEmpty())
+								.map(h -> h.iterator().next())
+								.map(hcfg -> hcfg.config())
+								.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
+								;
+	
+			_logger.debug("_config = " + _config.map(BeanTemplateUtils::toJson).map(JsonNode::toString).orElse("(not present)"));		
+			
+			_time_field = _config.flatMap(cfg -> Optionals.of(() -> cfg.output().add_time_with_name())).map(Optional::of) // prio #1: if manually specified
+									.orElse(Optionals.of(() -> _bucket.data_schema().temporal_schema())
+													.filter(schema -> Optional.ofNullable(schema.enabled()).orElse(true)) // prio #2: (but only if temporal enabled)...
+													.map(schema -> schema.time_field()) // ...use the time field
+											)
+					;
+			
+			_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field());
+			
+			//DEBUG
+			_logger.debug("_time_field = " + _time_field);		
+		}
+		catch (Throwable t) {
+			_logger.error("Error initializing flume", t);
+			throw t;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -155,6 +158,9 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 			txn.commit();
 			status = Status.READY;
 		} catch (Throwable t) {
+			//DEBUG
+			//_logger.warn("Error", t);
+			
 			txn.rollback();
 
 			// Log exception, handle individual exceptions as needed
@@ -178,6 +184,9 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	 * @return
 	 */
 	protected Optional<JsonNode> getEventJson(final Event evt, final Optional<FlumeBucketConfigBean> config) {
+		if (null == evt) { // (seem to get lots of these)
+			return Optional.empty();
+		}
 		if (config.isPresent()) {
 			final FlumeBucketConfigBean cfg = config.get();
 			if (null != cfg.output()) {
@@ -364,69 +373,74 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	 * @param config
 	 */
 	protected void directOutput(final JsonNode json, FlumeBucketConfigBean config, final DataBucketBean bucket) {
-		
-		// Lazy initialization
-		
-		if (!_direct.isSet()) { 
-			final DirectOutputState direct = new DirectOutputState();
-			final Optional<ISearchIndexService> search_index_service = 
-					(config.output().direct_output().contains("search_index_service") 
-							? _context.getServiceContext().getSearchIndexService()
-							: Optional.empty());
+		try {
+			// Lazy initialization
 			
-			direct.search_index_service = 
-					search_index_service
-						.flatMap(IDataServiceProvider::getDataService)
-						.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.empty(), Optional.empty()))
-						;
+			if (!_direct.isSet()) { 
+				final DirectOutputState direct = new DirectOutputState();
+				final Optional<ISearchIndexService> search_index_service = 
+						(config.output().direct_output().contains("search_index_service") 
+								? _context.getServiceContext().getSearchIndexService()
+								: Optional.empty());
+				
+				direct.search_index_service = 
+						search_index_service
+							.flatMap(IDataServiceProvider::getDataService)
+							.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.empty(), Optional.empty()))
+							;
+				
+				direct.batch_search_index_service = direct.search_index_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+				
+				final Optional<IStorageService> storage_service = 
+						(config.output().direct_output().contains("storage_service")
+								? Optional.of(_context.getServiceContext().getStorageService())
+								: Optional.empty());
+						
+				direct.storage_service = 
+						storage_service
+							.flatMap(IDataServiceProvider::getDataService)
+							.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.of(IStorageService.StorageStage.processed.toString()), Optional.empty()))
+							;
+	
+				direct.batch_storage_service = direct.storage_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+				
+				direct.also_stream = config.output().direct_output().contains("stream");
+						
+				_direct.set(direct);
+			}
+			final DirectOutputState direct = _direct.get();
 			
-			direct.batch_search_index_service = direct.search_index_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+			// Search index service
 			
-			final Optional<IStorageService> storage_service = 
-					(config.output().direct_output().contains("storage_service")
-							? Optional.of(_context.getServiceContext().getStorageService())
-							: Optional.empty());
-					
-			direct.storage_service = 
-					storage_service
-						.flatMap(IDataServiceProvider::getDataService)
-						.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.of(IStorageService.StorageStage.processed.toString()), Optional.empty()))
-						;
-
-			direct.batch_storage_service = direct.storage_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+			direct.search_index_service.ifPresent(search_index_service -> {
+				if (direct.batch_search_index_service.isPresent()) {
+					direct.batch_search_index_service.get().storeObject(json);
+				}
+				else {
+					search_index_service.storeObject(json);
+				}
+			});
 			
-			direct.also_stream = config.output().direct_output().contains("stream");
-					
-			_direct.set(direct);
+			// Storage service
+			
+			direct.storage_service.ifPresent(storage_service -> {
+				if (direct.batch_storage_service.isPresent()) {
+					direct.batch_storage_service.get().storeObject(json);
+				}
+				else {
+					storage_service.storeObject(json);
+				}
+			});
+	
+			// Streaming
+			
+			if (direct.also_stream) {
+				_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json));
+			}
 		}
-		final DirectOutputState direct = _direct.get();
-		
-		// Search index service
-		
-		direct.search_index_service.ifPresent(search_index_service -> {
-			if (direct.batch_search_index_service.isPresent()) {
-				direct.batch_search_index_service.get().storeObject(json);
-			}
-			else {
-				search_index_service.storeObject(json);
-			}
-		});
-		
-		// Storage service
-		
-		direct.storage_service.ifPresent(storage_service -> {
-			if (direct.batch_storage_service.isPresent()) {
-				direct.batch_storage_service.get().storeObject(json);
-			}
-			else {
-				storage_service.storeObject(json);
-			}
-		});
-
-		// Streaming
-		
-		if (direct.also_stream) {
-			_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json));
+		catch (Throwable t) {
+			//DEBUG
+			//_logger.warn("Error", t);
 		}
 	}
 }
