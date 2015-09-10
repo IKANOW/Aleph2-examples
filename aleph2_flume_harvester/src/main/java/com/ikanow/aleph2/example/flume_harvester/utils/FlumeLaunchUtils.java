@@ -128,11 +128,21 @@ public class FlumeLaunchUtils {
 	 * @param pid
 	 */
 	public static Tuple2<String,Boolean> killProcess(final String pid) {
+		return killProcess(pid, 15);		
+	}
+	/** Kills the specified process
+	 * @param pid
+	 * @param signal 
+	 */
+	public static Tuple2<String,Boolean> killProcess(final String pid, int signal) {
 		try {
+			if (null == pid) {
+				return Tuples._2T("", true); // (no pid, nothing to do)
+			}
 			if (!isRunning(pid)) {
 				return Tuples._2T("(process " + pid + " already deleted)", true);
 			}
-			final Process px = new ProcessBuilder(Arrays.asList("kill", "-15", pid))
+			final Process px = new ProcessBuilder(Arrays.asList("kill", ("-" + Integer.toString(signal)), pid))
 			//.redirectErrorStream(true).inheritIO()
 									.start()
 			;
@@ -143,7 +153,13 @@ public class FlumeLaunchUtils {
 				}
 			}
 			if (!px.isAlive()) {
-				return Tuples._2T("Tried to kill " + pid + ": success = " + px.exitValue(), 0 == px.exitValue());
+				final boolean is_running = isRunning(pid);
+				if (is_running && (9 != signal)) {
+					return killProcess(pid, 9); // (if -15 fails try a -9, seemed to work during CLI experimentation)
+				}
+				else { // done
+					return Tuples._2T("Tried to kill " + pid + ": success = " + px.exitValue() + "; is_running = " + is_running, !is_running);
+				}
 			}
 			else {
 				return Tuples._2T("Timed out trying to kill: " + pid, true);				
