@@ -52,55 +52,29 @@
   		<version>0.0.1-SNAPSHOT</version>
   		<scope>provided</scope>
   	</dependency>
-  	<!-- <dependency>
-  		<groupId>com.ikanow.aleph2</groupId>
-  		<artifactId>aleph2_harvest_context_library</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-  		<scope>test</scope>
-  	</dependency>
-  	<dependency>
-  		<groupId>com.ikanow.aleph2</groupId>
-  		<artifactId>aleph2_core_distributed_services_library</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-		<scope>test</scope>  		
-  	</dependency>
-  	<dependency>
-  		<groupId>com.ikanow.aleph2</groupId>
-  		<artifactId>aleph2_management_db_service</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-		<scope>test</scope>  		
-  	</dependency>
-   	<dependency>
-  		<groupId>com.ikanow.aleph2</groupId>
-  		<artifactId>aleph2_storage_service_hdfs</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-	    <scope>test</scope>
-  	</dependency>  	
-  	<dependency>
-  		<groupId>com.ikanow.aleph2</groupId>
-  		<artifactId>aleph2_management_db_service_mongodb</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-	    <scope>test</scope>
-  	</dependency> -->
   	<dependency>
   <groupId>org.apache.storm</groupId>
   <artifactId>storm-core</artifactId>
   <version>0.9.3</version>
+  <scope>provided</scope>
 </dependency>
   	<dependency>
 	<groupId>jline</groupId>
 	<artifactId>jline</artifactId>
 	<version>2.11</version>
+  <scope>provided</scope>
 </dependency>
 <dependency>
 	<groupId>org.slf4j</groupId>
 	<artifactId>slf4j-api</artifactId>
 	<version>1.7.12</version>
+  <scope>provided</scope>
 </dependency>
 <dependency>
 	<groupId>org.yaml</groupId>
 	<artifactId>snakeyaml</artifactId>
 	<version>1.15</version>
+  <scope>provided</scope>
 </dependency>
 
   </dependencies>  
