@@ -248,6 +248,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 			}
 		}
 		catch (Exception e) {
+			_logger.error(ErrorUtils.getLongForm("onNewSource: Unknown error {0}", e));
 			return FutureUtils.returnError(e);
 		}
 	}
@@ -272,6 +273,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 					new Date(), true, "onSuspend", "onSuspend", null, "Stopped " + stopped + " agents", null));
 		}
 		catch (Exception e) {
+			_logger.error(ErrorUtils.getLongForm("onSuspend: Unknown error {0}", e));
 			return FutureUtils.returnError(e);
 		}
 	}	
@@ -289,12 +291,16 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 			boolean is_enabled, Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
 		
-		if (is_enabled) {
-			return onNewSource(new_bucket, context, is_enabled);
-		}
-		else {
-			return onSuspend(new_bucket, context);
-		}
+		CompletableFuture<BasicMessageBean> reply = Lambdas.get(() -> {
+			if (is_enabled) {
+				return onNewSource(new_bucket, context, is_enabled);
+			}
+			else {
+				return onSuspend(new_bucket, context);
+			}
+		});
+		
+		return reply;
 	}
 
 	/* (non-Javadoc)
@@ -376,19 +382,25 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 					.forEach(Lambdas.wrap_consumer_u(v -> {
 						//TODO (ALEPH-10): handle HDFS for the overriden src path (so can go fetch
 						//TODO (ALEPH-10): security for this setting...
-						final File src_path = new File(Optional.ofNullable(v.test_src_path()).orElse(v.path()));
 						final File dest_path = new File(v.path() + "/" + BucketUtils.getUniqueSignature(test_bucket.full_name(), Optional.empty()));
 						FileUtils.forceMkdir(dest_path);						
-						FileUtils.listFiles(src_path, null, false).forEach(Lambdas.wrap_consumer_u(file -> {
-							Files.createLink(new File(dest_path.toString() + "/" + file.getName()).toPath(), file.toPath());
-						}));								
+						final File src_path = new File(Optional.ofNullable(v.test_src_path()).orElse(v.path()));
+						if (src_path.exists()) {
+							FileUtils.listFiles(src_path, null, false).forEach(Lambdas.wrap_consumer_u(file -> {
+								Files.createLink(new File(dest_path.toString() + "/" + file.getName()).toPath(), file.toPath());
+							}));
+						}
+						//(else just nothing to read on this node)
 					}));
 			});		
 			
 			// Just start a normal source except in test mode
-			return onNewSource(test_bucket, context, true, true);
+			final CompletableFuture<BasicMessageBean> reply = onNewSource(test_bucket, context, true, true);
+			
+			return reply;
 		}
 		catch (Exception e) {
+			_logger.error(ErrorUtils.getLongForm("onTestSource: Unknown error {0}", e));
 			return FutureUtils.returnError(e);
 		}
 	}
