@@ -374,7 +374,10 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
 		try {
-			// First clean up from the previous test just in case:
+			// First try stopping any existing running service:
+			this.onSuspend(test_bucket, context);
+			
+			// Then clean up from the previous test just in case:
 			FlumeUtils.getAgents(test_bucket).stream().forEach(agent -> {
 				final Collection<SpoolDirConfig> spool_dirs = FlumeUtils.getSpoolDirs(agent);
 				FlumeUtils.deleteGeneratedDirs(test_bucket, spool_dirs, true);
@@ -394,7 +397,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 					}));
 			});		
 			
-			// Just start a normal source except in test mode
+			// Now start a normal source except in test mode
 			final CompletableFuture<BasicMessageBean> reply = onNewSource(test_bucket, context, true, true);
 			
 			return reply;
