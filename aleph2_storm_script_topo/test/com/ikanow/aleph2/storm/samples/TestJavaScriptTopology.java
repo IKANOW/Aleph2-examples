@@ -47,7 +47,6 @@ import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.ikanow.aleph2.distributed_services.services.ICoreDistributedServices;
-import com.ikanow.aleph2.distributed_services.utils.KafkaUtils;
 import com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology2;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -131,7 +130,7 @@ public class TestJavaScriptTopology {
 		for (String ip : ips) {
 			String msg = "{\"ip\":\""+ip+"\"}";
 			// "{\"test\":\"test1\"}"
-			cds.produce(KafkaUtils.bucketPathToTopicName(test_bucket.full_name(), Optional.empty()), msg);
+			cds.produce(cds.generateTopicName(test_bucket.full_name(), Optional.empty()), msg);
 			if(count>100){ break;}
 			count++;
 		}
