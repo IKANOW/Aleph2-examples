@@ -81,7 +81,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 	 */
 	@Override
 	public void onInit(IHarvestContext context) {
-		_globals = BeanTemplateUtils.from(Optional.ofNullable(context.getLibraryConfig().library_config()).orElse(Collections.emptyMap()), FlumeGlobalConfigBean.class).get();		
+		_globals = BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), FlumeGlobalConfigBean.class).get();		
 	}
 
 	///////////////////////////////////////////////////

@@ -162,7 +162,7 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 	}
 	
 	public static Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> getConfig(final IHarvestContext context) {
-		final SharedLibraryBean lib = context.getLibraryConfig();
+		final SharedLibraryBean lib = context.getTechnologyLibraryConfig();
 		return Tuples._2T(lib, Optional.ofNullable(lib.library_config())
 					.map(j -> BeanTemplateUtils.from(j, GlobalConfigBean.class).get()));
 	}
