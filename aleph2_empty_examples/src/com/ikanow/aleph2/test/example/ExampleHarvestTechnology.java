@@ -31,6 +31,9 @@ import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 
+/** An empty harvest technology example
+ * @author alex
+ */
 public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 	private static final Logger _logger = LogManager.getLogger();	
 
