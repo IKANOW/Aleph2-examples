@@ -17,14 +17,18 @@ package com.ikanow.aleph2.test.example;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import scala.Tuple2;
+
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IUnderlyingService;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
@@ -55,11 +59,11 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getHarvestContextLibraries(Optional.empty())
+			final String core_list = context.getHarvestContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)).get());
-			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.empty()));
+			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onNewSource {0}", e));
@@ -85,11 +89,11 @@ public class ExampleHarvestTechnology implements IHarvestTechnologyModule {
 		
 		// Log some information about the request
 		try {
-			final String core_list = context.getHarvestContextLibraries(Optional.empty())
+			final String core_list = context.getHarvestContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Harvest library paths: " + context.getHarvestLibraries(Optional.of(new_bucket)).get());
-			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.empty()));
+			_logger.info("Harvest signature: " + context.getHarvestContextSignature(Optional.of(new_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onNewSource {0}", e));

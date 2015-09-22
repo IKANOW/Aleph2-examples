@@ -19,14 +19,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import scala.Tuple2;
+
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IAnalyticsContext;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IAnalyticsTechnologyModule;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IUnderlyingService;
 import com.ikanow.aleph2.data_model.objects.data_analytics.AnalyticThreadJobBean;
 import com.ikanow.aleph2.data_model.objects.data_analytics.AnalyticThreadTriggerBean.AnalyticThreadComplexTriggerBean;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
@@ -65,11 +69,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(new_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onNewSource {0}", e));
@@ -97,11 +101,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(new_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onUpdatedThread {0}", e));
@@ -127,11 +131,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(to_delete_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(to_delete_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(to_delete_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onDeleteThread {0}", e));
@@ -157,7 +161,7 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 		}
@@ -165,9 +169,9 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 			_logger.error(ErrorUtils.getLongForm("checkCustomTrigger {0}", e));
 		}
 		
-		return FutureUtils.createManagementFuture(
-				CompletableFuture.completedFuture(true),
-				CompletableFuture.completedFuture(
+		return FutureUtils.<Boolean>createManagementFuture(
+				CompletableFuture.<Boolean>completedFuture(true),
+				CompletableFuture.<Collection<BasicMessageBean>>completedFuture(
 					Arrays.asList(
 						new BasicMessageBean(
 								new Date(), // date
@@ -190,11 +194,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(new_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onThreadExecute {0}", e));
@@ -220,11 +224,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(completed_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(completed_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(completed_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onThreadComplete {0}", e));
@@ -250,11 +254,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(purged_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(purged_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(purged_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onPurge {0}", e));
@@ -280,11 +284,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(polled_analytic_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(polled_analytic_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(polled_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onPeriodicPoll {0}", e));
@@ -310,11 +314,11 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 
 		// Log some information about the request
 		try {
-			final String core_list = context.getAnalyticsContextLibraries(Optional.empty())
+			final String core_list = context.getAnalyticsContextLibraries(Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty())
 										.stream().collect(Collectors.joining(", "));
 			_logger.info("Core library paths: " + core_list);
 			_logger.info("Analytics library paths: " + context.getAnalyticsLibraries(Optional.of(test_bucket), jobs).get());
-			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(test_bucket), Optional.empty()));
+			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(test_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
 			_logger.error(ErrorUtils.getLongForm("onTestThread {0}", e));
@@ -436,9 +440,9 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 			AnalyticThreadJobBean job_to_check, IAnalyticsContext context) {
 		_logger.info("checkAnalyticJobProgress");
 
-		return FutureUtils.createManagementFuture(
-				CompletableFuture.completedFuture(true),
-				CompletableFuture.completedFuture(
+		return FutureUtils.<Boolean>createManagementFuture(
+				CompletableFuture.<Boolean>completedFuture(true),
+				CompletableFuture.<Collection<BasicMessageBean>>completedFuture(
 						Arrays.asList(
 						new BasicMessageBean(
 								new Date(), // date
