@@ -76,7 +76,7 @@ public class ExampleAnalyticsTechnology implements IAnalyticsTechnologyModule {
 			_logger.info("Analytics signature: " + context.getAnalyticsContextSignature(Optional.of(new_analytic_bucket), Optional.<Set<Tuple2<Class<? extends IUnderlyingService>, Optional<String>>>>empty()));
 		}
 		catch (Exception e) {
-			_logger.error(ErrorUtils.getLongForm("onNewSource {0}", e));
+			_logger.error(ErrorUtils.getLongForm("onNewThread {0}", e));
 		}
 		
 		return CompletableFuture.completedFuture(
