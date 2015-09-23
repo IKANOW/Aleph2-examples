@@ -96,19 +96,21 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 			logger.error(ErrorUtils.getLongForm("Error reading storm.yaml in storm harvest tech onInit: {0}", e));
 			object = new HashMap<String, Object>();
 		}
-					
-		if ( object.containsKey(backtype.storm.Config.NIMBUS_HOST) ) {
-			logger.info("starting in remote mode v5");
-			logger.info(object.get(backtype.storm.Config.NIMBUS_HOST));
-			//run in distributed mode
-			storm_controller = StormControllerUtil.getRemoteStormController(
-					(String)object.get(backtype.storm.Config.NIMBUS_HOST), 
-					(int)object.get(backtype.storm.Config.NIMBUS_THRIFT_PORT), 
-					(String)object.get(backtype.storm.Config.STORM_THRIFT_TRANSPORT_PLUGIN));
-		} else {
-			logger.info("starting in local mode");
-			//run in local mode
-			storm_controller = StormControllerUtil.getLocalStormController(); //debug mode	
+		
+		if ( null == storm_controller ) {
+			if ( object.containsKey(backtype.storm.Config.NIMBUS_HOST) ) {
+				logger.info("starting in remote mode v5");
+				logger.info(object.get(backtype.storm.Config.NIMBUS_HOST));
+				//run in distributed mode
+				storm_controller = StormControllerUtil.getRemoteStormController(
+						(String)object.get(backtype.storm.Config.NIMBUS_HOST), 
+						(int)object.get(backtype.storm.Config.NIMBUS_THRIFT_PORT), 
+						(String)object.get(backtype.storm.Config.STORM_THRIFT_TRANSPORT_PLUGIN));
+			} else {
+				logger.info("starting in local mode");
+				//run in local mode
+				storm_controller = StormControllerUtil.getLocalStormController(); //debug mode	
+			}
 		}
 	}
 
