@@ -36,12 +36,17 @@ import backtype.storm.LocalCluster;
 import backtype.storm.generated.StormTopology;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.ikanow.aleph2.analytics.services.AnalyticsContext;
+import com.ikanow.aleph2.analytics.storm.services.StreamingEnrichmentContextService;
 import com.ikanow.aleph2.data_import.context.stream_enrichment.utils.ErrorUtils;
-import com.ikanow.aleph2.data_import.services.StreamingEnrichmentContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IDataWriteService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
+import com.ikanow.aleph2.data_model.objects.data_analytics.AnalyticThreadBean;
+import com.ikanow.aleph2.data_model.objects.data_analytics.AnalyticThreadJobBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
@@ -59,6 +64,8 @@ public class TestJavaScriptTopology {
 
 	private List<String> ips;
 	
+	@Inject
+	protected IServiceContext _service_context;
 	 
 	@Before
 	public void injectModules() throws Exception {
@@ -69,6 +76,7 @@ public class TestJavaScriptTopology {
 			_local_cluster = new LocalCluster();
 			this.ips = readIps();
 
+			_app_injector.injectMembers(this);
 		}
 		catch (Exception e) {
 			try {
@@ -85,10 +93,31 @@ public class TestJavaScriptTopology {
 	public void testJavaScriptTopology() throws InterruptedException, ExecutionException {
 		// PHASE 1: GET AN IN-TECHNOLOGY CONTEXT
 		// Bucket
+		final AnalyticThreadJobBean.AnalyticThreadJobInputBean analytic_input = 
+				BeanTemplateUtils.build(AnalyticThreadJobBean.AnalyticThreadJobInputBean.class)
+					.with(AnalyticThreadJobBean.AnalyticThreadJobInputBean::data_service, "stream")
+					.with(AnalyticThreadJobBean.AnalyticThreadJobInputBean::resource_name_or_id, "")
+				.done().get();
+		
+		final AnalyticThreadJobBean.AnalyticThreadJobOutputBean analytic_output =
+				BeanTemplateUtils.build(AnalyticThreadJobBean.AnalyticThreadJobOutputBean.class)
+					.with(AnalyticThreadJobBean.AnalyticThreadJobOutputBean::is_transient, false)
+				.done().get();
+		
+		final AnalyticThreadJobBean analytic_job1 = BeanTemplateUtils.build(AnalyticThreadJobBean.class)
+				.with(AnalyticThreadJobBean::name, "analytic_job1")
+				.with(AnalyticThreadJobBean::inputs, Arrays.asList(analytic_input))
+				.with(AnalyticThreadJobBean::output, analytic_output)
+				.done().get();		
+		final AnalyticThreadBean analytic_thread = 	BeanTemplateUtils.build(AnalyticThreadBean.class)
+				.with(AnalyticThreadBean::jobs, Arrays.asList(analytic_job1))
+				.done().get();		
+		
 		final DataBucketBean test_bucket = BeanTemplateUtils.build(DataBucketBean.class)
 				.with(DataBucketBean::_id, "test_js_topology")
 				.with(DataBucketBean::modified, new Date())
 				.with(DataBucketBean::full_name, "/test/javascript")
+				.with(DataBucketBean::analytic_thread, analytic_thread)
 				.with("data_schema", BeanTemplateUtils.build(DataSchemaBean.class)
 						.with("search_index_schema", BeanTemplateUtils.build(DataSchemaBean.SearchIndexSchemaBean.class)
 								.done().get())
@@ -96,11 +125,14 @@ public class TestJavaScriptTopology {
 				.done().get();
 
 		// Context		
-		final StreamingEnrichmentContext test_context = _app_injector.getInstance(StreamingEnrichmentContext.class);
+		//final StreamingEnrichmentContext test_context = _app_injector.getInstance(StreamingEnrichmentContext.class);
+		final AnalyticsContext analytic_context = new AnalyticsContext(_service_context);
+		analytic_context.getAnalyticsContextSignature(Optional.empty(), Optional.empty());
+		analytic_context.overrideSavedContext(); // (THIS + PREV LINE ARE NEEDED WHEN TO AVOID CREATING 2 ModuleUtils INSTANCES WHICH BREAKS EVERYTHING)
+		final StreamingEnrichmentContextService test_context = new StreamingEnrichmentContextService(analytic_context);
 		test_context.setBucket(test_bucket);
-		test_context.setUserTopologyEntryPoint("com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology");
-		test_context.getEnrichmentContextSignature(Optional.empty(), Optional.empty());
-		test_context.overrideSavedContext(); // (THIS IS NEEDED WHEN TESTING THE KAFKA SPOUT)
+		test_context.setUserTopology(new com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology());
+		test_context.setJob(analytic_job1);		
 		
 		//PHASE 2: CREATE TOPOLOGY AND SUBMit		
 		final ICoreDistributedServices cds = test_context.getServiceContext().getService(ICoreDistributedServices.class, Optional.empty()).get();
