@@ -124,6 +124,34 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 			return FutureUtils.returnError(e);
 		}
 	}
+	
+	@Override
+	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
+			DataBucketBean polled_bucket,
+			IHarvestContext context) {
+		final Tuple2<SharedLibraryBean, Optional<GlobalConfigBean>> global_config = getConfig(context);
+		return global_config._2().map(g -> {
+			if (g.restart_process_on_exit()) 
+				return restartProcessOnExit(polled_bucket, context);
+			else
+				return CompletableFuture.completedFuture(getMessage(true, "onPeriodicPoll", "Nothing to do on poll (restart_process_on_exit turned off)"));				
+		}).orElse( CompletableFuture.completedFuture(getMessage(true, "onPeriodicPoll", "Nothing to do on poll (no global config")));
+	}
+
+	private CompletableFuture<BasicMessageBean> restartProcessOnExit(DataBucketBean bucket, IHarvestContext context) {
+		try {
+			//check if process is alive
+			final String pid = ProcessUtils.getPid(bucket);
+			if ( ProcessUtils.isRunning(pid) ) {
+				return CompletableFuture.completedFuture(getMessage(true, "onPeriodicPoll", "Process is still running"));
+			} else {
+				//if not, restart it
+				return onNewSource(bucket, context, true);
+			}
+		} catch (Exception e) {
+			return FutureUtils.returnError(e);
+		}
+	}
 
 	protected CompletableFuture<BasicMessageBean> onSuspend(
 			DataBucketBean to_suspend, IHarvestContext context) {
@@ -233,12 +261,7 @@ public class ExternalProcessHarvestTechnology implements IHarvestTechnologyModul
 		return null;
 	}
 
-	@Override
-	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
-			DataBucketBean polled_bucket,
-			IHarvestContext context) {
-		return null;
-	}
+	
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onHarvestComplete(

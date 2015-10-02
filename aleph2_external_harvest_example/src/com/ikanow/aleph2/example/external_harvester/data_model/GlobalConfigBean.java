@@ -27,5 +27,7 @@ public class GlobalConfigBean {
 	 * @return
 	 */
 	public boolean store_pids_in_db() { return Optional.ofNullable(store_pids_in_db).orElse(false); }
+	public boolean restart_process_on_exit() { return Optional.ofNullable(restart_process_on_exit).orElse(false); }
 	private Boolean store_pids_in_db;
+	private Boolean restart_process_on_exit;
 }
