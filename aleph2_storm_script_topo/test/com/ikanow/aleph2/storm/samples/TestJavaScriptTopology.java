@@ -16,6 +16,7 @@
 package com.ikanow.aleph2.storm.samples;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,18 +29,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import backtype.storm.LocalCluster;
-import backtype.storm.generated.StormTopology;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.ikanow.aleph2.analytics.services.AnalyticsContext;
-import com.ikanow.aleph2.analytics.storm.services.StreamingEnrichmentContextService;
+import com.ikanow.aleph2.analytics.storm.services.MockStormTestingService;
 import com.ikanow.aleph2.data_import.context.stream_enrichment.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
@@ -49,14 +50,16 @@ import com.ikanow.aleph2.data_model.objects.data_analytics.AnalyticThreadBean;
 import com.ikanow.aleph2.data_model.objects.data_analytics.AnalyticThreadJobBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean;
+import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.ikanow.aleph2.distributed_services.services.ICoreDistributedServices;
-import com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology2;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 public class TestJavaScriptTopology {
+
+	static final Logger _logger = LogManager.getLogger(); 
 
 	LocalCluster _local_cluster;
 	
@@ -109,6 +112,7 @@ public class TestJavaScriptTopology {
 				.with(AnalyticThreadJobBean::inputs, Arrays.asList(analytic_input))
 				.with(AnalyticThreadJobBean::output, analytic_output)
 				.done().get();		
+		
 		final AnalyticThreadBean analytic_thread = 	BeanTemplateUtils.build(AnalyticThreadBean.class)
 				.with(AnalyticThreadBean::jobs, Arrays.asList(analytic_job1))
 				.done().get();		
@@ -124,37 +128,31 @@ public class TestJavaScriptTopology {
 						.done().get())
 				.done().get();
 
-		// Context		
-		//final StreamingEnrichmentContext test_context = _app_injector.getInstance(StreamingEnrichmentContext.class);
-		final AnalyticsContext analytic_context = new AnalyticsContext(_service_context);
-		analytic_context.getAnalyticsContextSignature(Optional.empty(), Optional.empty());
-		analytic_context.overrideSavedContext(); // (THIS + PREV LINE ARE NEEDED WHEN TO AVOID CREATING 2 ModuleUtils INSTANCES WHICH BREAKS EVERYTHING)
-		final StreamingEnrichmentContextService test_context = new StreamingEnrichmentContextService(analytic_context);
-		test_context.setBucket(test_bucket);
-		test_context.setUserTopology(new com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology());
-		test_context.setJob(analytic_job1);		
+		//////////////////////////////////////////////////////
+		// PHASE 2: SPECIFICALLY FOR THIS TEST
+		//(Also: register a listener on the output to generate a secondary queue)
+		final ICoreDistributedServices cds = _service_context.getService(ICoreDistributedServices.class, Optional.empty()).get();
+
+		final BasicMessageBean res = new MockStormTestingService(_service_context).testAnalyticModule(test_bucket).get();
+		assertTrue("Storm starts", res.success());
 		
-		//PHASE 2: CREATE TOPOLOGY AND SUBMit		
-		final ICoreDistributedServices cds = test_context.getServiceContext().getService(ICoreDistributedServices.class, Optional.empty()).get();
-		final StormTopology topology = (StormTopology) new JavaScriptTopology2()
-											.getTopologyAndConfiguration(test_bucket, test_context)
-											._1();
+		_logger.info("******** Submitted storm cluster: " + res.message());
+		Thread.sleep(5000L);
 		
-		final backtype.storm.Config config = new backtype.storm.Config();
-		config.setDebug(true);
-		_local_cluster.submitTopology("test_js_topology", config, topology);		
-		Thread.sleep(3000L);
-		
-		//PHASE 3: CHECK INDEX
-		final ISearchIndexService index_service = test_context.getServiceContext().getSearchIndexService().get();
+
+		//////////////////////////////////////////////////////
+		//PHASE 4: CHECK INDEX
+		final ISearchIndexService index_service = _service_context.getService(ISearchIndexService.class, Optional.empty()).get();
 		final ICrudService<JsonNode> crud_service = 
-											index_service.getDataService()
-													.flatMap(s -> s.getWritableDataService(JsonNode.class, test_bucket, Optional.empty(), Optional.empty()))
-													.flatMap(IDataWriteService::getCrudService).get();
+				index_service.getDataService()
+					.flatMap(s -> s.getWritableDataService(JsonNode.class, test_bucket, Optional.empty(), Optional.empty()))
+					.flatMap(IDataWriteService::getCrudService)
+					.get();
 		crud_service.deleteDatastore().get();
-		Thread.sleep(1000L);
+		_logger.info("******** Cleansed existing datastore");
+		Thread.sleep(2000L);
 		assertEquals(0L, crud_service.countObjects().get().intValue());
-		
+
 		//PHASE4 : WRITE TO KAFKA
 		// TODO here's my example code replace with
 		//context.sendObjectToStreamingPipeline(Optional.empty(), json);

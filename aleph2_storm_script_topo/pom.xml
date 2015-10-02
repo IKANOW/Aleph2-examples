@@ -131,9 +131,16 @@
   		<version>${aleph2.version}</version>
 		<scope>test</scope>
   	</dependency>  	
-  	 <dependency>
+<!--   	 <dependency>
   		<groupId>com.ikanow.aleph2</groupId>
   		<artifactId>aleph2_analytics_context_library</artifactId>
+  		<version>${aleph2.version}</version>
+		<scope>test</scope>
+	</dependency>
+	-->
+   	 <dependency>
+  		<groupId>com.ikanow.aleph2</groupId>
+  		<artifactId>aleph2_analytic_services_storm</artifactId>
   		<version>${aleph2.version}</version>
 		<scope>test</scope>
 	</dependency>
