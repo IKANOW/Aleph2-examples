@@ -92,7 +92,6 @@ public class TestJavaScriptTopology {
 	}
 	
 	@Test
-	@Ignore
 	public void testJavaScriptTopology() throws InterruptedException, ExecutionException {
 		// PHASE 1: GET AN IN-TECHNOLOGY CONTEXT
 		// Bucket
@@ -111,7 +110,8 @@ public class TestJavaScriptTopology {
 				.with(AnalyticThreadJobBean::name, "analytic_job1")
 				.with(AnalyticThreadJobBean::inputs, Arrays.asList(analytic_input))
 				.with(AnalyticThreadJobBean::output, analytic_output)
-				.done().get();		
+                 .with(AnalyticThreadJobBean::entry_point, "com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology2")
+                 .done().get();		
 		
 		final AnalyticThreadBean analytic_thread = 	BeanTemplateUtils.build(AnalyticThreadBean.class)
 				.with(AnalyticThreadBean::jobs, Arrays.asList(analytic_job1))
@@ -132,8 +132,20 @@ public class TestJavaScriptTopology {
 		// PHASE 2: SPECIFICALLY FOR THIS TEST
 		//(Also: register a listener on the output to generate a secondary queue)
 		final ICoreDistributedServices cds = _service_context.getService(ICoreDistributedServices.class, Optional.empty()).get();
-
+/*		final AnalyticsContext analytic_context = new AnalyticsContext(_service_context);
+		analytic_context.getAnalyticsContextSignature(Optional.empty(), Optional.empty());
+		analytic_context.overrideSavedContext(); // (THIS + PREV LINE ARE NEEDED WHEN TO AVOID CREATING 2 ModuleUtils INSTANCES WHICH BREAKS EVERYTHING)
+		
+		final StreamingEnrichmentContextService test_context = new StreamingEnrichmentContextService(analytic_context);
+		test_context.setBucket(test_bucket);
+		test_context.setUserTopology(new com.ikanow.aleph2.storm.samples.topology.JavaScriptTopology());
+		test_context.setJob(analytic_job1);		
+	*/
+		
 		final BasicMessageBean res = new MockStormTestingService(_service_context).testAnalyticModule(test_bucket).get();
+		if(!res.success()){
+			_logger.error(res.message());
+		}
 		assertTrue("Storm starts", res.success());
 		
 		_logger.info("******** Submitted storm cluster: " + res.message());
@@ -166,7 +178,7 @@ public class TestJavaScriptTopology {
 		}
 		Thread.sleep(9000L);
 		
-		assertEquals(1L, crud_service.countObjects().get().intValue());		
+		assertTrue(crud_service.countObjects().get().intValue()>0);		
 	}
 	
 	protected List<String> readIps() throws IOException{
