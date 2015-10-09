@@ -31,9 +31,11 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
 import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
 import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
+import com.ikanow.aleph2.storm.samples.script.ScriptSecurityManager;
 
 public class JavaScriptMapperBolt extends BaseRichBolt {
 	private static final Logger logger = LogManager.getLogger(JavaScriptMapperBolt.class);
@@ -46,19 +48,21 @@ public class JavaScriptMapperBolt extends BaseRichBolt {
 	protected transient CompiledScriptFactory compiledScriptFactory = null;
 
 	protected IScriptProvider scriptProvider;
+
+	protected IServiceContext serviceContext;
 	
 	public static String MAP_CALL = "map(jsonIn);";
 	
 	
-	public JavaScriptMapperBolt(IScriptProvider scriptProvider){		
+	public JavaScriptMapperBolt(IServiceContext serviceContext, IScriptProvider scriptProvider){		
 		this.scriptProvider = scriptProvider;
-		
+		this.serviceContext = serviceContext;		
 	}
 	
 	protected CompiledScriptFactory getCompiledScriptFactory(){
 		if(compiledScriptFactory == null){
 			scriptProvider.getScriptlets().add(MAP_CALL);
-			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider,new NoSecurityManager());
+			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider, new ScriptSecurityManager(serviceContext.getSecurityService()));
 			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);
 		}
 		return compiledScriptFactory;

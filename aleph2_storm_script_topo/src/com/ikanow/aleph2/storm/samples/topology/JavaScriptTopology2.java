@@ -65,11 +65,11 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 		final Collection<Tuple2<BaseRichSpout, String>>  entry_points = context.getTopologyEntryPoints(BaseRichSpout.class, Optional.of(bucket));				
 		entry_points.forEach(spout_name -> builder.setSpout(spout_name._2(), spout_name._1()));
 		entry_points.stream().reduce(
-				builder.setBolt("mapperBolt", new JavaScriptMapperBolt(mapperScriptProvider)),
+				builder.setBolt("mapperBolt", new JavaScriptMapperBolt(context.getServiceContext(),mapperScriptProvider)),
 				(acc, v) -> acc.shuffleGrouping(v._2()),
 				(acc1, acc2) -> acc1 // (not possible in practice)
 				) ;				
-		builder.setBolt("folderBolt", new JavaScriptFolderBolt(folderScriptProvider)).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
+		builder.setBolt("folderBolt", new JavaScriptFolderBolt(context.getServiceContext(),folderScriptProvider)).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
 		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("folderBolt");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
 	}
