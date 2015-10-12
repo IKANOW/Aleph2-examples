@@ -32,9 +32,11 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
 import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
 import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
+import com.ikanow.aleph2.storm.samples.script.ScriptSecurityManager;
 
 public class JavaScriptFolderBolt extends BaseRichBolt {
 	private static final Logger logger = LogManager.getLogger(JavaScriptFolderBolt.class);
@@ -47,6 +49,8 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	protected transient CompiledScriptFactory compiledScriptFactory = null;
 
 	protected IScriptProvider scriptProvider;
+
+	protected IServiceContext serviceContext;
 	
 	protected static String FOLD_CALL = "fold(mapKey,mapValueJson);";
 	protected static String CHECKEMIT_CALL = "checkEmit(mapKey,mapValueJson);";
@@ -55,9 +59,9 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 	protected static String RESET_CALL = "reset(mapKey);";
 	
 	
-	public JavaScriptFolderBolt(IScriptProvider scriptProvider){		
+	public JavaScriptFolderBolt(IServiceContext serviceContext, IScriptProvider scriptProvider){		
 		this.scriptProvider = scriptProvider;
-		
+		this.serviceContext = serviceContext;		
 	}
 	
 	protected CompiledScriptFactory getCompiledScriptFactory(){
@@ -68,7 +72,7 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 			scriptProvider.getScriptlets().add(ALLENTRIES_CALL);
 			scriptProvider.getScriptlets().add(UPDATE_CALL);
 
-			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider,new NoSecurityManager());
+			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider, new ScriptSecurityManager(serviceContext.getSecurityService()));
 			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);
 		}
 		return compiledScriptFactory;
