@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.data_model.objects.shared.AuthorizationBean;
+import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.ModuleUtils;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -60,11 +61,18 @@ public class SimpleSecurityTest {
 		app_injector.injectMembers(app);
 		
 		app.runTest(args[1]);
+		System.exit(0);
 	}
 	
 	public void runTest(final String owner_id) {
-		final CompletableFuture<Long> count = _service_context.getCoreManagementDbService().getSharedLibraryStore().readOnlyVersion().secured(_service_context, new AuthorizationBean(owner_id)).countObjects();
-		
-		System.out.println("Shared lib count: " + count.join().intValue());
+		try {
+			final CompletableFuture<Long> count = _service_context.getCoreManagementDbService().getSharedLibraryStore().readOnlyVersion().secured(_service_context, new AuthorizationBean(owner_id)).countObjects();
+			
+			System.out.println("Shared lib count: " + count.join().intValue());
+		}
+		catch (Exception e) {
+			System.out.println(ErrorUtils.getLongForm("{0}", e));
+			e.printStackTrace();
+		}
 	}
 }
