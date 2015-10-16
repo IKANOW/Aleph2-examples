@@ -70,16 +70,25 @@ public class SimpleHdfsTest {
 	}
 	
 	public void runTest() throws AccessControlException, FileNotFoundException, UnsupportedFileSystemException, IllegalArgumentException, IOException {
+		final String temp_dir = System.getProperty("java.io.tmpdir") + File.separator;
 		
 		final IStorageService storage = _service_context.getStorageService();
 		
 		final FileContext fc = (FileContext) storage.getUnderlyingPlatformDriver(FileContext.class, Optional.empty()).get();
 
+		final FileContext lfc = (FileContext) storage.getUnderlyingPlatformDriver(FileContext.class, IStorageService.LOCAL_FS).get();
+		
 		System.out.println("FILES IN BUCKET ROOT");
 		
-		final RemoteIterator<LocatedFileStatus> it = fc.util().listFiles(new Path(storage.getBucketRootPath()), false);
+		final RemoteIterator<LocatedFileStatus> it = fc.util().listFiles(new Path(storage.getBucketRootPath()), true);
+		boolean first = true;
 		while (it.hasNext()) {
-			System.out.println(it.next());
+			final LocatedFileStatus lfs = it.next();
+			if (first) {
+				first = false;
+				lfc.util().copy(lfs.getPath(), lfc.makeQualified(new Path(temp_dir + "ALEX.txt")));
+			}
+			System.out.println(lfs);
 		}
 		
 		System.out.println("FILES/DIRS IN BUCKET ROOT");
