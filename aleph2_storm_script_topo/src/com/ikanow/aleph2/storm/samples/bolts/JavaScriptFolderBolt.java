@@ -25,57 +25,40 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
 import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
-import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
-import com.ikanow.aleph2.storm.samples.script.ScriptSecurityManager;
 
-public class JavaScriptFolderBolt extends BaseRichBolt {
+public class JavaScriptFolderBolt extends DefaultScriptBolt {
 	private static final Logger logger = LogManager.getLogger(JavaScriptFolderBolt.class);
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -17206092588932701L;
-	private OutputCollector _collector;	
-	protected transient CompiledScriptFactory compiledScriptFactory = null;
-
-	protected IScriptProvider scriptProvider;
-
-	protected IServiceContext serviceContext;
 	
 	protected static String FOLD_CALL = "fold(mapKey,mapValueJson);";
 	protected static String CHECKEMIT_CALL = "checkEmit(mapKey,mapValueJson);";
 	protected static String ALLENTRIES_CALL = "allEntries();";
 	protected static String UPDATE_CALL = "update(mapKey,state);";
 	protected static String RESET_CALL = "reset(mapKey);";
+
 	
-	
-	public JavaScriptFolderBolt(IServiceContext serviceContext, IScriptProvider scriptProvider){		
-		this.scriptProvider = scriptProvider;
-		this.serviceContext = serviceContext;		
+	public JavaScriptFolderBolt(String contextSignature,IScriptProvider scriptProvider){
+		super(contextSignature, scriptProvider);
 	}
 	
 	protected CompiledScriptFactory getCompiledScriptFactory(){
-		if(compiledScriptFactory == null){
-			
-			scriptProvider.getScriptlets().add(FOLD_CALL);
-			scriptProvider.getScriptlets().add(CHECKEMIT_CALL);
-			scriptProvider.getScriptlets().add(ALLENTRIES_CALL);
-			scriptProvider.getScriptlets().add(UPDATE_CALL);
+		scriptProvider.getScriptlets().add(FOLD_CALL);
+		scriptProvider.getScriptlets().add(CHECKEMIT_CALL);
+		scriptProvider.getScriptlets().add(ALLENTRIES_CALL);
+		scriptProvider.getScriptlets().add(UPDATE_CALL);
 
-			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider, new ScriptSecurityManager(serviceContext.getSecurityService()));
-			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);
-		}
-		return compiledScriptFactory;
+		return super.getCompiledScriptFactory();
 	}
 	
 	@Override
@@ -122,11 +105,6 @@ public class JavaScriptFolderBolt extends BaseRichBolt {
 		_collector.ack(tuple);
 	}
 
-	@SuppressWarnings("rawtypes")
-	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		_collector = collector;
-	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

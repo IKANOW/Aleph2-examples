@@ -49,11 +49,12 @@ public class JavaScriptTopology implements IEnrichmentStreamingTopology {
 	@Override
 	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bucket, IEnrichmentModuleContext context) {
 		TopologyBuilder builder = new TopologyBuilder();		
-		
+		String contextSignature = context.getEnrichmentContextSignature(Optional.of(bucket), Optional.empty());
+
 		final Collection<Tuple2<BaseRichSpout, String>>  entry_points = context.getTopologyEntryPoints(BaseRichSpout.class, Optional.of(bucket));				
 		entry_points.forEach(spout_name -> builder.setSpout(spout_name._2(), spout_name._1()));
 		entry_points.stream().reduce(
-				builder.setBolt("scriptBolt", new JavaScriptBolt("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")),
+				builder.setBolt("scriptBolt", new JavaScriptBolt(contextSignature,"/com/ikanow/aleph2/storm/samples/script/js/scripts.properties")),
 				(acc, v) -> acc.shuffleGrouping(v._2()),
 				(acc1, acc2) -> acc1 // (not possible in practice)
 				) ;		

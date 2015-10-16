@@ -24,68 +24,71 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import backtype.storm.task.OutputCollector;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Fields;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
 
+import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentModuleContext;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
+import com.ikanow.aleph2.data_model.utils.ContextUtils;
 import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
 import com.ikanow.aleph2.storm.samples.script.IScriptProvider;
+import com.ikanow.aleph2.storm.samples.script.ScriptSecurityManager;
 
-public class JavaScriptMapperBolt extends DefaultScriptBolt {
-	private static final Logger logger = LogManager.getLogger(JavaScriptMapperBolt.class);
+public abstract class DefaultScriptBolt extends BaseRichBolt {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4568169861800172703L;
+
+	private static final Logger logger = LogManager.getLogger(JavaScriptFolderBolt.class);
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -17206092588932701L;
+	protected OutputCollector _collector;	
+	protected transient CompiledScriptFactory compiledScriptFactory = null;
+
+	protected IScriptProvider scriptProvider;
 	
-	public static String MAP_CALL = "map(jsonIn);";
+	protected String contextSignature = null;
+	protected transient  IServiceContext serviceContext;
+	protected transient IEnrichmentModuleContext _context;
 	
-	
-	public JavaScriptMapperBolt(String contextSignature, IScriptProvider scriptProvider){
-		super(contextSignature, scriptProvider);
+	public DefaultScriptBolt(String contextSignature,IScriptProvider scriptProvider){
+		this.contextSignature = contextSignature;
+		this.scriptProvider = scriptProvider;		
 	}
 	
 	protected CompiledScriptFactory getCompiledScriptFactory(){
-		scriptProvider.getScriptlets().add(MAP_CALL);
-		return super.getCompiledScriptFactory();
+		if(compiledScriptFactory == null){
+			
+			this.compiledScriptFactory = new CompiledScriptFactory(scriptProvider, new ScriptSecurityManager(serviceContext.getSecurityService()));
+			compiledScriptFactory.executeCompiledScript(CompiledScriptFactory.GLOBAL);
+		}
+		return compiledScriptFactory;
 	}
 	
-	@Override
+
 	@SuppressWarnings("rawtypes")
-	public void execute(Tuple tuple) {
-		String val0 = tuple.getString(0);
-		logger.debug("JavaScriptBolt Received tuple:"+tuple+" val0:"+val0);
-		LinkedHashMap<String, Object> tupelMap =tupleToLinkedHashMap(tuple);
-		String jsonIn = (String) tupelMap.get("str");
-		if(jsonIn!=null){
-			Object retVal = getCompiledScriptFactory().executeCompiledScript(MAP_CALL,"jsonIn",jsonIn,"_collector",_collector,"_tuple", tuple);
-			logger.debug("JavaScriptBolt Result from Script:"+retVal);
-			if(retVal instanceof Map){			
-				Map m = (Map)retVal;
-				String mapKey = (String)m.get("mapKey");
-				String mapValueJson = (String)m.get("mapValueJson");
-				if(mapKey!=null && mapValueJson!=null){
-				_collector.emit(tuple, new Values(mapKey, mapValueJson));
-				}
-			}
-		}
-		//always ack the tuple to acknowledge we've processed it, otherwise a fail message will be reported back
-		//to the spout
-		_collector.ack(tuple);
-	}
-
-
 	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("mapKey","mapValueJson"));
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+		_collector = collector;
+
+		try {
+			_context = ContextUtils.getEnrichmentContext(contextSignature);		
+			this.serviceContext = _context.getServiceContext();
+		}
+		catch (Exception e) { // nothing to be done here?
+			logger.error("Failed to get context", e);
+		}
 	}
+
 	
 	public static LinkedHashMap<String, Object> tupleToLinkedHashMap(final Tuple t) {
 		return StreamSupport.stream(t.getFields().spliterator(), false)
 							.collect(Collectors.toMap(f -> f, f -> t.getValueByField(f), (m1, m2) -> m1, LinkedHashMap::new));
 	}
-	
+
+
 }
