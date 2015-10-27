@@ -49,13 +49,38 @@ import com.ikanow.aleph2.storm.samples.spouts.TimerSpout;
 public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 	
 	protected static ObjectMapper object_mapper = BeanTemplateUtils.configureMapper(Optional.empty());
+//JS user code
+/*	function map(jsonInStr) {
+	    var json = eval('(' + jsonInStr + ')');
+	    var message = json.message;
+	    var fields = message.split(",");
+	    var src_ip = fields[3];
+	    var dst_ip = fields[4];
+	    json.src_ip = src_ip;
+	   json.dst_ip = dst_ip;
+	    return { mapKey: "" + src_ip + dst_ip, mapValueJson: JSON.stringify(json) };
+	}
 
+	function fold(mapKey,mapValueJsonStr) {
+	    emit(mapValueJsonStr);
+	}
+
+	function checkEmit(mapKey,state) {
+	    //(do nothing)
+	}
+	*/
+	
 	@Override
 	public Tuple2<Object, Map<String, String>> getTopologyAndConfiguration(DataBucketBean bucket, IEnrichmentModuleContext context) {
 		TopologyBuilder builder = new TopologyBuilder();		
 		
+		String contextSignature = context.getEnrichmentContextSignature(Optional.of(bucket), Optional.empty());
+		
 		builder.setSpout("timer", new TimerSpout(3000L));
 		JavaScriptProviderBean  providerBean = BeanTemplateUtils.from(bucket.streaming_enrichment_topology().config(),JavaScriptProviderBean.class).get();
+		if(providerBean == null){
+			providerBean =  new JavaScriptProviderBean(); 
+		}
 		if (null == providerBean.getGlobalScript()) {
 			providerBean.setGlobalScript(new PropertyBasedScriptProvider("/com/ikanow/aleph2/storm/samples/script/js/scripts.properties").getGlobalScript());
 		}
@@ -65,11 +90,11 @@ public class JavaScriptTopology2 implements IEnrichmentStreamingTopology {
 		final Collection<Tuple2<BaseRichSpout, String>>  entry_points = context.getTopologyEntryPoints(BaseRichSpout.class, Optional.of(bucket));				
 		entry_points.forEach(spout_name -> builder.setSpout(spout_name._2(), spout_name._1()));
 		entry_points.stream().reduce(
-				builder.setBolt("mapperBolt", new JavaScriptMapperBolt(context.getServiceContext(),mapperScriptProvider)),
+				builder.setBolt("mapperBolt", new JavaScriptMapperBolt(contextSignature,mapperScriptProvider)),
 				(acc, v) -> acc.shuffleGrouping(v._2()),
 				(acc1, acc2) -> acc1 // (not possible in practice)
 				) ;				
-		builder.setBolt("folderBolt", new JavaScriptFolderBolt(context.getServiceContext(),folderScriptProvider)).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
+		builder.setBolt("folderBolt", new JavaScriptFolderBolt(contextSignature,folderScriptProvider)).shuffleGrouping("mapperBolt").shuffleGrouping("timer");
 		builder.setBolt("out", context.getTopologyStorageEndpoint(BaseRichBolt.class, Optional.of(bucket))).localOrShuffleGrouping("folderBolt");
 		return new Tuple2<Object, Map<String, String>>(builder.createTopology(), new HashMap<String, String>());
 	}

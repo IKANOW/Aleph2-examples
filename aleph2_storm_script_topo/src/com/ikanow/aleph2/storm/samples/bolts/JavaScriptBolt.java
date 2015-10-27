@@ -35,7 +35,7 @@ import com.ikanow.aleph2.storm.samples.script.CompiledScriptFactory;
 import com.ikanow.aleph2.storm.samples.script.NoSecurityManager;
 import com.ikanow.aleph2.storm.samples.script.PropertyBasedScriptProvider;
 
-public class JavaScriptBolt extends BaseRichBolt {
+public class JavaScriptBolt extends DefaultScriptBolt {
 	private static final Logger logger = LogManager.getLogger(JavaScriptBolt.class);
 
 	/**
@@ -50,9 +50,8 @@ public class JavaScriptBolt extends BaseRichBolt {
 	protected static String SPLITIP_CALL = "splitIP();";
 	
 	
-	public JavaScriptBolt(String propertyFileName){		
-		
-		this.propertyFileName  = propertyFileName;
+	public JavaScriptBolt(String contextSignature,String propertyFileName){		
+		super(contextSignature,new PropertyBasedScriptProvider(propertyFileName));
 		
 	}
 	
