@@ -94,22 +94,23 @@ public class SimpleRegexFilterService implements IEnrichmentBatchModule {
 	public void onObjectBatch(Stream<Tuple2<Long, IBatchRecord>> batch,
 			Optional<Integer> batch_size, Optional<JsonNode> grouping_key) {
 		
-		batch.forEach(record -> {
+		batch.forEach(record -> {			
 			final JsonNode record_json = record._2().getJson();
 			boolean matched = false;
 			final Iterator<InternalRegexConfig.InternalRegexElement> it_outer = _regex_config.get().elements().iterator();
 			while (it_outer.hasNext() && !matched) {
 				final InternalRegexConfig.InternalRegexElement element = it_outer.next();
+				
 				final Iterator<String> it_inner = element.fields().iterator();
 				while (it_inner.hasNext() && !matched) {
 					final String field = it_inner.next();
 					final JsonNode j = record_json.get(field);
 					if ((null != j) && j.isTextual()) {
-						matched = element.regex().matcher(j.asText()).find();
+						matched |= element.regex().matcher(j.asText()).find();
 					}
 				}
 			}
-			if (matched) {
+			if (matched) {				
 				_context.get().emitImmutableObject(record._1(), record_json, Optional.empty(), Optional.empty());
 			}
 		});
