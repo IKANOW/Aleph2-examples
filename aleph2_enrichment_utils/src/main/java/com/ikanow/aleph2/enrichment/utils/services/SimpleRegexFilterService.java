@@ -24,7 +24,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+
 import scala.Tuple2;
+
 
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -64,7 +66,8 @@ public class SimpleRegexFilterService implements IEnrichmentBatchModule {
 	@Override
 	public void onStageInitialize(IEnrichmentModuleContext context,
 			DataBucketBean bucket, EnrichmentControlMetadataBean control,
-			boolean final_stage) {
+			final Tuple2<ProcessingStage, ProcessingStage> previous_next)
+	{
 		
 		final SimpleRegexFilterBean config_bean = BeanTemplateUtils.from(Optional.ofNullable(control.config()).orElse(Collections.emptyMap()), SimpleRegexFilterBean.class).get();
 		
