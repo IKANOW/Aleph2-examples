@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>aleph2_example_webapp_kafka</display-name>
+  <listener>
+    <listener-class>com.ikanow.aleph2.examples.module.KafkaGuiceServletContextListener</listener-class>
+  </listener>
+  <servlet>
+    <servlet-name>Resteasy</servlet-name>
+    <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
+    <init-param>
+      <param-name>javax.ws.rs.Application</param-name>
+      <param-value>com.ikanow.aleph2.examples.application.ExampleApplication</param-value>
+    </init-param>
+  </servlet>
+  <!-- We map the api calls to something other than /* so we can serve up the static webpages in WebContent -->
+  <servlet-mapping>
+    <servlet-name>Resteasy</servlet-name>
+    <url-pattern>/rest/*</url-pattern>
+  </servlet-mapping>
+  <!-- Param describing where to find the config file for aleph2 guice bindings -->
+  <context-param>
+  	<description>The full path to the properties file with aleph2 bindings, i.e. YOU NEED TO SET THIS, and example has provided with app in example_config</description>
+  	<param-name>aleph2.config</param-name>
+  	<param-value>C:\\Users\\Burch\\git\\Aleph2-examples\\aleph2_example_webapp_kafka\\example_config\\v1_sync_service.properties</param-value>
+  </context-param>
+</web-app>
