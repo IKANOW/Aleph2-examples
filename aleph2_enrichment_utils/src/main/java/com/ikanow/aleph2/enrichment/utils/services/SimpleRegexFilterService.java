@@ -66,7 +66,7 @@ public class SimpleRegexFilterService implements IEnrichmentBatchModule {
 	@Override
 	public void onStageInitialize(IEnrichmentModuleContext context,
 			DataBucketBean bucket, EnrichmentControlMetadataBean control,
-			final Tuple2<ProcessingStage, ProcessingStage> previous_next)
+			final Tuple2<ProcessingStage, ProcessingStage> previous_next, final Optional<List<String>> grouping_fields)
 	{
 		
 		final SimpleRegexFilterBean config_bean = BeanTemplateUtils.from(Optional.ofNullable(control.config()).orElse(Collections.emptyMap()), SimpleRegexFilterBean.class).get();
@@ -114,7 +114,7 @@ public class SimpleRegexFilterService implements IEnrichmentBatchModule {
 				}
 			}
 			if (matched) {				
-				_context.get().emitImmutableObject(record._1(), record_json, Optional.empty(), Optional.empty());
+				_context.get().emitImmutableObject(record._1(), record_json, Optional.empty(), Optional.empty(), Optional.empty());
 			}
 		});
 	}
