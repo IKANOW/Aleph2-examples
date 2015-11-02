@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.yaml.snakeyaml.Yaml;
@@ -289,11 +290,32 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 				final String input_jar_location = System.getProperty("java.io.tmpdir") + File.separator + job_name + ".jar";
 				List<String> jars_to_merge = new ArrayList<String>();
 				jars_to_merge.addAll( context.getHarvestContextLibraries(Optional.empty()) );
+				if (isOnlyHadoopDep(jars_to_merge)) { // special case: no aleph2 libs found, this is almost certainly because this is being run from eclipse...
+					final GlobalPropertiesBean globals = ModuleUtils.getGlobalProperties();
+					logger.warn("WARNING: no library files found, probably because this is running from an IDE - instead taking all JARs from: " + (globals.local_root_dir() + "/lib/"));
+					try {
+						//... and LiveInjecter doesn't work on classes ... as a backup just copy everything from "<LOCAL_ALEPH2_HOME>/lib" into there 
+						jars_to_merge.addAll(
+								FileUtils.listFiles(new File(globals.local_root_dir() + "/lib/"), new String[] { "jar" }, false)
+									.stream()
+									.map(File::toString)
+									.filter(file -> {
+										return !(file.contains("aleph2_storm_dependencies") || file.contains("aleph2_analytical_services_storm"));
+									})
+									.collect(Collectors.toList())
+									);
+					}
+					catch (Exception e) {
+						throw new RuntimeException("In eclipse/IDE mode, directory not found: " + (globals.local_root_dir() + "/lib/"));
+					}
+				}
+				
 				//filter the harvester out of the harvest libraries
 				Map<String, String> harvest_libraries = context.getHarvestLibraries(Optional.of(new_bucket)).get();
 				//kick the harvest library out of our jar (it contains storm.jar which we can't send to storm)
 				List<String> harvest_library_paths = harvest_libraries.keySet().stream().filter(name -> !name.contains(new_bucket.harvest_technology_name_or_id())).map(name -> harvest_libraries.get(name)).collect(Collectors.toList());
-				jars_to_merge.addAll(harvest_library_paths);
+				jars_to_merge.addAll(harvest_library_paths);					
+					
 				JarBuilderUtil.mergeJars(jars_to_merge, input_jar_location, dirs_to_ignore);
 				StormControllerUtil.startJob(storm_controller, job_name, input_jar_location, topology);
 				
@@ -316,6 +338,20 @@ public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 		future.complete(new BasicMessageBean(new Date(), true, null, "onNewSource", null, null, null));
 		return future;
 	}	
+	
+	/**
+	 * Checks if the jars to merge have no libs or only hadoop-commons,
+	 * this typically signs that the application is being run from eclipse rather than deployed
+	 * on a node.
+	 * 
+	 * @param jars_to_merge
+	 * @return
+	 */
+	private static boolean isOnlyHadoopDep(List<String> jars_to_merge) {
+		if ( jars_to_merge.isEmpty() || jars_to_merge.get(0).contains("hadoop-common") )
+			return true;			
+		return false;
+	}
 	
 	public static void main(String[] args) {
 		//fake main for eclipse build

@@ -92,9 +92,9 @@ public class FlumeLaunchUtils {
 							"-n", flume_info._1()							
 							))
 			.redirectErrorStream(true)
-			/**/
-			//.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
-			.redirectOutput(new File("/tmp/external_harvest_test.txt"))
+			.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
+			//DEBUG
+			//.redirectOutput(new File("/tmp/external_harvest_test.txt"))
 			;
 			
 			final Process px = pb.start();

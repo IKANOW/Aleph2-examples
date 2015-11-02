@@ -1,0 +1,6 @@
+/build/
+/target/
+/.settings/
+/Ikanow/
+.classpath
+.project
