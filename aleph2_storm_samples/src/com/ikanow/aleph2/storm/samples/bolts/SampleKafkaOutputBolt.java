@@ -65,7 +65,7 @@ public class SampleKafkaOutputBolt extends BaseRichBolt {
 				JsonNode output_node = createJsonNode(keyA, keyB, message);
 				//TODO send to service we want or is there some json output?
 				long id = 0; //TODO what is this suppose to be?
-				context.emitImmutableObject(id, output_node, Optional.empty(), Optional.empty());
+				context.emitImmutableObject(id, output_node, Optional.empty(), Optional.empty(), Optional.empty());
 				_collector.ack(tuple);
 			} catch (Exception e) {
 				logger.error("Error parsing json",e);

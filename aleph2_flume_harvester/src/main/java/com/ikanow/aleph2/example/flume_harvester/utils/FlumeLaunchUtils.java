@@ -93,6 +93,7 @@ public class FlumeLaunchUtils {
 							))
 			.redirectErrorStream(true)
 			.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
+			//DEBUG
 			//.redirectOutput(new File("/tmp/external_harvest_test.txt"))
 			;
 			
