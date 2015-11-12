@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.ikanow.aleph2</groupId>
-	<artifactId>aleph2_flume_harvester</artifactId>
+	<artifactId>aleph2_logstash_harvester</artifactId>
 	<version>${aleph2.version}</version>
 	<properties>
 		<aleph2.scope>provided</aleph2.scope>
@@ -31,7 +31,6 @@
 						<configuration>
 							<artifactSet>
 								<includes>
-									<include>net.sf.opencsv</include>
 								</includes>
 							</artifactSet>
 						</configuration>
@@ -52,16 +51,6 @@
 			<artifactId>aleph2_data_model</artifactId>
 			<version>${aleph2.version}</version>
 			<scope>${aleph2.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>2.3</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.flume</groupId>
-			<artifactId>flume-ng-core</artifactId>
-			<version>1.6.0</version>
 		</dependency>
 	</dependencies>
 </project>
