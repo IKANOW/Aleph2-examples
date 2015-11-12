@@ -1,5 +1,6 @@
 package com.ikanow.aleph2.harvest.logstash.services;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -9,18 +10,22 @@ import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
+import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
+import com.ikanow.aleph2.data_model.utils.SetOnce;
+import com.ikanow.aleph2.harvest.logstash.data_model.LogstashHarvesterConfigBean;
 
 /** Logstash harvester interface
  * @author Alex
  */
 public class LogstashHarvestService implements IHarvestTechnologyModule {
-
+	protected final SetOnce<LogstashHarvesterConfigBean> _globals = new SetOnce<>();
+	
 	/* (non-Javadoc)
 	 * @see com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule#onInit(com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext)
 	 */
 	@Override
 	public void onInit(IHarvestContext context) {
-		//(nothing to do)
+		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), LogstashHarvesterConfigBean.class).get());		
 	}
 
 	/* (non-Javadoc)

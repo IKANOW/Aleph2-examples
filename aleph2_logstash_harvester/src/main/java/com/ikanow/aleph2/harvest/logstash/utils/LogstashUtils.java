@@ -15,9 +15,44 @@
  ******************************************************************************/
 package com.ikanow.aleph2.harvest.logstash.utils;
 
-/** Utilities for manipulating logstash assets
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import com.ikanow.aleph2.harvest.logstash.data_model.LogstashBucketConfigBean;
+import com.ikanow.aleph2.harvest.logstash.data_model.LogstashHarvesterConfigBean;
+
+/** Utilities for manipulating logstash assets (config file code is separate)
+ *  Mostly copied from V1
  * @author Alex
  */
 public class LogstashUtils {
 
+	/** Builds a process to execute
+	 * @param global
+	 * @param bucket_config
+	 * @param logstash_config
+	 * @param requested_docs
+	 * @return
+	 */
+	public static ProcessBuilder buildLogstashTest(final LogstashHarvesterConfigBean global, final LogstashBucketConfigBean bucket_config, final String logstash_config, final int requested_docs) {
+		
+		ArrayList<String> args = new ArrayList<String>(4);
+		args.addAll(Arrays.asList(global.binary_path(), "-e", logstash_config));
+		if (0 == requested_docs) {
+			args.add("-t"); // test mode, must faster
+		}//TESTED
+		
+		if (bucket_config.debug_verbosity()) {
+			args.add("--debug");
+		}
+		else {
+			args.add("--verbose");					
+		}
+		ProcessBuilder logstashProcessBuilder = new ProcessBuilder(args);
+		logstashProcessBuilder = logstashProcessBuilder.directory(new File(global.working_dir())).redirectErrorStream(true);
+		logstashProcessBuilder.environment().put("JAVA_OPTS", "");
+		
+		return logstashProcessBuilder;
+	}
 }

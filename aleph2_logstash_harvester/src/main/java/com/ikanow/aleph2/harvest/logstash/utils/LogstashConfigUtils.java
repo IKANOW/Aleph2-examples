@@ -13,28 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package com.ikanow.aleph2.harvest.logstash.data_model;
+package com.ikanow.aleph2.harvest.logstash.utils;
 
-import java.util.Optional;
+public class LogstashConfigUtils {
 
-/** Per bucket configuration for Logstsash
- * @author Alex
- */
-public class LogstashBucketConfigBean {
-	/** Jackson c'tor
-	 */
-	protected LogstashBucketConfigBean() {}
-
-	/** The logstash config script
-	 * @return
-	 */
-	public String script() { return Optional.ofNullable(script).orElse(""); }
-
-	/** Whether to go "full verbose" (currently doesn't do anything since the logs aren't returned)
-	 * @return
-	 */
-	public boolean debug_verbosity() { return Optional.ofNullable(debug_verbosity).orElse(false); }
-	
-	private String script;
-	private Boolean debug_verbosity;
 }
