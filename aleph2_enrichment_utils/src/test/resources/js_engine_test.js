@@ -1,5 +1,3 @@
-
-
 function handle_batch_java(json_stream, len, grouping_key) {
 	
 	// Check the imported underscore works

@@ -1,9 +1,25 @@
+/*******************************************************************************
+ * Copyright 2015, The IKANOW Open Source Project.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.ikanow.aleph2.harvest.logstash.services;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -15,6 +31,7 @@ import scala.Tuple2;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.ISubject;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
@@ -26,6 +43,7 @@ import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.SetOnce;
 import com.ikanow.aleph2.harvest.logstash.data_model.LogstashBucketConfigBean;
 import com.ikanow.aleph2.harvest.logstash.data_model.LogstashHarvesterConfigBean;
+import com.ikanow.aleph2.harvest.logstash.utils.LogstashConfigUtils;
 import com.ikanow.aleph2.harvest.logstash.utils.LogstashUtils;
 import com.ikanow.aleph2.harvest.logstash.utils.ProcessUtils;
 
@@ -36,13 +54,19 @@ import fj.data.Validation;
  */
 public class LogstashHarvestService implements IHarvestTechnologyModule {
 	protected final SetOnce<LogstashHarvesterConfigBean> _globals = new SetOnce<>();
+	protected final SetOnce<IHarvestContext> _context = new SetOnce<>();
+
+	////////////////////////////////////////////////////////////////////////////////
+	
+	// SERVICE API	
 	
 	/* (non-Javadoc)
 	 * @see com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule#onInit(com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext)
 	 */
 	@Override
 	public void onInit(IHarvestContext context) {
-		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), LogstashHarvesterConfigBean.class).get());		
+		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), LogstashHarvesterConfigBean.class).get());
+		_context.set(context);
 	}
 
 	/* (non-Javadoc)
@@ -94,12 +118,16 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			boolean is_enabled, Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
 				
+		final LogstashBucketConfigBean config = Optionals.ofNullable(new_bucket.harvest_configs()).stream().findFirst()														
+				.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
+				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
+		
 		// Handle test case - use process utils to delete
 		if (BucketUtils.isTestBucket(new_bucket)) {
 					
 			final String pid_to_suspend = ProcessUtils.getPid(new_bucket);
 			
-			//TODO: need to kill the ".sincedb" file
+			resetFilePointer(new_bucket, config, _globals.get());
 			
 			//kill/log
 			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(pid_to_suspend);
@@ -112,10 +140,6 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 				//TODO: longer term could do better here, eg we don't care unless data_schema or harvest_configs have changed, right?				
 				return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onUpdatedSource", "No change to bucket"));			
 			}
-			final LogstashBucketConfigBean config = Optionals.ofNullable(new_bucket.harvest_configs()).stream().findFirst()														
-					.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
-					.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
-			
 			if (is_enabled) {
 				return CompletableFuture.completedFuture(startOrUpdateLogstash(new_bucket, config, _globals.get()));
 			}
@@ -133,10 +157,14 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onPurge(DataBucketBean to_purge,
 			IHarvestContext context) {
 		
-		// TODO Auto-generated method stub
-		// Look for .sincedb files for this bucket and delete if present
+		final LogstashBucketConfigBean config = 
+				Optionals.ofNullable(to_purge.harvest_configs()).stream().findFirst()														
+					.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
+				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
+				
+		resetFilePointer(to_purge, config, _globals.get());
 		
-		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPurge", "NYI"));
+		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPurge", "(done)"));
 	}
 
 	/* (non-Javadoc)
@@ -146,8 +174,12 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onDelete(
 			DataBucketBean to_delete, IHarvestContext context) {
 		
-		// TODO Auto-generated method stub
-		// Look for .sincedb files for this bucket and delete if present
+		final LogstashBucketConfigBean config = 
+				Optionals.ofNullable(to_delete.harvest_configs()).stream().findFirst()														
+					.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
+				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
+				
+		resetFilePointer(to_delete, config, _globals.get());
 		
 		return onUpdatedSource(to_delete, to_delete, false, Optional.empty(), context);				
 	}
@@ -217,7 +249,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	
 	// EXECUTIVE UTILS
 	
-	/** Runs logstash in test mode before doing anything else to check its formatting
+	/** Runs logstash in test mode before doing anything else, to check its formatting (otherwise deploying the config can crash the entire thread)
 	 * @param script
 	 * @param bucket
 	 * @param config
@@ -246,7 +278,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		}
 	}
 	
-	/** Starts logstash (or updates if already present)
+	/** Starts logstash (or updates if already present), by create a new config file and restarting the logstash service
 	 * @param bucket
 	 * @param config
 	 * @param globals
@@ -276,7 +308,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		}
 	}
 	
-	/** Stops this logstash source (don't use this if going to restart)
+	/** Stops this logstash source (don't use this if going to restart), by deleting the config file and restarting the logstash service
 	 * @param bucket
 	 * @param config
 	 * @param globals
@@ -297,19 +329,6 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		}
 	}	
 	
-	/** Builds a working logstash formatted config
-	 * @param bucket
-	 * @param config
-	 * @param globals
-	 * @return
-	 */
-	protected Validation<BasicMessageBean, String> getLogstashFormattedConfig(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
-		
-		//TODO
-		
-		return null;
-	}
-	
 	/** Creates the logstash restart file, which the v1 version of logstash periodically checks to decide whether to restart
 	 * @param bucket
 	 * @param config
@@ -320,9 +339,88 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		FileUtils.touch(new File(globals.restart_file()));
 	}
 
+	protected void resetFilePointer(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
+		final String since_db_path = getFilePointer(bucket, config, globals);
+		try {
+			new File(since_db_path).delete();
+		}
+		catch (Exception e) {} // don't care
+	}
+	
+	////////////////////////////////////////////////////////////////////////////////
+	
+	// CONFIGURATION BUILDING
+	
+	/** Builds a working logstash formatted config
+	 * @param bucket
+	 * @param config
+	 * @param globals
+	 * @return
+	 */
+	protected Validation<BasicMessageBean, String> getLogstashFormattedConfig(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
+		try {
+			boolean is_admin = isAdmin(Optional.ofNullable(bucket.owner_id()).orElse(""), _context.get());
+	
+			// Input and filter
+			
+			final StringBuffer errMessage = new StringBuffer();
+			String logstashConfig = LogstashConfigUtils.validateLogstashInput(globals, bucket.full_name(), config.script(), errMessage, is_admin);
+			if (null == logstashConfig) { // Validation error...
+				return Validation.fail(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "getLogstashFormattedConfig", errMessage.toString()));
+			}//TESTED
+			
+			logstashConfig = logstashConfig.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals));
+			// Replacement for #LOGSTASH{host} - currently only replacement supported (+ #IKANOW{} in main code)
+			try {
+				logstashConfig = logstashConfig.replace("#LOGSTASH{host}", java.net.InetAddress.getLocalHost().getHostName());
+			}
+			catch (Exception e) {
+				logstashConfig = logstashConfig.replace("#LOGSTASH{host}", "localhost.localdomain");
+				
+			}
+			
+			String outputConfig = 
+					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService())
+									.replace("_XXX_SOURCEKEY_XXX_", bucket.full_name())
+									;
+			// Output
+			
+			return Validation.success(logstashConfig + "\n" + outputConfig);
+		}
+		catch (Exception e) {
+			return Validation.fail(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "getLogstashFormattedConfig", ErrorUtils.getLongForm("{0}", e)));
+		}
+	}
+	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	// Lower Level Utils
+	
+	/** Returns whether the current user is an admin
+	 * @param user_id
+	 * @param context
+	 * @return
+	 */
+	protected static boolean isAdmin(final String user_id, IHarvestContext context) {
+		final ISubject system_user = context.getServiceContext().getSecurityService().loginAsSystem();
+		try {
+			context.getServiceContext().getSecurityService().runAs(system_user, Arrays.asList(user_id)); // (Switch to bucket owner user)
+			return context.getServiceContext().getSecurityService().hasRole(system_user, "admin");
+		}
+		finally {
+			context.getServiceContext().getSecurityService().releaseRunAs(system_user);
+		}
+	}
+	
+	/** Returns the location of the file pointer
+	 * @param bucket
+	 * @param config
+	 * @param globals
+	 * @return
+	 */
+	protected static String getFilePointer(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
+		return globals.working_dir() + ".sincedb_" + BucketUtils.getUniqueSignature(bucket.full_name(), Optional.empty());
+	}
 	
 	/** Returns the config path + the file name
 	 * @param bucket
@@ -341,6 +439,5 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	protected static String getConfigPath(LogstashHarvesterConfigBean globals) {
 		if ((new File(globals.master_config_dir())).exists()) return globals.master_config_dir();
 		else return globals.slave_config_dir();
-	}
-	
+	}	
 }
