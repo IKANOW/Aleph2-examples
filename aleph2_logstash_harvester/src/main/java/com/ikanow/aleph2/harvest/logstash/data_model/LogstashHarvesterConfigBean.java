@@ -30,7 +30,11 @@ public class LogstashHarvesterConfigBean {
 	public static String LOGSTASH_BINARY = "/opt/logstash-infinite/logstash/bin/logstash";
 	
 	public static String LOGSTASH_RESTART_FILE = "/opt/logstash-infinite/RESTART_LOGSTASH";
-	public static String LOGSTASH_CONFIG_EXTENSION = ".auto.conf";
+	public static String LOGSTASH_CONFIG_EXTENSION = ".v2.conf";
+	
+	public static String NON_ADMIN_INPUTS = "collectd,drupal_dblog,gelf,gemfire,imap,irc,lumberjack,s3,snmptrap,sqs,syslog,twitter,udp,xmpp,zenoss";
+	public static String NON_ADMIN_FILTERS = "advisor,alter,anonymize,checksum,cidr,cipher,clone,collate,csv,date,dns,drop,elapsed,extractnumbers,fingerprint,geoip,gelfify,grep,grok,grokdiscovery,l18n,json,json_encode,kv,metaevent,metrics,multiline,mutate,noop,prune,punct,railsparallelrequest,range,sleep,split,sumnumbers,syslog_pri,throttle,translate,unique,urldecode,useragent,uuid,wms,wmts,xml";
+	public static String NON_ADMIN_OUTPUTS = ""; //(non for now, non-admins will have to use the overrides)
 	
 	/** Jackson c'tor
 	 */
@@ -41,10 +45,20 @@ public class LogstashHarvesterConfigBean {
 	public String master_config_dir() { return Optional.ofNullable(master_config_dir).orElse(LOGSTASH_CONFIG); }
 	public String slave_config_dir() { return Optional.ofNullable(slave_config_dir).orElse(LOGSTASH_CONFIG_DISTRIBUTED); }
 	public String binary_path() { return Optional.ofNullable(binary_path).orElse(LOGSTASH_BINARY); }
-		
+	public String restart_file() { return Optional.ofNullable(restart_file).orElse(LOGSTASH_RESTART_FILE); }
+
+	public String non_admin_inputs() { return Optional.ofNullable(non_admin_inputs).orElse(NON_ADMIN_INPUTS); }
+	public String non_admin_filters() { return Optional.ofNullable(non_admin_filters).orElse(NON_ADMIN_FILTERS); }
+	public String non_admin_outputs() { return Optional.ofNullable(non_admin_outputs).orElse(NON_ADMIN_OUTPUTS); }	
+	
 	private String base_dir;
 	private String working_dir;
 	private String master_config_dir;
 	private String slave_config_dir;
-	private String binary_path;
+	private String binary_path;	
+	private String restart_file;
+	
+	private String non_admin_inputs;
+	private String non_admin_filters;
+	private String non_admin_outputs;
 }

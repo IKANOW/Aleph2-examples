@@ -35,6 +35,13 @@ public class LogstashBucketConfigBean {
 	 */
 	public boolean debug_verbosity() { return Optional.ofNullable(debug_verbosity).orElse(false); }
 	
+	/** Whether to allow the user to specify their own default, or whether to use one of the pre-existing:
+	 *  "hdfs" (default), or "elasticsearch"
+	 * @return
+	 */
+	public String output_override() { return Optional.ofNullable(output_override).orElse("hdfs"); }
+			
 	private String script;
+	private String output_override;
 	private Boolean debug_verbosity;
 }

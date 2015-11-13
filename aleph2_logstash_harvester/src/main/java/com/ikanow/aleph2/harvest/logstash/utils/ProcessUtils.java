@@ -24,9 +24,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import scala.Tuple2;
 
@@ -45,7 +43,7 @@ public class ProcessUtils {
 	 * @param context
 	 * @return
 	 */
-	public static Tuple2<String, String> launchProcess(final DataBucketBean bucket, final IHarvestContext context) {
+	public static Tuple2<String, String> launchProcess(final ProcessBuilder process_to_launch, final DataBucketBean bucket, final IHarvestContext context) {
 		try {
 			// Try
 			final File run_dir = new File ("/opt/aleph2-home/run/");
@@ -54,29 +52,7 @@ public class ProcessUtils {
 				throw new RuntimeException("Can't write to: " + run_dir);
 			}
 			
-			final String classpath = Stream.concat(
-					context.getHarvestContextLibraries(Optional.empty()).stream(),
-					context.getHarvestLibraries(Optional.of(bucket)).get().values().stream()
-					)
-					.collect(Collectors.joining(":"))
-					;
-			
-			ProcessBuilder pb = new ProcessBuilder(
-					Arrays.<String>asList(
-							Optional.ofNullable(System.getenv("JAVA_HOME")).orElse("/usr/")  
-								+ File.separator + "bin" + File.separator + "java",
-							"-classpath",
-							classpath,
-							"com.ikanow.aleph2.example.external_harvester.services.ExternalProcessLaunchService",
-							context.getHarvestContextSignature(Optional.of(bucket), Optional.empty()),
-							"test_argument"
-							))
-			.redirectErrorStream(true)
-			.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
-			//.redirectOutput(new File("/tmp/external_harvest_test.txt"))
-			;
-			
-			final Process px = pb.start();
+			final Process px = process_to_launch.start();
 			
 			// Sleep for 5s to see if it's going to die quickly
 			for (int i = 0; i < 5; ++i) {
@@ -90,7 +66,7 @@ public class ProcessUtils {
 			String pid = null;
 			if (!px.isAlive()) {
 				err = "Unknown error: " + px.exitValue() + ": " + 
-						pb.command().stream().collect(Collectors.joining(" "));
+						process_to_launch.command().stream().collect(Collectors.joining(" "));
 					// (since not capturing output)
 			}
 			else {

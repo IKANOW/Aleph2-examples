@@ -35,11 +35,11 @@ public class LogstashUtils {
 	 * @param requested_docs
 	 * @return
 	 */
-	public static ProcessBuilder buildLogstashTest(final LogstashHarvesterConfigBean global, final LogstashBucketConfigBean bucket_config, final String logstash_config, final int requested_docs) {
+	public static ProcessBuilder buildLogstashTest(final LogstashHarvesterConfigBean global, final LogstashBucketConfigBean bucket_config, final String logstash_config, final long requested_docs) {
 		
 		ArrayList<String> args = new ArrayList<String>(4);
 		args.addAll(Arrays.asList(global.binary_path(), "-e", logstash_config));
-		if (0 == requested_docs) {
+		if (0L == requested_docs) {
 			args.add("-t"); // test mode, must faster
 		}//TESTED
 		
