@@ -25,14 +25,13 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import scala.Tuple2;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IBatchRecord;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentBatchModule;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentModuleContext;
@@ -81,6 +80,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 		_engine.get().put("_a2_global_grouping_fields", grouping_fields.orElse(Collections.emptyList()));
 		_engine.get().put("_a2_global_previous_stage", previous_next._1().toString());
 		_engine.get().put("_a2_global_next_stage", previous_next._2().toString());
+		_engine.get().put("_a2_global_bucket", bucket);
 		_engine.get().put("_a2_global_config", BeanTemplateUtils.configureMapper(Optional.empty()).convertValue(config_bean.config(), JsonNode.class));
 		_engine.get().put("_a2_global_mapper", BeanTemplateUtils.configureMapper(Optional.empty()));
 		
@@ -91,7 +91,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 						if (import_path.equals("")) { // also import the user script just before here
 							return config_bean.script();
 						}
-						else return Resources.toString(Resources.getResource(import_path), Charsets.UTF_8);
+						else return IOUtils.toString(JsScriptEngineService.class.getClassLoader().getResourceAsStream(import_path), "UTF-8");
 					}
 					catch (Exception e) {
 						_logger.error(ErrorUtils.getLongForm("onStageInitialize: {0}", e));		

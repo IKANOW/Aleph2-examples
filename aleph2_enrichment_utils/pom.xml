@@ -68,6 +68,11 @@
 			<scope>${aleph2.scope}</scope>
 		</dependency>
 		<!-- Other external dependencies here -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
 		<!-- Test code -->
 	</dependencies>
 </project>

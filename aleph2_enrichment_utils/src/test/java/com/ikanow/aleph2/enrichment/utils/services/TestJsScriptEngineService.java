@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,8 @@ import com.ikanow.aleph2.data_model.objects.data_import.EnrichmentControlMetadat
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.Tuples;
 
+import fj.data.Either;
+
 public class TestJsScriptEngineService {
 
 	@Test
@@ -62,17 +65,28 @@ public class TestJsScriptEngineService {
 		//final IEnrichmentModuleContext context = Mockito.mock(IEnrichmentModuleContext.class);
 		
 		final LinkedList<ObjectNode> emitted = new LinkedList<>();
+		final LinkedList<JsonNode> grouped = new LinkedList<>();
+		final LinkedList<JsonNode> externally_emitted = new LinkedList<>();
 		
 		final IEnrichmentModuleContext context = Mockito.mock(IEnrichmentModuleContext.class, new Answer<Void>() {
-		      public Void answer(InvocationOnMock invocation) {
+		      @SuppressWarnings("unchecked")
+			public Void answer(InvocationOnMock invocation) {
 		    	  try {
-			    	  assertEquals("emitMutableObject", invocation.getMethod().getName());
+			    	  Object[] args  = invocation.getArguments();
+			    	  assertTrue(invocation.getMethod().getName().equals("emitMutableObject") ||
+			    			  invocation.getMethod().getName().equals("externalEmit")
+			    			  );
 			    	  if (invocation.getMethod().getName().equals("emitMutableObject")) {
-				    	  Object[] args  = invocation.getArguments();
+			    		  final Optional<JsonNode> grouping = (Optional<JsonNode>) args[3];
+			    		  if (grouping.isPresent()) {
+			    			  grouped.add(grouping.get());
+			    		  }
 				    	  emitted.add((ObjectNode) args[1]);
 			    	  }
-			    	  else if (invocation.getMethod().getName().equals("emitMutableObject")) {
-			    		  
+			    	  else if (invocation.getMethod().getName().equals("externalEmit")) {
+			    		  final DataBucketBean to = (DataBucketBean) args[0];
+			    		  final Either<JsonNode, Map<String, Object>> out = (Either<JsonNode, Map<String, Object>>)args[1];
+			    		  externally_emitted.add(((ObjectNode)out.left().value()).put("bucket", to.full_name()));			    		  
 			    	  }
 		    	  }
 		    	  catch (Exception e) {
@@ -124,6 +138,10 @@ public class TestJsScriptEngineService {
 				fail("missing field" + on.toString());
 			}
 		});
+		
+		assertEquals(5, grouped.size());
+		assertTrue(grouped.stream().map(j -> j.toString()).allMatch(s -> s.equals("{\"key\":\"static\"}")));
+		assertEquals(5, externally_emitted.size());
 		
 		// Finally, check cloning
 		

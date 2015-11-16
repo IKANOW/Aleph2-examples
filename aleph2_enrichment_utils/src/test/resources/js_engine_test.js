@@ -20,8 +20,9 @@ function handle_batch_java(json_stream, len, grouping_key) {
 		var json_js = JSON.parse(json_str);
 		if (null != grouping_key) {
 			json_js.grouping_key = _a2.to_json(grouping_key);
+			_a2.externalEmit("test", json_js);
 		}
-		_a2.emit(json_js);
+		_a2.emit(json_js, grouping_key);
 		_a2.emit({'prev': _a2.previous_stage, 'next': _a2.next_stage, 'groups': _a2.grouping_fields, 'config': _a2.config });
 	}
 }
