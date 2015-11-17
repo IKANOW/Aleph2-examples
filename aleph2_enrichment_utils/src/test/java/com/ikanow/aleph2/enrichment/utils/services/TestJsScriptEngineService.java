@@ -73,7 +73,7 @@ public class TestJsScriptEngineService {
 			public Void answer(InvocationOnMock invocation) {
 		    	  try {
 			    	  Object[] args  = invocation.getArguments();
-			    	  assertTrue(invocation.getMethod().getName().equals("emitMutableObject") ||
+			    	  assertTrue("Unexpected call to context object during test: " + invocation.getMethod().getName(), invocation.getMethod().getName().equals("emitMutableObject") ||
 			    			  invocation.getMethod().getName().equals("externalEmit")
 			    			  );
 			    	  if (invocation.getMethod().getName().equals("emitMutableObject")) {
