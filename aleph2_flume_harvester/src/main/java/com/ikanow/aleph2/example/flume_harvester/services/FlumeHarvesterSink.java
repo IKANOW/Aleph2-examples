@@ -41,12 +41,14 @@ import com.codepoetics.protonpack.StreamUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableSet;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IDataServiceProvider;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IDataWriteService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
+import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean.MasterEnrichmentType;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
@@ -76,6 +78,22 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	DataBucketBean _bucket;
 	Optional<String> _time_field;
 	
+	boolean _streaming = true; 
+	boolean _batch = true;
+	
+	/** Fixed config that writes batch output
+	 */
+	final static FlumeBucketConfigBean _BATCH_CONFIG = 
+			BeanTemplateUtils.build(FlumeBucketConfigBean.class)
+				.with(FlumeBucketConfigBean::output, 
+						BeanTemplateUtils.build(FlumeBucketConfigBean.OutputConfig.class)
+							.with(FlumeBucketConfigBean.OutputConfig::direct_output,
+									ImmutableSet.<String>builder().add("batch").build()
+									)
+						.done().get()
+				)
+			.done().get();
+	
 	/* (non-Javadoc)
 	 * @see org.apache.flume.conf.Configurable#configure(org.apache.flume.Context)
 	 */
@@ -88,6 +106,25 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 						.get();
 	
 			_bucket = _context.getBucket().get();
+			
+			switch (Optional.ofNullable(_bucket.master_enrichment_type()).orElse(MasterEnrichmentType.none)) {
+			case none:
+				_streaming = false;
+				_batch = false;
+				break;
+			case batch:
+				_streaming = false;
+				_batch = true;
+				break;
+			case streaming:
+				_streaming = true;
+				_batch = false;
+				break;
+			case streaming_and_batch: // (not really supported in many places)
+				_streaming = true;
+				_batch = true;
+				break;
+			}
 			
 			_logger.debug("Bucket = " + BeanTemplateUtils.toJson(_bucket));
 			
@@ -150,8 +187,13 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 				{
 					this.directOutput(json_event, _config.get(), _bucket);
 				}
-				else { //TODO: streaming vs batch 				
-					_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json_event));
+				else {
+					if (_streaming) {
+						_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json_event));
+					}
+					if (_batch) {
+						this.directOutput(json_event, _BATCH_CONFIG, _bucket);
+					}
 				}
 			});
 		
@@ -363,7 +405,9 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 		public Optional<IDataWriteService<JsonNode>> search_index_service;
 		public Optional<IDataWriteService.IBatchSubservice<JsonNode>> batch_search_index_service;
 		public Optional<IDataWriteService<JsonNode>> storage_service;
-		public Optional<IDataWriteService.IBatchSubservice<JsonNode>> batch_storage_service;
+		public Optional<IDataWriteService.IBatchSubservice<JsonNode>> bulk_storage_service;
+		public Optional<IDataWriteService<JsonNode>> batch_input_service;
+		public Optional<IDataWriteService.IBatchSubservice<JsonNode>> bulk_batch_input_service;
 		public boolean also_stream;
 	}
 	final protected SetOnce<DirectOutputState> _direct = new SetOnce<>(); 
@@ -378,6 +422,9 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 			
 			if (!_direct.isSet()) { 
 				final DirectOutputState direct = new DirectOutputState();
+				
+				// Search index service
+				
 				final Optional<ISearchIndexService> search_index_service = 
 						(config.output().direct_output().contains("search_index_service") 
 								? _context.getServiceContext().getSearchIndexService()
@@ -391,6 +438,8 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 				
 				direct.batch_search_index_service = direct.search_index_service.flatMap(IDataWriteService::getBatchWriteSubservice);
 				
+				// Storage service
+				
 				final Optional<IStorageService> storage_service = 
 						(config.output().direct_output().contains("storage_service")
 								? Optional.of(_context.getServiceContext().getStorageService())
@@ -402,8 +451,23 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 							.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.of(IStorageService.StorageStage.processed.toString()), Optional.empty()))
 							;
 	
-				direct.batch_storage_service = direct.storage_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+				direct.bulk_storage_service = direct.storage_service.flatMap(IDataWriteService::getBatchWriteSubservice);
 				
+				// Batch input (uses storage service logic)
+				
+				final Optional<IStorageService> batch_input_service = 
+						(config.output().direct_output().contains("batch")
+								? Optional.of(_context.getServiceContext().getStorageService())
+								: Optional.empty());
+						
+				direct.batch_input_service = 
+						batch_input_service
+							.flatMap(IDataServiceProvider::getDataService)
+							.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.of(IStorageService.StorageStage.transient_input.toString()), Optional.empty()))
+							;
+	
+				direct.bulk_batch_input_service = direct.batch_input_service.flatMap(IDataWriteService::getBatchWriteSubservice);
+
 				direct.also_stream = config.output().direct_output().contains("stream");
 						
 				_direct.set(direct);
@@ -424,8 +488,19 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 			// Storage service
 			
 			direct.storage_service.ifPresent(storage_service -> {
-				if (direct.batch_storage_service.isPresent()) {
-					direct.batch_storage_service.get().storeObject(json);
+				if (direct.bulk_storage_service.isPresent()) {
+					direct.bulk_storage_service.get().storeObject(json);
+				}
+				else {
+					storage_service.storeObject(json);
+				}
+			});
+	
+			//Batch input (uses storage service logic)
+			
+			direct.batch_input_service.ifPresent(storage_service -> {
+				if (direct.bulk_batch_input_service.isPresent()) {
+					direct.bulk_batch_input_service.get().storeObject(json);
 				}
 				else {
 					storage_service.storeObject(json);
