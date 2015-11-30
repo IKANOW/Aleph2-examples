@@ -352,8 +352,19 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 	@Override
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
-		return CompletableFuture.completedFuture(new BasicMessageBean(
-				new Date(), true, "onPeriodicPoll", "onPeriodicPoll", null, "No action taken", null));
+		
+		// (If we're here then we're not suspended by definition)
+		
+		// Check if it's running
+		final Optional<String> maybe_pid = Optional.ofNullable(FlumeLaunchUtils.getPid(polled_bucket));
+		final boolean is_running = maybe_pid.map(Lambdas.wrap_u(pid -> FlumeLaunchUtils.isRunning(pid))).orElse(false);
+		if (!is_running) { // restart it if not
+			return onNewSource(polled_bucket, context, true);
+		}
+		else {
+			return CompletableFuture.completedFuture(new BasicMessageBean(
+					new Date(), true, "onPeriodicPoll", "onPeriodicPoll", null, "No action taken", null));
+		}
 	}
 
 	/* (non-Javadoc)
