@@ -39,4 +39,9 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
+	<context-param>
+	     <param-name>shiroEnvironmentClass</param-name>
+	     <param-value>com.ikanow.aleph2.web_login.WebEnvironment</param-value>
+	</context-param>
+	
 </web-app>

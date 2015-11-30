@@ -1,4 +1,4 @@
-package aleph2_web_login;
+package com.ikanow.aleph2.web_login;
 
 public class IkanowV1CookieAuthentication {
 
