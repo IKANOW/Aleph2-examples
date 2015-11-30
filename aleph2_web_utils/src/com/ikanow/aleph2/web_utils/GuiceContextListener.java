@@ -30,6 +30,7 @@ public class GuiceContextListener extends GuiceServletContextListener {
 	
 	public static String CONTEXT_PARAM_ALEPH2_CONFIG = "aleph2.config"; 
 	public static String CONTEXT_PARAM_MODULE_CLASS = "aleph2.module_class"; 
+	public static String CONTEXT_PARAM_APPLICATION_CLASS = "aleph2.application_class"; 
 	private static final Logger logger = LogManager.getLogger();
 	public static Injector injector;
 	private String config_path; 
@@ -40,7 +41,7 @@ public class GuiceContextListener extends GuiceServletContextListener {
 	public void contextInitialized(ServletContextEvent servletContextEvent) {
 		config_path = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_ALEPH2_CONFIG);
 		this.moduleClassName = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_MODULE_CLASS);
-		this.applicationClassName = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_MODULE_CLASS);
+		this.applicationClassName = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_APPLICATION_CLASS);
 		super.contextInitialized(servletContextEvent);
 	}
 	

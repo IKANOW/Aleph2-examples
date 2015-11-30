@@ -7,7 +7,7 @@
         <dependent-module archiveName="aleph2_data_model-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_data_model/aleph2_data_model">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_core_distributed_services_library-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_distributed_services_library/aleph2_core_distributed_services_library">
+        <dependent-module archiveName="aleph2_web_utils-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_web_utils/aleph2_web_utils">
             <dependency-type>uses</dependency-type>
         </dependent-module>
         <property name="context-root" value="aleph2_web_login"/>

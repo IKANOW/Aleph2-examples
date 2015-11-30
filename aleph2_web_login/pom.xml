@@ -20,6 +20,12 @@
 	</dependency>
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_web_utils</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
 		<artifactId>aleph2_core_distributed_services_library</artifactId>
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
