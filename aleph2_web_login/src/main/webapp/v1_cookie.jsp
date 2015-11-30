@@ -16,21 +16,30 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
-<%@ include file="../include.jsp" %>
+<%@ include file="include.jsp" %>
 
 <html>
 <head>
     <link type="text/css" rel="stylesheet" href="<c:url value="/style.css"/>"/>
+    <title>Cookie</title>
 </head>
 <body>
 
-<h2>Users only</h2>
+<shiro:authenticated>
+<h2>You are authenticated!</h2>
+<%
+// Create cookies for first and last names.      
+Cookie infiniteCookie = new Cookie("infinite.cookie",  "CookieValue");
+infiniteCookie.setPath("/");
 
-<p>You are currently logged in.</p>
+// Add both the cookies in the response header.
+response.addCookie( infiniteCookie );
+   %>
 
-<p><a href="<c:url value="/home.jsp"/>">Return to the home page.</a></p>
 
-<p><a href="<c:url value="/logout"/>">Log out.</a></p>
-
+</shiro:authenticated>
+<shiro:notAuthenticated>
+<h2>Not authenticated!</h2>
+</shiro:notAuthenticated>
 </body>
 </html>
