@@ -55,7 +55,14 @@ public class GuiceContextListener extends GuiceServletContextListener {
 			File f = new File(".");
 			logger.debug("CURR PATH: " + f.getCanonicalPath());
 			logger.debug("full file path: " + config_file.getCanonicalPath());
-			final Config config = ConfigFactory.parseFile(config_file);
+			Config config = null;
+			// check if file exists otherwise try to load from classpath
+			if(config_file.exists()){
+				config = ConfigFactory.parseFile(config_file);	
+			}
+			else{
+				config = ConfigFactory.parseResources(config_path);
+			}
 			this.getClass();
 			Module module = ((Module) Class.forName(moduleClassName!=null?moduleClassName:DefaultWebModule.class.getName()).newInstance());
 			final Class<?> applicationClass =  applicationClassName!=null?Class.forName(applicationClassName):DefaultInjectorContainer.class;
