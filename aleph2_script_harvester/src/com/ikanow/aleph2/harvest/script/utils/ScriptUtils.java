@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -147,6 +148,8 @@ public class ScriptUtils {
 					script_file_path = ScriptUtils.saveScriptToTempFile(resource, bucket);
 				} catch (IOException e) {
 					return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "Could not create temporary file to load script into: " + e.getMessage());
+				} catch (NullPointerException e) {
+					return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "Could not find resource file: " + config.resource_name());
 				}
 			}
 			//run the script file (or script we copied into one)
@@ -174,11 +177,26 @@ public class ScriptUtils {
 	 * 
 	 * @param bucket
 	 */
-	public static BasicMessageBean stopScriptProcess(final DataBucketBean bucket, final ScriptHarvesterBucketConfigBean config, final String message, final String working_dir) {
-		//TODO STOP PID if its still running (verify its the same process)
+	public static BasicMessageBean stopScriptProcess(final DataBucketBean bucket, final ScriptHarvesterBucketConfigBean config, final String message, final String working_dir, final IStorageService storage_service) {
+		//STOP PID if its still running (verify its the same process)		
+		final Tuple2<String, Boolean> err_pid = ProcessUtils.stopProcess(ScriptHarvestService.class.getSimpleName(), bucket, storage_service.getRootPath());
+		if ( !err_pid._2) {
+			//failed to stop, try to cleanup script file and bail out
+			cleanupTempScriptFile(bucket, message);
+			return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "Error stopping script (can result in script continuing to run on server, need to manually kill perhaps): "+err_pid._1, Optional.empty());
+		}
 		
-		//TODO KILL tmp script file we copied locally if need be?
-		return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "not yet implemented");
+		// KILL tmp script file we copied locally if need be?		
+		cleanupTempScriptFile(bucket, message);		
+		return ErrorUtils.buildSuccessMessage(ScriptHarvestService.class.getSimpleName(), message, "Temporary script stopped and tmp files deleted successfully.");
+	}
+	
+	private static BasicMessageBean cleanupTempScriptFile(final DataBucketBean bucket, final String message) {
+		final String script_file_path = ScriptUtils.createTmpScriptFilePath(bucket);
+		final File tmp_script_File = new File(script_file_path);
+		if ( tmp_script_File.exists() )
+			tmp_script_File.delete();
+		return ErrorUtils.buildSuccessMessage(ScriptHarvestService.class.getSimpleName(), message, "Temporary script deleted successfully.");
 	}
 
 	/**
@@ -187,11 +205,18 @@ public class ScriptUtils {
 	 */
 	public static BasicMessageBean restartScriptProcess(final DataBucketBean bucket, final IHarvestContext context, final IStorageService storage_service, final ScriptHarvesterBucketConfigBean config, final String message, final String working_dir, 
 			Optional<Long> requested_num_objects, Optional<Long> max_run_time_secs) {
-		final BasicMessageBean stop_result = stopScriptProcess(bucket, config, message, working_dir);
+		final BasicMessageBean stop_result = stopScriptProcess(bucket, config, message, working_dir, storage_service);
 		final BasicMessageBean start_result = startScriptProcess(bucket, context, storage_service, config, message, working_dir, requested_num_objects, max_run_time_secs);
 		//merge the results and return that bean
-		final Map<String, String> details = stop_result.details();
-		details.putAll(start_result.details());
+		final Map<String, String> details = new HashMap<String, String>();
+		if ( stop_result.details() != null )
+			details.putAll(stop_result.details());
+		if ( start_result.details() != null)
+			details.putAll(start_result.details());
 		return new BasicMessageBean(new Date(), stop_result.success() && start_result.success(), ScriptHarvestService.class.getSimpleName(), "restartScriptProcess", 0, "STOP: " + stop_result.message() + " START: " + start_result.message(), details);
+	}
+
+	public static boolean isProcessRunning(final DataBucketBean bucket, final IStorageService storage_service) {
+		return ProcessUtils.isProcessRunning(ScriptHarvestService.class.getSimpleName(), bucket, storage_service.getRootPath());
 	}
 }

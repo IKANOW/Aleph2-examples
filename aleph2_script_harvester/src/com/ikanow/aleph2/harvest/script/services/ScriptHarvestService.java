@@ -6,7 +6,6 @@ import java.util.concurrent.CompletableFuture;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import com.google.inject.Inject;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
@@ -53,7 +52,6 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public CompletableFuture<BasicMessageBean> onNewSource(
 			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {
-		// TODO start up process and record pid
 		if (enabled) {
 			//TODO loop over every harvest config and run for every one enabled rather than just the first
 			final ScriptHarvesterBucketConfigBean config = 
@@ -73,7 +71,8 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			DataBucketBean old_bucket, DataBucketBean new_bucket,
 			boolean is_enabled, Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
-		// TODO stop any currently running pid for this job, if enabled start up again
+		_logger.error("SCRIPT: onUPDATE, enabled: " + is_enabled);
+		// stop any currently running pid for this job, if enabled start up again
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(new_bucket.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
@@ -88,7 +87,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 		}
 		else { // Just stop
 			//(this does nothing if the bucket isn't actually running)
-			return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir()));
+			return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir(), storage_service));
 		}		
 	}
 
@@ -97,33 +96,38 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			IHarvestContext context) {
 		// TODO nothing to do, scripts shouldn't be keeping any local state? or do we want to pass
 		//a special ENV var that tells a script to purge
-		return null;
+		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPurge", "NYI - if you have a need to purge a script, let me know how to implement"));
 	}
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onDelete(
 			DataBucketBean to_delete, IHarvestContext context) {
-		// TODO kill the process if its running
+		// kill the process if its running
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(to_delete.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 		
-		return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(to_delete, config, "onDelete", _globals.get().working_dir()));
+		return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(to_delete, config, "onDelete", _globals.get().working_dir(), storage_service));
 	}
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onDecommission(
 			DataBucketBean to_decommission, IHarvestContext context) {
-		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onDecommission", "NYI"));
+		//run stop because the process is moving off this node
+		return onUpdatedSource(to_decommission, to_decommission, false, Optional.empty(), context);
+	//	return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onDecommission", "NYI"));
 	}
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
-		// TODO report if the process is still running?
 		_logger.error("SCRIPT: onPeriodicPoll was called");
-		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
+		// report if the process is still running?
+		return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + ScriptUtils.isProcessRunning(polled_bucket, storage_service)));
+		
+		
+//		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
 	}
 
 	@Override
