@@ -26,6 +26,13 @@
 	</dependency>
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_security_service_ikanow_v1</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
 		<artifactId>aleph2_web_utils</artifactId>
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>

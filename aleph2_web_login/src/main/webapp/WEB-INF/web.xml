@@ -53,7 +53,7 @@
 	</context-param>
 	<context-param>
 	     <param-name>aleph2.module_class</param-name>
-	     <param-value>com.ikanow.aleph2.web_utils.DefaultWebModule</param-value>
+	     <param-value>com.ikanow.aleph2.security.module.IkanowV1WebSecurityModule</param-value>
 	</context-param>
 	<context-param>
 	     <param-name>aleph2.application_class</param-name>
