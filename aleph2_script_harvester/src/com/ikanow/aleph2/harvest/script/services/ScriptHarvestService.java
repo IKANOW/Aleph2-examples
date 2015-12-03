@@ -6,9 +6,10 @@ import java.util.concurrent.CompletableFuture;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import com.google.inject.Inject;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
@@ -26,7 +27,13 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	private static final Logger _logger = LogManager.getLogger();
 	protected final SetOnce<ScriptHarvesterConfigBean> _globals = new SetOnce<>();
 	protected final SetOnce<IHarvestContext> _context = new SetOnce<>();
+	private final IStorageService storage_service;
 
+	@Inject
+	public ScriptHarvestService(final IStorageService storage_service) {
+		this.storage_service = storage_service;
+	}
+	
 	@Override
 	public void onInit(IHarvestContext context) {
 		_logger.error("SCRIPT: init");
@@ -45,7 +52,6 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public CompletableFuture<BasicMessageBean> onNewSource(
 			DataBucketBean new_bucket, IHarvestContext context, boolean enabled) {
-		// TODO start up process and record pid
 		if (enabled) {
 			//TODO loop over every harvest config and run for every one enabled rather than just the first
 			final ScriptHarvesterBucketConfigBean config = 
@@ -53,7 +59,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 						.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 					.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 						
-			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, context, storage_service, config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 		else {		
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket {0} created but suspended", new_bucket.full_name()));
@@ -65,7 +71,8 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			DataBucketBean old_bucket, DataBucketBean new_bucket,
 			boolean is_enabled, Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
-		// TODO stop any currently running pid for this job, if enabled start up again
+		_logger.error("SCRIPT: onUPDATE, enabled: " + is_enabled);
+		// stop any currently running pid for this job, if enabled start up again
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(new_bucket.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
@@ -76,11 +83,11 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onUpdatedSource", "No change to bucket"));			
 		}
 		if (is_enabled) {
-			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, context, storage_service, config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 		else { // Just stop
 			//(this does nothing if the bucket isn't actually running)
-			return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir()));
+			return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir(), storage_service));
 		}		
 	}
 
@@ -89,33 +96,38 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			IHarvestContext context) {
 		// TODO nothing to do, scripts shouldn't be keeping any local state? or do we want to pass
 		//a special ENV var that tells a script to purge
-		return null;
+		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPurge", "NYI - if you have a need to purge a script, let me know how to implement"));
 	}
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onDelete(
 			DataBucketBean to_delete, IHarvestContext context) {
-		// TODO kill the process if its running
+		// kill the process if its running
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(to_delete.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 		
-		return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(to_delete, config, "onDelete", _globals.get().working_dir()));
+		return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(to_delete, config, "onDelete", _globals.get().working_dir(), storage_service));
 	}
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onDecommission(
 			DataBucketBean to_decommission, IHarvestContext context) {
-		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onDecommission", "NYI"));
+		//run stop because the process is moving off this node
+		return onUpdatedSource(to_decommission, to_decommission, false, Optional.empty(), context);
+	//	return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onDecommission", "NYI"));
 	}
 
 	@Override
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
-		// TODO report if the process is still running?
 		_logger.error("SCRIPT: onPeriodicPoll was called");
-		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
+		// report if the process is still running?
+		return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + ScriptUtils.isProcessRunning(polled_bucket, storage_service)));
+		
+		
+//		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
 	}
 
 	@Override
@@ -135,8 +147,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());		
 		
-		//TODO also need to support a resource being spec'd and we'll just try to get it via getResourceAsStream(resource)
-		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
+		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, storage_service, config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
 	}
 
 }
