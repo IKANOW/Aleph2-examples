@@ -16,7 +16,8 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
-<%@ include file="include.jsp" %>
+<%@ page import="com.google.inject.Injector,com.ikanow.aleph2.security.service.IkanowV1CookieAuthentication" %>
+<%@ include file="include.jsp"%>
 
 <html>
 <head>
@@ -25,12 +26,23 @@
 </head>
 <body>
 
+<%     ServletContext sc = session.getServletContext();
+	   Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
+	   IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
+
+     %>
 <shiro:authenticated>
 <h2>You are authenticated!</h2>
 <%
 // Create cookies for first and last names.      
 Cookie infiniteCookie = new Cookie("infinite.cookie",  "CookieValue");
 infiniteCookie.setPath("/");
+
+//
+
+
+     
+
 
 // Add both the cookies in the response header.
 response.addCookie( infiniteCookie );
@@ -41,5 +53,7 @@ response.addCookie( infiniteCookie );
 <shiro:notAuthenticated>
 <h2>Not authenticated!</h2>
 </shiro:notAuthenticated>
+
+<h2>Injector<%=""+injector %></h2>
 </body>
 </html>

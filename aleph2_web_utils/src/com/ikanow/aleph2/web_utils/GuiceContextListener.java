@@ -65,8 +65,9 @@ public class GuiceContextListener extends GuiceServletContextListener {
 			}
 			this.getClass();
 			Module module = ((Module) Class.forName(moduleClassName!=null?moduleClassName:DefaultWebModule.class.getName()).newInstance());
-			final Class<?> applicationClass =  applicationClassName!=null?Class.forName(applicationClassName):DefaultInjectorContainer.class;
+			final Class<?> applicationClass =  applicationClassName!=null?Class.forName(applicationClassName):DefaultInjectorContainer.class;			
 			ModuleUtils.initializeApplication(Arrays.asList(module), Optional.of(config), Either.left(applicationClass));
+			
 			injector = ModuleUtils.getAppInjector().get();
 		} catch (Exception e) {
 			logger.error("error creating injector", e);

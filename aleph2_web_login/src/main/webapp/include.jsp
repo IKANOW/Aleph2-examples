@@ -16,7 +16,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
-<%@ page import="org.apache.shiro.SecurityUtils" %>
+<%@ page import="org.apache.shiro.SecurityUtils,com.google.inject.Injector" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags" %>
