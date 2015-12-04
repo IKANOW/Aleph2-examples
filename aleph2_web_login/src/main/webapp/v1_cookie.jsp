@@ -16,7 +16,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
-<%@ page import="com.google.inject.Injector,com.ikanow.aleph2.security.service.IkanowV1CookieAuthentication" %>
+<%@ page import="com.google.inject.Injector,org.apache.shiro.subject.support.DefaultSubjectContext,org.apache.shiro.subject.SimplePrincipalCollection,com.ikanow.aleph2.security.web.*" %>
 <%@ include file="include.jsp"%>
 
 <html>
@@ -29,7 +29,9 @@
 <%     ServletContext sc = session.getServletContext();
 	   Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
 	   IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
-
+	   SimplePrincipalCollection pc = (SimplePrincipalCollection)request.getSession(false).getAttribute(DefaultSubjectContext.PRINCIPALS_SESSION_KEY);
+	   String userId = pc!=null ? ""+pc.getPrimaryPrincipal():null;
+	   CookieBean cb = cookieAuth.createCookie(userId);
      %>
 <shiro:authenticated>
 <h2>You are authenticated!</h2>
