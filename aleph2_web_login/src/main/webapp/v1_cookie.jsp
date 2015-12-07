@@ -26,36 +26,36 @@
 </head>
 <body>
 
-<%     ServletContext sc = session.getServletContext();
-	   Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
-	   IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
-	   SimplePrincipalCollection pc = (SimplePrincipalCollection)request.getSession(false).getAttribute(DefaultSubjectContext.PRINCIPALS_SESSION_KEY);
-	   String userId = pc!=null ? ""+pc.getPrimaryPrincipal():null;
-	   CookieBean cb = cookieAuth.createCookie(userId);
-     %>
 <shiro:authenticated>
 <h2>You are authenticated!</h2>
 <%
+     ServletContext sc = session.getServletContext();
+Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
+IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
+SimplePrincipalCollection pc = (SimplePrincipalCollection)request.getSession(false).getAttribute(DefaultSubjectContext.PRINCIPALS_SESSION_KEY);
+String userId = pc!=null ? ""+pc.getPrimaryPrincipal():null;
+CookieBean cb = cookieAuth.createCookie(userId);
+
 // Create cookies for first and last names.      
-Cookie infiniteCookie = new Cookie("infinite.cookie",  "CookieValue");
+Cookie infiniteCookie = new Cookie("infinite.cookie",  cb.getCookieId());
 infiniteCookie.setPath("/");
+//infiniteCookie.setAccessRestricted(true);
+//Indicates whether to restrict cookie access to untrusted parties. Currently this toggles the non-standard but widely supported HttpOnly cookie parameter. 
+//infiniteCookie.setHttpOnly(true);
 
-//
-
-
-     
-
+int nClientPort = 80;
+if ((443 == nClientPort) || (8443 == nClientPort)) {
+	infiniteCookie.setSecure(true);
+}
 
 // Add both the cookies in the response header.
 response.addCookie( infiniteCookie );
-   %>
-
-
+ %>
 </shiro:authenticated>
+
 <shiro:notAuthenticated>
 <h2>Not authenticated!</h2>
 </shiro:notAuthenticated>
 
-<h2>Injector<%=""+injector %></h2>
 </body>
 </html>
