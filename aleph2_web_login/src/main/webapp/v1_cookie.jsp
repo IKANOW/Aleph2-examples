@@ -41,7 +41,7 @@ Cookie infiniteCookie = new Cookie("infinite.cookie",  cb.getCookieId());
 infiniteCookie.setPath("/");
 //infiniteCookie.setAccessRestricted(true);
 //Indicates whether to restrict cookie access to untrusted parties. Currently this toggles the non-standard but widely supported HttpOnly cookie parameter. 
-//infiniteCookie.setHttpOnly(true);
+infiniteCookie.setHttpOnly(true);
 
 int nClientPort = 80;
 if ((443 == nClientPort) || (8443 == nClientPort)) {
