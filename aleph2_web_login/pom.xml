@@ -12,11 +12,12 @@
   <name>aleph2_web_login Maven Webapp</name>
   <url>http://maven.apache.org</url>
   <dependencies>
- 	<dependency>
+<!--  	<dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>javax.servlet-api</artifactId>
         <version>3.1.0</version>
-	</dependency>   
+	</dependency>
+	 -->   
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
 		<artifactId>aleph2_data_model</artifactId>
