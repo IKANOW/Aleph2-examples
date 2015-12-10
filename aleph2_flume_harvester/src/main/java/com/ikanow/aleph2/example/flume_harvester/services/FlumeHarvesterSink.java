@@ -463,7 +463,14 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 				direct.batch_input_service = 
 						batch_input_service
 							.flatMap(IDataServiceProvider::getDataService)
-							.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, Optional.of(IStorageService.StorageStage.transient_input.toString()), Optional.empty()))
+							.flatMap(s -> s.getWritableDataService(JsonNode.class, bucket, 
+									Optional.of(IStorageService.StorageStage.transient_input.toString()
+											+ Optionals.of(() -> _config.get().output().batch_schema())
+													.map(b -> BeanTemplateUtils.toJson(b).toString())
+													.map(str -> ":" + str)
+												.orElse("")
+											), 
+									Optional.empty()))
 							;
 	
 				direct.bulk_batch_input_service = direct.batch_input_service.flatMap(IDataWriteService::getBatchWriteSubservice);

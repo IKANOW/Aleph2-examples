@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean;
+
 /** Per bucket configuration
  * @author alex
  */
@@ -195,9 +197,8 @@ public class FlumeBucketConfigBean {
 		 */
 		public CsvConfig csv() { return csv; }
 		/** If specified then the ouput module will write directly out to the designated service instead of going into the enrichment stream
-		 *  (TODO (ALEPH-10) batch related concepts not yet supported)
 		 *  General format <service name>[.<non default service name>]
-		 *  Currently supported: search_index_service, storage_service
+		 *  Currently supported: search_index_service, storage_service, batch, streaming
 		 *  If stream is specified then the data is _also_ sent to the enrichment stream
 		 *  
 		 * @return
@@ -209,11 +210,22 @@ public class FlumeBucketConfigBean {
 		 */
 		public String add_time_with_name() { return add_time_with_name; }
 		
+		/** For batch output, sets the target parameters
+		 *  The only 2 supported params are:
+		 *   - target_write_settings
+		 *   - codec
+		 *   Setting others may result in undefined behavior
+		 * @return
+		 */
+		public DataSchemaBean.StorageSchemaBean.StorageSubSchemaBean batch_schema() { return batch_schema; }
+		
 		private JsonConfig json;
 		private CsvConfig csv;
 		
 		private Set<String> direct_output; // ("search_index_service[.<non_default_service>]", "storage_service", etc)
 		private String add_time_with_name;
+		
+		private DataSchemaBean.StorageSchemaBean.StorageSubSchemaBean batch_schema; 		
 	}
 	
 	private InputConfig input;
