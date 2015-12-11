@@ -26,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import scala.Tuple2;
 
@@ -35,17 +37,18 @@ import com.ikanow.aleph2.data_model.interfaces.shared_services.ISubject;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
+import com.ikanow.aleph2.data_model.objects.shared.GlobalPropertiesBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.BucketUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.Optionals;
+import com.ikanow.aleph2.data_model.utils.ProcessUtils;
 import com.ikanow.aleph2.data_model.utils.SetOnce;
 import com.ikanow.aleph2.harvest.logstash.data_model.LogstashBucketConfigBean;
 import com.ikanow.aleph2.harvest.logstash.data_model.LogstashHarvesterConfigBean;
 import com.ikanow.aleph2.harvest.logstash.utils.LogstashConfigUtils;
 import com.ikanow.aleph2.harvest.logstash.utils.LogstashUtils;
-import com.ikanow.aleph2.harvest.logstash.utils.ProcessUtils;
 
 import fj.data.Validation;
 
@@ -53,9 +56,12 @@ import fj.data.Validation;
  * @author Alex
  */
 public class LogstashHarvestService implements IHarvestTechnologyModule {
+	private static final Logger _logger = LogManager.getLogger();
 	protected final SetOnce<LogstashHarvesterConfigBean> _globals = new SetOnce<>();
 	protected final SetOnce<IHarvestContext> _context = new SetOnce<>();
-
+	protected final SetOnce<GlobalPropertiesBean> _global_propertes = new SetOnce<>();
+	private static final String LOCAL_RUN_DIR_SUFFIX = "run" + File.separator;
+	
 	////////////////////////////////////////////////////////////////////////////////
 	
 	// SERVICE API	
@@ -65,8 +71,10 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	 */
 	@Override
 	public void onInit(IHarvestContext context) {
+		_logger.error("LOGSTASH: init");
 		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), LogstashHarvesterConfigBean.class).get());
 		_context.set(context);
+		_global_propertes.set(context.getServiceContext().getGlobalProperties());		
 	}
 
 	/* (non-Javadoc)
@@ -75,10 +83,11 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public boolean canRunOnThisNode(DataBucketBean bucket,
 			IHarvestContext context) {
-		
+		_logger.error("LOGSTASH: canRun");
 		final File master = new File(_globals.get().master_config_dir()); 
 		final File slave = new File(_globals.get().slave_config_dir()); 
 		if (BucketUtils.isTestBucket(bucket)) {
+			_logger.error("LOGSTASH: canRun test: " + new File(_globals.get().binary_path()).exists());
 			return new File(_globals.get().binary_path()).exists();
 		}
 		else if (Optional.ofNullable(bucket.multi_node_enabled()).orElse(false)) { // multi node
@@ -102,7 +111,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 						.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
 					.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
 						
-			return CompletableFuture.completedFuture(startOrUpdateLogstash(new_bucket, config, _globals.get()));
+			return CompletableFuture.completedFuture(startOrUpdateLogstash(new_bucket, config, _globals.get(), context));
 		}
 		else {		
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket {0} created but suspended", new_bucket.full_name()));
@@ -124,13 +133,10 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		
 		// Handle test case - use process utils to delete
 		if (BucketUtils.isTestBucket(new_bucket)) {
-					
-			final String pid_to_suspend = ProcessUtils.getPid(new_bucket);
-			
 			resetFilePointer(new_bucket, config, _globals.get());
 			
 			//kill/log
-			final Tuple2<String, Boolean> kill_result = ProcessUtils.killProcess(pid_to_suspend);
+			final Tuple2<String, Boolean> kill_result = ProcessUtils.stopProcess(this.getClass().getSimpleName(), new_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX);
 			
 			return CompletableFuture.completedFuture(
 					ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "Bucket suspended: {0}", kill_result._1()));
@@ -141,7 +147,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 				return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onUpdatedSource", "No change to bucket"));			
 			}
 			if (is_enabled) {
-				return CompletableFuture.completedFuture(startOrUpdateLogstash(new_bucket, config, _globals.get()));
+				return CompletableFuture.completedFuture(startOrUpdateLogstash(new_bucket, config, _globals.get(), context));
 			}
 			else { // Just stop
 				//(this does nothing if the bucket isn't actually running)
@@ -218,24 +224,26 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onTestSource(
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
-		
+		_logger.error("LOGSTASH: test was called");
 		// Build the logstash config file
 		
 		final LogstashBucketConfigBean config = 
 				Optionals.ofNullable(test_bucket.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
-				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
+				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());				
 		
-		final Validation<BasicMessageBean, String> ls_config = getLogstashFormattedConfig(test_bucket, config, _globals.get()); 
+		final Validation<BasicMessageBean, String> ls_config = getLogstashFormattedConfig(test_bucket, config, _globals.get(), context); 
 		if (ls_config.isFail()) {
 			return CompletableFuture.completedFuture(ls_config.fail());
 		}
 		
 		// Launch the binary in a separate process
 		
-		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L));
+		//final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.empty());
+		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.of(test_bucket.full_name()));
 		
-		final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, test_bucket, context);
+		_logger.error("LOGSTASH: process built was: " + pb.command().toString());
+		final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX);
 	
 		if (null != err_pid._1()) {
 			return CompletableFuture.completedFuture(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "onTestSource", "Bucket error: " + err_pid._1()));				
@@ -258,7 +266,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	 */
 	protected BasicMessageBean validateLogstashConfigBeforeRunning(final String script, final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
 		
-		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, script, 0L);		
+		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, script, 0L, Optional.empty());		
 		try {
 			final Process px = pb.start();
 			final StringWriter outputAndError = new StringWriter();
@@ -271,7 +279,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			
 			int ret_val = px.exitValue();
 			
-			return ErrorUtils.buildMessage(ret_val != 0, this.getClass().getSimpleName(), "validateLogstashConfigBeforeRunning", outputAndError.toString());
+			return ErrorUtils.buildMessage(ret_val == 0, this.getClass().getSimpleName(), "validateLogstashConfigBeforeRunning", outputAndError.toString());
 		}
 		catch (Exception e) {
 			return ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "validateLogstashConfigBeforeRunning", ErrorUtils.getLongForm("{0}", e));
@@ -285,9 +293,9 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	 * @return
 	 * @throws IOException
 	 */
-	protected BasicMessageBean startOrUpdateLogstash(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
+	protected BasicMessageBean startOrUpdateLogstash(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals, final IHarvestContext context) {
 		try {
-			final Validation<BasicMessageBean, String> ls_config = getLogstashFormattedConfig(bucket, config, globals);
+			final Validation<BasicMessageBean, String> ls_config = getLogstashFormattedConfig(bucket, config, globals, context);
 			if (ls_config.isSuccess()) {
 				final BasicMessageBean validation = validateLogstashConfigBeforeRunning(ls_config.success(), bucket, config, globals);
 				if (validation.success()) {
@@ -357,7 +365,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	 * @param globals
 	 * @return
 	 */
-	protected Validation<BasicMessageBean, String> getLogstashFormattedConfig(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
+	protected Validation<BasicMessageBean, String> getLogstashFormattedConfig(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals, final IHarvestContext context) {
 		try {
 			boolean is_admin = isAdmin(Optional.ofNullable(bucket.owner_id()).orElse(""), _context.get());
 	
@@ -380,7 +388,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			}
 			
 			String outputConfig = 
-					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService())
+					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root() + "/", context)
 									.replace("_XXX_SOURCEKEY_XXX_", bucket.full_name())
 									;
 			// Output
