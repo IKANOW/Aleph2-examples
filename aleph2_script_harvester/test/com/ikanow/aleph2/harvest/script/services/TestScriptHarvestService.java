@@ -29,8 +29,16 @@ import scala.Tuple2;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IColumnarService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IDocumentService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IGeospatialService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IGraphService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.IManagementDbService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
+import com.ikanow.aleph2.data_model.interfaces.data_services.ITemporalService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.ISecurityService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IUnderlyingService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
@@ -38,10 +46,12 @@ import com.ikanow.aleph2.data_model.objects.data_import.DataBucketStatusBean;
 import com.ikanow.aleph2.data_model.objects.data_import.HarvestControlMetadataBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean.StorageSchemaBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
+import com.ikanow.aleph2.data_model.objects.shared.GlobalPropertiesBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.objects.shared.SharedLibraryBean;
 import com.ikanow.aleph2.data_model.objects.shared.AssetStateDirectoryBean.StateDirectoryType;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
+
 import fj.data.Either;
 
 public class TestScriptHarvestService {
@@ -64,7 +74,7 @@ public class TestScriptHarvestService {
 
 	@Test
 	public void testOnTest() throws IOException, InterruptedException, ExecutionException {		
-		final ScriptHarvestService harvester = new ScriptHarvestService(getFakeStorageService());
+		final ScriptHarvestService harvester = new ScriptHarvestService();
 		harvester.onInit(getFakeContext());
 		
 		final String tmp_dir = System.getProperty("java.io.tmpdir");
@@ -91,7 +101,7 @@ public class TestScriptHarvestService {
 	
 	@Test
 	public void testUserArgs() throws IOException, InterruptedException, ExecutionException, URISyntaxException {		
-		final ScriptHarvestService harvester = new ScriptHarvestService(getFakeStorageService());
+		final ScriptHarvestService harvester = new ScriptHarvestService();
 		harvester.onInit(getFakeContext());
 		
 		final String tmp_dir = System.getProperty("java.io.tmpdir");
@@ -123,7 +133,7 @@ public class TestScriptHarvestService {
 	
 	@Test
 	public void testStopScript() throws InterruptedException, ExecutionException {
-		final ScriptHarvestService harvester = new ScriptHarvestService(getFakeStorageService());
+		final ScriptHarvestService harvester = new ScriptHarvestService();
 		harvester.onInit(getFakeContext());
 		
 		final String tmp_dir = System.getProperty("java.io.tmpdir");
@@ -178,7 +188,7 @@ public class TestScriptHarvestService {
 		//if so, creates a second file
 		//if not creates file, spins forever (gets stuck here)		
 		
-		final ScriptHarvestService harvester = new ScriptHarvestService(getFakeStorageService());
+		final ScriptHarvestService harvester = new ScriptHarvestService();
 		harvester.onInit(getFakeContext());
 		
 		final String tmp_dir = System.getProperty("java.io.tmpdir");
@@ -246,7 +256,7 @@ public class TestScriptHarvestService {
 	@Test
 	public void testRunLocalFile() throws InterruptedException, ExecutionException, IOException {
 		//save a file to /tmp/somescript.sh and send that as a bucket param, test it works
-		final ScriptHarvestService harvester = new ScriptHarvestService(getFakeStorageService());
+		final ScriptHarvestService harvester = new ScriptHarvestService();
 		harvester.onInit(getFakeContext());
 		
 		final String tmp_dir = System.getProperty("java.io.tmpdir");
@@ -284,7 +294,7 @@ public class TestScriptHarvestService {
 	public void testRunResource() throws InterruptedException, ExecutionException {
 		//create a file in this package, send as a bucket param, see if it works (dunno if this one is possible)
 		//save a file to /tmp/somescript.sh and send that as a bucket param, test it works
-				final ScriptHarvestService harvester = new ScriptHarvestService(getFakeStorageService());
+				final ScriptHarvestService harvester = new ScriptHarvestService();
 				harvester.onInit(getFakeContext());
 				
 				final String tmp_dir = System.getProperty("java.io.tmpdir");
@@ -370,8 +380,75 @@ public class TestScriptHarvestService {
 			
 			@Override
 			public IServiceContext getServiceContext() {
-				// TODO Auto-generated method stub
-				return null;
+				return new IServiceContext() {
+					
+					@Override
+					public Optional<ITemporalService> getTemporalService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public IStorageService getStorageService() {
+						return getFakeStorageService();
+					}
+					
+					@Override
+					public <I extends IUnderlyingService> Optional<I> getService(
+							Class<I> serviceClazz, Optional<String> serviceName) {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public ISecurityService getSecurityService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public Optional<ISearchIndexService> getSearchIndexService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public Optional<IGraphService> getGraphService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public GlobalPropertiesBean getGlobalProperties() {
+						return BeanTemplateUtils.build(GlobalPropertiesBean.class)
+								.with(GlobalPropertiesBean::local_root_dir, System.getProperty("java.io.tmpdir") + File.separator)
+								.done().get();
+					}
+					
+					@Override
+					public Optional<IGeospatialService> getGeospatialService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public Optional<IDocumentService> getDocumentService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public IManagementDbService getCoreManagementDbService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+					
+					@Override
+					public Optional<IColumnarService> getColumnarService() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+				};
 			}
 			
 			@Override

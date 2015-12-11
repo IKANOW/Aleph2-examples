@@ -6,13 +6,13 @@ import java.util.concurrent.CompletableFuture;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.google.inject.Inject;
+
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
+import com.ikanow.aleph2.data_model.objects.shared.GlobalPropertiesBean;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
@@ -27,18 +27,14 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	private static final Logger _logger = LogManager.getLogger();
 	protected final SetOnce<ScriptHarvesterConfigBean> _globals = new SetOnce<>();
 	protected final SetOnce<IHarvestContext> _context = new SetOnce<>();
-	private final IStorageService storage_service;
-
-	@Inject
-	public ScriptHarvestService(final IStorageService storage_service) {
-		this.storage_service = storage_service;
-	}
+	protected final SetOnce<GlobalPropertiesBean> _global_propertes = new SetOnce<>();
 	
 	@Override
 	public void onInit(IHarvestContext context) {
 		_logger.error("SCRIPT: init");
 		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), ScriptHarvesterConfigBean.class).get());
 		_context.set(context);
+		_global_propertes.set(context.getServiceContext().getGlobalProperties());
 	}
 
 	@Override
@@ -59,7 +55,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 						.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 					.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 						
-			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, context, storage_service, config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 		else {		
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket {0} created but suspended", new_bucket.full_name()));
@@ -83,11 +79,11 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onUpdatedSource", "No change to bucket"));			
 		}
 		if (is_enabled) {
-			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, context, storage_service, config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 		else { // Just stop
 			//(this does nothing if the bucket isn't actually running)
-			return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir(), storage_service));
+			return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(new_bucket, config, "onDelete", _globals.get().working_dir(), _global_propertes.get().local_root_dir()));
 		}		
 	}
 
@@ -108,7 +104,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 		
-		return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(to_delete, config, "onDelete", _globals.get().working_dir(), storage_service));
+		return CompletableFuture.completedFuture(ScriptUtils.stopScriptProcess(to_delete, config, "onDelete", _globals.get().working_dir(), _global_propertes.get().local_root_dir()));
 	}
 
 	@Override
@@ -124,7 +120,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			DataBucketBean polled_bucket, IHarvestContext context) {
 		_logger.error("SCRIPT: onPeriodicPoll was called");
 		// report if the process is still running?
-		return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + ScriptUtils.isProcessRunning(polled_bucket, storage_service)));
+		return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + ScriptUtils.isProcessRunning(polled_bucket, _global_propertes.get().local_root_dir())));
 		
 		
 //		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
@@ -147,7 +143,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());		
 		
-		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, storage_service, config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
+		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, _global_propertes.get().local_root_dir(), config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
 	}
 
 }

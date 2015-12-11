@@ -36,6 +36,8 @@ public class LogstashHarvesterConfigBean {
 	public static String NON_ADMIN_FILTERS = "advisor,alter,anonymize,checksum,cidr,cipher,clone,collate,csv,date,dns,drop,elapsed,extractnumbers,fingerprint,geoip,gelfify,grep,grok,grokdiscovery,l18n,json,json_encode,kv,metaevent,metrics,multiline,mutate,noop,prune,punct,railsparallelrequest,range,sleep,split,sumnumbers,syslog_pri,throttle,translate,unique,urldecode,useragent,uuid,wms,wmts,xml";
 	public static String NON_ADMIN_OUTPUTS = ""; //(non for now, non-admins will have to use the overrides)
 	
+	public static String DEFAULT_MOUNT_ROOT = "/opt/hadoop-fileshare/app/aleph2";
+	
 	/** Jackson c'tor
 	 */
 	protected LogstashHarvesterConfigBean() {}
@@ -49,7 +51,9 @@ public class LogstashHarvesterConfigBean {
 
 	public String non_admin_inputs() { return Optional.ofNullable(non_admin_inputs).orElse(NON_ADMIN_INPUTS); }
 	public String non_admin_filters() { return Optional.ofNullable(non_admin_filters).orElse(NON_ADMIN_FILTERS); }
-	public String non_admin_outputs() { return Optional.ofNullable(non_admin_outputs).orElse(NON_ADMIN_OUTPUTS); }	
+	public String non_admin_outputs() { return Optional.ofNullable(non_admin_outputs).orElse(NON_ADMIN_OUTPUTS); }
+	
+	public String hadoop_mount_root() { return Optional.ofNullable(hadoop_mount_root).orElse(DEFAULT_MOUNT_ROOT); }
 	
 	private String base_dir;
 	private String working_dir;
@@ -57,6 +61,7 @@ public class LogstashHarvesterConfigBean {
 	private String slave_config_dir;
 	private String binary_path;	
 	private String restart_file;
+	private String hadoop_mount_root;
 	
 	private String non_admin_inputs;
 	private String non_admin_filters;
