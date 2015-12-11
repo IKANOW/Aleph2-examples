@@ -310,9 +310,7 @@ public class FlumeHarvestTechnology implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onPurge(DataBucketBean to_purge,
 			IHarvestContext context) {
 				
-		//(clean up any generated files)
-		FlumeUtils.getAgents(to_purge).stream().forEach(agent -> 
-			FlumeUtils.deleteGeneratedDirs(to_purge, agent, BucketUtils.isTestBucket(to_purge)));
+		// Do nothing: this isn't like logstash where the files persist, you have to copy new files in anyway
 		
 		return CompletableFuture.completedFuture(new BasicMessageBean(
 				new Date(), true, "onPurge", "onPurge", null, "No action taken", null));
