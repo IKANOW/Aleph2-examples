@@ -22,10 +22,10 @@
         <listener-class>com.ikanow.aleph2.web_utils.GuiceContextListener</listener-class>
     </listener>
 
-    <listener>
+<!--     <listener>
         <listener-class>org.apache.shiro.web.env.EnvironmentLoaderListener</listener-class>
     </listener>
-
+-->
     <filter>
         <filter-name>ShiroFilter</filter-name>
         <filter-class>org.apache.shiro.web.servlet.ShiroFilter</filter-class>
@@ -40,17 +40,18 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-	<context-param>
+<!-- 	<context-param>
 	     <param-name>shiroEnvironmentClass</param-name>
 	     <param-value>com.ikanow.aleph2.web_login.WebEnvironment</param-value>
 	</context-param>
+	-->
 	<context-param>
 	     <param-name>aleph2.config</param-name>
 	     <param-value>web_login.properties</param-value>
 	</context-param>
 	<context-param>
 	     <param-name>aleph2.module_class</param-name>
-	     <param-value>com.ikanow.aleph2.security.module.IkanowV1WebSecurityModule</param-value>
+	    <param-value>com.ikanow.aleph2.security.module.IkanowV1WebSecurityModule</param-value>
 	</context-param>
 	<context-param>
 	     <param-name>aleph2.application_class</param-name>

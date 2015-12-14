@@ -2,9 +2,11 @@ package  com.ikanow.aleph2.web_utils;
 
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Optional;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 
 import org.apache.logging.log4j.LogManager;
@@ -35,10 +37,12 @@ public class GuiceContextListener extends GuiceServletContextListener {
 	public static Injector injector;
 	private String config_path; 
 	private String moduleClassName; 
-	private String applicationClassName; 
+	private String applicationClassName;
+	protected ServletContext servletContext; 
 	
 	@Override
 	public void contextInitialized(ServletContextEvent servletContextEvent) {
+		this.servletContext  = servletContextEvent.getServletContext();
 		config_path = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_ALEPH2_CONFIG);
 		this.moduleClassName = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_MODULE_CLASS);
 		this.applicationClassName = servletContextEvent.getServletContext().getInitParameter(CONTEXT_PARAM_APPLICATION_CLASS);
@@ -64,7 +68,17 @@ public class GuiceContextListener extends GuiceServletContextListener {
 				config = ConfigFactory.parseResources(config_path);
 			}
 			this.getClass();
-			Module module = ((Module) Class.forName(moduleClassName!=null?moduleClassName:DefaultWebModule.class.getName()).newInstance());
+			// TODO check if instance of web module, then take different constructor
+		   Class<?> moduleClass = Class.forName(moduleClassName!=null?moduleClassName:DefaultWebModule.class.getName()); 
+		   Constructor<?> constructor = null;
+		   try {
+			   constructor = moduleClass.getConstructor(ServletContext.class);			
+			} catch (Exception e) {
+				logger.error("error getting constructor", e);
+			}
+		   
+		   Module module = (constructor!=null) ? ((Module)constructor.newInstance(servletContext)): ((Module) moduleClass.newInstance());
+			
 			final Class<?> applicationClass =  applicationClassName!=null?Class.forName(applicationClassName):DefaultInjectorContainer.class;			
 			ModuleUtils.initializeApplication(Arrays.asList(module), Optional.of(config), Either.left(applicationClass));
 			

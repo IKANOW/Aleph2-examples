@@ -43,7 +43,7 @@ infiniteCookie.setPath("/");
 //Indicates whether to restrict cookie access to untrusted parties. Currently this toggles the non-standard but widely supported HttpOnly cookie parameter. 
 infiniteCookie.setHttpOnly(true);
 
-int nClientPort = 80;
+int nClientPort = request.getServerPort();
 if ((443 == nClientPort) || (8443 == nClientPort)) {
 	infiniteCookie.setSecure(true);
 }
@@ -51,6 +51,7 @@ if ((443 == nClientPort) || (8443 == nClientPort)) {
 // Add both the cookies in the response header.
 response.addCookie( infiniteCookie );
  %>
+ <%=nClientPort %>
 </shiro:authenticated>
 
 <shiro:notAuthenticated>

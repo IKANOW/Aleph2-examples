@@ -10,6 +10,9 @@
         <dependent-module archiveName="aleph2_core_security-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_security/aleph2_core_security">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="aleph2_security_service_ikanow_web_v1-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_security_service_ikanow_web_v1/aleph2_security_service_ikanow_web_v1">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <dependent-module archiveName="aleph2_security_service_ikanow_v1-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_security_service_ikanow_v1/aleph2_security_service_ikanow_v1">
             <dependency-type>uses</dependency-type>
         </dependent-module>
