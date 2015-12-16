@@ -45,6 +45,7 @@ import com.ikanow.aleph2.harvest.logstash.services.LogstashHarvestService;
 public class LogstashUtils {
 
 	private static final Logger _logger = LogManager.getLogger();
+	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh.mm.ss}";
 	
 	/** Builds a process to execute
 	 * @param global
@@ -87,8 +88,9 @@ public class LogstashUtils {
 	 */
 	public static String getOutputTemplate(final String type, final DataBucketBean bucket, final IStorageService storage_service, final String hadoop_root_path, final IHarvestContext context) throws IOException {
 		if (type.equals("hdfs")) {
-			final String import_dir = hadoop_root_path + storage_service.getBucketRootPath() + IStorageService.TO_IMPORT_DATA_SUFFIX;
-			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + IStorageService.TEMP_DATA_SUFFIX;
+			//TODO if test bucket, override sement_time to be 10s instead of 60s (or allow user to spec in config block)
+			final String import_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TO_IMPORT_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
+			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
 			final String output = IOUtils.toString(LogstashHarvestService.class.getClassLoader().getResourceAsStream("output_hdfs.ls"),Charsets.UTF_8)
 									.replace("_XXX_TEMPPATH_XXX_", temp_dir)
 									.replace("_XXX_FINALPATH_XXX_", import_dir)

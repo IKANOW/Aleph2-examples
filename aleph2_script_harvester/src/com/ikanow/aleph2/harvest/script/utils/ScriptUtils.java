@@ -38,7 +38,7 @@ public class ScriptUtils {
 	private static final String ENV_LIBRARY_PATH = "A2_LIBRARY_PATH"; //path of cached library jar
 	private static final String ENV_MODULE_PATH = "A2_MODULE_PATH"; //path of cached module jars
 	private static final String ENV_CLASS_PATH = "A2_CLASS_PATH"; //path of lib + module jars
-	private static final String ENV_BUCKET_HDFS_PATH = "A2_BUCKET_PATH"; //path of bucket in hdfs
+	private static final String ENV_BUCKET_HDFS_PATH = "A2_BUCKET_HDFS_PATH"; //path of bucket in hdfs
 	private static final String ENV_BUCKET_PATH = "A2_BUCKET_PATH"; //subpath to bucket
 	private static final String ENV_BUCKET_STR = "A2_BUCKET_STR"; //string of bucket json
 	private static final String LOCAL_RUN_DIR_SUFFIX = "run" + File.separator;
@@ -179,7 +179,7 @@ public class ScriptUtils {
 	 */
 	public static BasicMessageBean stopScriptProcess(final DataBucketBean bucket, final ScriptHarvesterBucketConfigBean config, final String message, final String working_dir, final String aleph_root_path) {
 		//STOP PID if its still running (verify its the same process)		
-		final Tuple2<String, Boolean> err_pid = ProcessUtils.stopProcess(ScriptHarvestService.class.getSimpleName(), bucket, aleph_root_path + LOCAL_RUN_DIR_SUFFIX);
+		final Tuple2<String, Boolean> err_pid = ProcessUtils.stopProcess(ScriptHarvestService.class.getSimpleName(), bucket, aleph_root_path + LOCAL_RUN_DIR_SUFFIX, Optional.empty());
 		if ( !err_pid._2) {
 			//failed to stop, try to cleanup script file and bail out
 			cleanupTempScriptFile(bucket, message);

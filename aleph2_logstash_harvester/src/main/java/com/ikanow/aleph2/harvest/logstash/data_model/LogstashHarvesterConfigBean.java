@@ -36,7 +36,7 @@ public class LogstashHarvesterConfigBean {
 	public static String NON_ADMIN_FILTERS = "advisor,alter,anonymize,checksum,cidr,cipher,clone,collate,csv,date,dns,drop,elapsed,extractnumbers,fingerprint,geoip,gelfify,grep,grok,grokdiscovery,l18n,json,json_encode,kv,metaevent,metrics,multiline,mutate,noop,prune,punct,railsparallelrequest,range,sleep,split,sumnumbers,syslog_pri,throttle,translate,unique,urldecode,useragent,uuid,wms,wmts,xml";
 	public static String NON_ADMIN_OUTPUTS = ""; //(non for now, non-admins will have to use the overrides)
 	
-	public static String DEFAULT_MOUNT_ROOT = "/opt/hadoop-fileshare/app/aleph2";
+	public static String DEFAULT_MOUNT_ROOT = "/opt/hadoop-fileshare";
 	
 	/** Jackson c'tor
 	 */

@@ -136,7 +136,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			resetFilePointer(new_bucket, config, _globals.get());
 			
 			//kill/log
-			final Tuple2<String, Boolean> kill_result = ProcessUtils.stopProcess(this.getClass().getSimpleName(), new_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX);
+			final Tuple2<String, Boolean> kill_result = ProcessUtils.stopProcess(this.getClass().getSimpleName(), new_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
 			
 			return CompletableFuture.completedFuture(
 					ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "Bucket suspended: {0}", kill_result._1()));
@@ -388,7 +388,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			}
 			
 			String outputConfig = 
-					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root() + "/", context)
+					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root(), context)
 									.replace("_XXX_SOURCEKEY_XXX_", bucket.full_name())
 									;
 			// Output
