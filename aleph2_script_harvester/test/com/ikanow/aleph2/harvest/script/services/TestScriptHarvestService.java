@@ -29,18 +29,11 @@ import scala.Tuple2;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IColumnarService;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IDocumentService;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IGeospatialService;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IGraphService;
-import com.ikanow.aleph2.data_model.interfaces.data_services.IManagementDbService;
-import com.ikanow.aleph2.data_model.interfaces.data_services.ISearchIndexService;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
-import com.ikanow.aleph2.data_model.interfaces.data_services.ITemporalService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
-import com.ikanow.aleph2.data_model.interfaces.shared_services.ISecurityService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IUnderlyingService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.MockServiceContext;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketStatusBean;
 import com.ikanow.aleph2.data_model.objects.data_import.HarvestControlMetadataBean;
@@ -380,75 +373,12 @@ public class TestScriptHarvestService {
 			
 			@Override
 			public IServiceContext getServiceContext() {
-				return new IServiceContext() {
-					
-					@Override
-					public Optional<ITemporalService> getTemporalService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public IStorageService getStorageService() {
-						return getFakeStorageService();
-					}
-					
-					@Override
-					public <I extends IUnderlyingService> Optional<I> getService(
-							Class<I> serviceClazz, Optional<String> serviceName) {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public ISecurityService getSecurityService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public Optional<ISearchIndexService> getSearchIndexService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public Optional<IGraphService> getGraphService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public GlobalPropertiesBean getGlobalProperties() {
-						return BeanTemplateUtils.build(GlobalPropertiesBean.class)
+				final MockServiceContext context = new MockServiceContext();
+				context.addService(IStorageService.class, Optional.empty(), getFakeStorageService());
+				context.addGlobals(BeanTemplateUtils.build(GlobalPropertiesBean.class)
 								.with(GlobalPropertiesBean::local_root_dir, System.getProperty("java.io.tmpdir") + File.separator)
-								.done().get();
-					}
-					
-					@Override
-					public Optional<IGeospatialService> getGeospatialService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public Optional<IDocumentService> getDocumentService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public IManagementDbService getCoreManagementDbService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public Optional<IColumnarService> getColumnarService() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-				};
+								.done().get());
+				return context;
 			}
 			
 			@Override
