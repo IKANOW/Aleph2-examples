@@ -17,6 +17,8 @@ package com.ikanow.aleph2.harvest.logstash.data_model;
 
 import java.util.Optional;
 
+import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean.WriteSettings;
+
 /** Per bucket configuration for Logstsash
  * @author Alex
  */
@@ -39,9 +41,12 @@ public class LogstashBucketConfigBean {
 	 *  "hdfs" (default), or "elasticsearch"
 	 * @return
 	 */
-	public String output_override() { return Optional.ofNullable(output_override).orElse("hdfs"); }
-			
+	public String output_override() { return Optional.ofNullable(output_override).orElse("hdfs"); }			
+	
+	public WriteSettings write_settings_override() { return Optional.ofNullable(write_settings_override).orElse(new WriteSettings(33554432, 0L, 300, 0)); }
+	
 	private String script;
 	private String output_override;
 	private Boolean debug_verbosity;
+	private WriteSettings write_settings_override;
 }

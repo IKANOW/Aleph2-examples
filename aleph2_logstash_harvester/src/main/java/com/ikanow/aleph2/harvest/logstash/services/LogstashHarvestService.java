@@ -388,7 +388,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			}
 			
 			String outputConfig = 
-					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root(), context)
+					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root(), context, config)
 									.replace("_XXX_SOURCEKEY_XXX_", bucket.full_name())
 									;
 			// Output
