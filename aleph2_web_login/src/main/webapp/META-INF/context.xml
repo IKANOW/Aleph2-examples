@@ -16,6 +16,6 @@
   limitations under the License.
 -->
 <Context>
- 	<Loader virtualClasspath="/usr/share/java/elasticsearch/lib/*.jar;/opt/hadoop-infinite/lib/*.jar;/opt/infinite-home/lib/*.jar;/opt/infinite-home/lib/extractors/*.jar;/opt/infinite-home/lib/unbundled/*.jar"
+ 	<Loader virtualClasspath="/opt/aleph2-home/lib/*.jar"
     />
 </Context>
