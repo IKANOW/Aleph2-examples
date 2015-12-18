@@ -159,7 +159,8 @@ public class ScriptUtils {
 			} catch (JsonProcessingException | InterruptedException | ExecutionException e) {
 				return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "Could not create process to run: " + e.getMessage());
 			}
-			final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, ScriptHarvestService.class.getSimpleName(), bucket, aleph_root_path + LOCAL_RUN_DIR_SUFFIX);
+			final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, ScriptHarvestService.class.getSimpleName(), bucket, aleph_root_path + LOCAL_RUN_DIR_SUFFIX, 
+					max_run_time_secs.isPresent() ? Optional.of(new Tuple2<Long, Integer>(max_run_time_secs.get(), 9)) : Optional.empty());
 			
 			if (null != err_pid._1()) {
 				return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "Bucket error: " + err_pid._1());				

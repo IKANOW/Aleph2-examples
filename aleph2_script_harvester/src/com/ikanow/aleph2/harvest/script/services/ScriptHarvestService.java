@@ -137,11 +137,14 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
 		_logger.error("SCRIPT: test was called");
+				
 		//TODO loop over every harvest config and run for every one enabled rather than just the first
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(test_bucket.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());		
+		//kill any already running scripts
+		ScriptUtils.stopScriptProcess(test_bucket, config, "onTestSource", _globals.get().working_dir(), _global_propertes.get().local_root_dir());
 		
 		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, _global_propertes.get().local_root_dir(), config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
 	}

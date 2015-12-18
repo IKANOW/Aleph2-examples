@@ -43,7 +43,6 @@ import com.ikanow.aleph2.harvest.logstash.services.LogstashHarvestService;
  * @author Alex
  */
 public class LogstashUtils {
-
 	private static final Logger _logger = LogManager.getLogger();
 	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh.mm.ss}.json";
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";

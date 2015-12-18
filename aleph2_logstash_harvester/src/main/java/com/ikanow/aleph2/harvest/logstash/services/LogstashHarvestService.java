@@ -225,6 +225,10 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
 		_logger.error("LOGSTASH: test was called");
+		
+		// Kill any previously running tests
+		ProcessUtils.stopProcess(this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
+		
 		// Build the logstash config file
 		
 		final LogstashBucketConfigBean config = 
@@ -243,7 +247,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.of(test_bucket.full_name()));
 		
 		_logger.error("LOGSTASH: process built was: " + pb.command().toString());
-		final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX);
+		final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(new Tuple2<Long, Integer>(test_spec.max_run_time_secs(), 2)));
 	
 		if (null != err_pid._1()) {
 			return CompletableFuture.completedFuture(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "onTestSource", "Bucket error: " + err_pid._1()));				
