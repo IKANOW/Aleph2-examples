@@ -43,8 +43,12 @@ import com.ikanow.aleph2.harvest.logstash.services.LogstashHarvestService;
  * @author Alex
  */
 public class LogstashUtils {
-
 	private static final Logger _logger = LogManager.getLogger();
+	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh.mm.ss}.json";
+	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
+	private static final Integer DEFAULT_MAX_OBJECTS = 33554432;
+	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
+	private static final Integer DEFAULT_SEGMENT_PERIOD = 300;
 	
 	/** Builds a process to execute
 	 * @param global
@@ -85,15 +89,19 @@ public class LogstashUtils {
 	 * @return
 	 * @throws IOException 
 	 */
-	public static String getOutputTemplate(final String type, final DataBucketBean bucket, final IStorageService storage_service, final String hadoop_root_path, final IHarvestContext context) throws IOException {
+	public static String getOutputTemplate(final String type, final DataBucketBean bucket, final IStorageService storage_service, final String hadoop_root_path, final IHarvestContext context, final LogstashBucketConfigBean config) throws IOException {
 		if (type.equals("hdfs")) {
-			final String import_dir = hadoop_root_path + storage_service.getBucketRootPath() + IStorageService.TO_IMPORT_DATA_SUFFIX;
-			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + IStorageService.TEMP_DATA_SUFFIX;
+			//if test bucket, override segment_time to be 10s instead of 60s (or allow user to spec in config block)
+			final String import_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TO_IMPORT_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
+			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
 			final String output = IOUtils.toString(LogstashHarvestService.class.getClassLoader().getResourceAsStream("output_hdfs.ls"),Charsets.UTF_8)
 									.replace("_XXX_TEMPPATH_XXX_", temp_dir)
 									.replace("_XXX_FINALPATH_XXX_", import_dir)
+									.replace("_XXX_FLUSH_INTERVAL_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_FLUSH_INTERVAL).toString())
+									.replace("_XXX_SEGMENT_PERIOD_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_SEGMENT_PERIOD).toString()) //if this is a test, sets segment_period to 10s, otherwise sets it to config option
+									.replace("_XXX_MAX_SIZE_XXX_", Optional.ofNullable(config.write_settings_override().batch_max_objects()).orElse(DEFAULT_MAX_OBJECTS).toString())
 									;
-			return output;
+			return output;			
 		}
 		else if (type.equals("elasticsearch")) {
 			// Work out what the index naming is:
