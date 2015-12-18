@@ -37,7 +37,7 @@ String userId = pc!=null ? ""+pc.getPrimaryPrincipal():null;
 CookieBean cb = cookieAuth.createCookie(userId);
 
 // Create cookies for first and last names.      
-Cookie infiniteCookie = new Cookie("infinite.cookie",  cb.getCookieId());
+Cookie infiniteCookie = new Cookie("infinitecookie",  cb.getCookieId());
 infiniteCookie.setPath("/");
 //infiniteCookie.setAccessRestricted(true);
 //Indicates whether to restrict cookie access to untrusted parties. Currently this toggles the non-standard but widely supported HttpOnly cookie parameter. 

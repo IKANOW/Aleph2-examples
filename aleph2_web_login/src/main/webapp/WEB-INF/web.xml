@@ -47,7 +47,7 @@
 	-->
 	<context-param>
 	     <param-name>aleph2.config</param-name>
-	     <param-value>web_login.properties</param-value>
+	     <param-value>/opt/aleph2-home/etc/web_login.properties</param-value>
 	</context-param>
 	<context-param>
 	     <param-name>aleph2.module_class</param-name>
