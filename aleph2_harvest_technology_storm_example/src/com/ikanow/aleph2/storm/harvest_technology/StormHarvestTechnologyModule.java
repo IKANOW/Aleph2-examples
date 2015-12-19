@@ -70,6 +70,17 @@ import com.ikanow.aleph2.utils.StormControllerUtil;
  */
 public class StormHarvestTechnologyModule implements IHarvestTechnologyModule {
 
+	/* (non-Javadoc)
+	 * @see com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule#applyNodeAffinity(com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean, com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext)
+	 */
+	@Override
+	public boolean applyNodeAffinity(DataBucketBean completed_bucket,
+			IHarvestContext context) {		
+		// This supports either one, defaults to true (<-that's a requirement)
+		
+		return Optional.ofNullable(completed_bucket.lock_to_nodes()).orElse(true);		
+	}
+
 	//https://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html
 	private static final String JOB_NAME_PREFIX = "storm_harvest_technology_job_";	
 	private static final Logger logger = LogManager.getLogger();
