@@ -44,7 +44,7 @@ import com.ikanow.aleph2.harvest.logstash.services.LogstashHarvestService;
  */
 public class LogstashUtils {
 	private static final Logger _logger = LogManager.getLogger();
-	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh.mm.ss}.json";
+	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}.json"; // (new file every minute unless flushed first)
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
 	private static final Integer DEFAULT_MAX_OBJECTS = 33554432;
 	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
