@@ -34,7 +34,7 @@
 		<groupId>com.ikanow.aleph2</groupId>
 		<artifactId>aleph2_web_utils</artifactId>
 		<version>${aleph2.version}</version>
-		<scope>${aleph2.scope}</scope>
+ 		<scope>${aleph2.scope}</scope>
 	</dependency>
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
@@ -53,6 +53,20 @@
 		<artifactId>aleph2_management_db_service_mongodb</artifactId>
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
+		<exclusions>
+			<exclusion>
+				<artifactId>jsp-api</artifactId>
+				<groupId>javax.servlet.jsp</groupId>
+			</exclusion>
+			<exclusion>
+				<artifactId>jasper-runtime</artifactId>
+				<groupId>tomcat</groupId>
+			</exclusion>
+			<exclusion>
+				<artifactId>jasper-compiler</artifactId>
+				<groupId>tomcat</groupId>
+			</exclusion>
+		</exclusions>
 	</dependency>
 	
 	<dependency>
@@ -93,58 +107,36 @@
 		<groupId>org.slf4j</groupId>
 		<artifactId>slf4j-simple</artifactId>
 		<version>1.6.1</version>
-		<scope>test</scope>
 	</dependency>
-<!--         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>jstl</artifactId>            
-            <scope>provided</scope>
-        </dependency>
-        -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.1</version>
-            <scope>test</scope>
         </dependency>
- 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-servlet-api</artifactId>
-			<version>8.0.21</version>
-		</dependency>
-<!--          <dependency>
+          <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
-            <scope>runtime</scope>
         </dependency>
-        --> 
-          <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>jstl</artifactId>
-        <version>1.2</version>
-        <scope>runtime</scope>
-    </dependency>
-    <dependency>
-        <groupId>taglibs</groupId>
-        <artifactId>standard</artifactId>
-        <scope>runtime</scope>
-        <version>1.1.2</version>
-    </dependency>
-    <dependency>
-        <groupId>taglibs</groupId>
-        <artifactId>c</artifactId>
-        <version>1.1.2</version>
-        <scope>runtime</scope>
-        <type>tld</type>
-    </dependency>
-    <dependency>
-        <groupId>taglibs</groupId>
-        <artifactId>fmt</artifactId>
-        <version>1.1.2</version>
-        <scope>runtime</scope>
-        <type>tld</type>
-    </dependency>
+ 	<dependency>
+		<groupId>org.apache.tomcat</groupId>
+		<artifactId>tomcat-servlet-api</artifactId>
+		<version>7.0.67</version>
+           <scope>provided</scope>
+ 	</dependency>
+ 	<dependency>
+		<groupId>org.apache.tomcat</groupId>
+		<artifactId>tomcat-servlet-api</artifactId>
+		<version>7.0.67</version>
+           <scope>provided</scope>
+ 	</dependency>
+	<dependency>
+		<groupId>javax.servlet</groupId>
+		<artifactId>javax.servlet-api</artifactId>
+		<version>3.0.1</version>
+           <scope>provided</scope>
+	</dependency>
+
   </dependencies>
   <build>
     <finalName>aleph2_web_login</finalName>
@@ -157,17 +149,6 @@
 			<target>1.8</target>
 		</configuration>
 	</plugin>
-<!-- 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-eclipse-plugin</artifactId>
-				<inherited>true</inherited>
-				<configuration>
-					<classpathContainers>
-						<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
-						<classpathContainer>org.eclipse.jdt.USER_LIBRARY/TOMCAT_6.0.14_LIBRARY</classpathContainer>
-					</classpathContainers>
-				</configuration>
-			</plugin> -->
-		</plugins>
+	</plugins>
   </build>
 </project>

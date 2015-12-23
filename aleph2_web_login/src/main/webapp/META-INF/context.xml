@@ -16,6 +16,6 @@
   limitations under the License.
 -->
 <Context>
- 	<Loader virtualClasspath="/opt/aleph2-home/lib/*.jar"
+ 	<Loader  className="org.apache.catalina.loader.VirtualWebappLoader" virtualClasspath="/opt/aleph2-home/lib/*.jar"
     />
 </Context>

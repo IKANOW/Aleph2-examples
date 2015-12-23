@@ -21,7 +21,7 @@
 
 <html>
 <head>
-    <link type="text/css" rel="stylesheet" href="<c:url value="/style.css"/>"/>
+    <link type="text/css" rel="stylesheet" href="style.css"/>
     <title>Cookie</title>
 </head>
 <body>

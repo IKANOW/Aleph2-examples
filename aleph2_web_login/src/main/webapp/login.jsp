@@ -18,8 +18,8 @@
   --%>
 <%@ include file="include.jsp" %>
 <p>Hi <shiro:guest>Guest</shiro:guest><shiro:user><shiro:principal/></shiro:user>!
-    ( <shiro:user><a href="<c:url value="/logout"/>">Log out</a></shiro:user>
-    <shiro:guest><a href="<c:url value="/login.jsp"/>">Log in</a> (sample accounts provided)</shiro:guest> )
+    ( <shiro:user><a href="logout">Log out</a></shiro:user>
+    <shiro:guest><a href="login.jsp">Log in</a> (sample accounts provided)</shiro:guest> )
 </p>
 
 <html>
