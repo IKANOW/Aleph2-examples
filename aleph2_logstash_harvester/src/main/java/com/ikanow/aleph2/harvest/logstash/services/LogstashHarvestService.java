@@ -133,9 +133,11 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		
 		// Handle test case - use process utils to delete
 		if (BucketUtils.isTestBucket(new_bucket)) {
+			_logger.error("UPDATE SOURCE: trying to stop a test bucket, resetting file pointer");
 			resetFilePointer(new_bucket, config, _globals.get());
 			
 			//kill/log
+			_logger.error("Sending stop process");
 			final Tuple2<String, Boolean> kill_result = ProcessUtils.stopProcess(this.getClass().getSimpleName(), new_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
 			
 			return CompletableFuture.completedFuture(
@@ -205,7 +207,21 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
-		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
+		_logger.error("LOGSTASH: on periodic poll was called");
+		final LogstashBucketConfigBean config = Optionals.ofNullable(polled_bucket.harvest_configs()).stream().findFirst()														
+				.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
+				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
+		//check if the job is still running
+		//if yes: report its running
+		//if no: restart job
+		if ( isConfigRunning(polled_bucket, config, _globals.get())) {
+			_logger.error("LOGSTASH: on periodic poll was called, config was running, do nothing");
+			return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "Config is currently running!"));
+		} else {
+			_logger.error("LOGSTASH: on periodic poll was called, config was NOT running, restarting config job");
+			return CompletableFuture.completedFuture(startOrUpdateLogstash(polled_bucket, config, _globals.get(), context));
+			
+		}
 	}
 
 	/* (non-Javadoc)
@@ -350,6 +366,20 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	protected void createLogstashRestartCommand(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) throws IOException {
 		FileUtils.touch(new File(globals.restart_file()));
 	}
+	
+	/**
+	 * Returns back if the given logstash config is already running.
+	 * 
+	 * @param bucket
+	 * @param config
+	 * @param globals
+	 * @return
+	 */
+	protected boolean isConfigRunning(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
+		final String config_file_path = getConfigFilePath(bucket, config, globals);
+		final File config_file = new File(config_file_path);
+		return config_file.exists();
+	}
 
 	protected void resetFilePointer(final DataBucketBean bucket, final LogstashBucketConfigBean config, final LogstashHarvesterConfigBean globals) {
 		final String since_db_path = getFilePointer(bucket, config, globals);
@@ -392,7 +422,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			}
 			
 			String outputConfig = 
-					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root(), context, config)
+					LogstashUtils.getOutputTemplate(config.output_override(), bucket, _context.get().getServiceContext().getStorageService(), _globals.get().hadoop_mount_root(), context, config, _global_propertes.get())
 									.replace("_XXX_SOURCEKEY_XXX_", bucket.full_name())
 									;
 			// Output
