@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,8 +34,10 @@ import com.google.common.base.Charsets;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
+import com.ikanow.aleph2.data_model.objects.shared.GlobalPropertiesBean;
 import com.ikanow.aleph2.data_model.utils.BucketUtils;
 import com.ikanow.aleph2.data_model.utils.Optionals;
+import com.ikanow.aleph2.data_model.utils.Patterns;
 import com.ikanow.aleph2.data_model.utils.TimeUtils;
 import com.ikanow.aleph2.harvest.logstash.data_model.LogstashBucketConfigBean;
 import com.ikanow.aleph2.harvest.logstash.data_model.LogstashHarvesterConfigBean;
@@ -48,7 +53,7 @@ public class LogstashUtils {
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
 	private static final Integer DEFAULT_MAX_OBJECTS = 33554432;
 	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
-	private static final Integer DEFAULT_SEGMENT_PERIOD = 300;
+	private static final String HDFS_NAMENODE_HTTP_ADDRESS = "dfs.namenode.http-address";
 	
 	/** Builds a process to execute
 	 * @param global
@@ -89,17 +94,22 @@ public class LogstashUtils {
 	 * @return
 	 * @throws IOException 
 	 */
-	public static String getOutputTemplate(final String type, final DataBucketBean bucket, final IStorageService storage_service, final String hadoop_root_path, final IHarvestContext context, final LogstashBucketConfigBean config) throws IOException {
+	public static String getOutputTemplate(final String type, final DataBucketBean bucket, final IStorageService storage_service, final String hadoop_root_path, final IHarvestContext context, final LogstashBucketConfigBean config, final GlobalPropertiesBean globals) throws IOException {
 		if (type.equals("hdfs")) {
 			//if test bucket, override segment_time to be 10s instead of 60s (or allow user to spec in config block)
-			final String import_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TO_IMPORT_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
-			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
+//			final String import_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TO_IMPORT_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
+//			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
+			final String import_dir = (storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TO_IMPORT_DATA_SUFFIX + OUTPUT_FILE_SYNTAX).replaceAll("//", "/");
+//			final String temp_dir = storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
+			final String hdfs_server_url = getHDFSServerURL(globals);
 			final String output = IOUtils.toString(LogstashHarvestService.class.getClassLoader().getResourceAsStream("output_hdfs.ls"),Charsets.UTF_8)
-									.replace("_XXX_TEMPPATH_XXX_", temp_dir)
-									.replace("_XXX_FINALPATH_XXX_", import_dir)
-									.replace("_XXX_FLUSH_INTERVAL_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_FLUSH_INTERVAL).toString())
-									.replace("_XXX_SEGMENT_PERIOD_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_SEGMENT_PERIOD).toString()) //if this is a test, sets segment_period to 10s, otherwise sets it to config option
-									.replace("_XXX_MAX_SIZE_XXX_", Optional.ofNullable(config.write_settings_override().batch_max_objects()).orElse(DEFAULT_MAX_OBJECTS).toString())
+//									.replace("_XXX_TEMPORARY_PATH_XXX_", temp_dir)
+									.replace("_XXX_PATH_XXX_", import_dir)
+									.replace("_XXX_HOST_XXX_", hdfs_server_url.substring(0, hdfs_server_url.indexOf(":")))
+									.replace("_XXX_PORT_XXX_", hdfs_server_url.substring(hdfs_server_url.indexOf(":")+1))
+									.replace("_XXX_USER_XXX_", "tomcat") //TODO this should be a field in the HDFS config (see xxx_server_xxx)
+									.replace("_XXX_IDLE_FLUSH_TIME_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_FLUSH_INTERVAL).toString())									
+									.replace("_XXX_FLUSH_SIZE_XXX_", Optional.ofNullable(config.write_settings_override().batch_max_objects()).orElse(DEFAULT_MAX_OBJECTS).toString())
 									;
 			return output;			
 		}
@@ -123,5 +133,73 @@ public class LogstashUtils {
 			return output;			
 		}
 		else return "";
+	}
+
+	private static String getHDFSServerURL(final GlobalPropertiesBean globals) {
+		final Configuration config = getConfiguration(globals);
+		return config.get(HDFS_NAMENODE_HTTP_ADDRESS);
+	}
+	
+	/** 
+	 * Retrieves the system configuration
+	 *  (with code to handle possible internal concurrency bug in Configuration)
+	 *  (tried putting a static synchronization around Configuration as an alternative)
+	 * @return
+	 */
+	protected static Configuration getConfiguration(final GlobalPropertiesBean globals){		
+		for (int i = 0; i < 60; ++i) {
+			try { 
+				return getConfiguration(globals, i);
+			}
+			catch (java.util.ConcurrentModificationException e) {
+				final long to_sleep = Patterns.match(i).<Long>andReturn()
+						.when(ii -> ii < 15, __ -> 100L)
+						.when(ii -> ii < 30, __ -> 250L)
+						.when(ii -> ii < 45, __ -> 500L)
+						.otherwise(__ -> 1000L)
+						+ (new Date().getTime() % 100L) // (add random component)
+						;
+				
+				try { Thread.sleep(to_sleep); } catch (Exception ee) {}
+				if (59 == i) throw e;
+			}
+		}
+		return null;
+	}
+	protected static Configuration getConfiguration(final GlobalPropertiesBean globals, final int attempt){
+		synchronized (Configuration.class) {
+			Configuration config = new Configuration(false);
+			
+			if (new File(globals.local_yarn_config_dir()).exists()) {
+				config.addResource(new Path(globals.local_yarn_config_dir() +"/yarn-site.xml"));
+				config.addResource(new Path(globals.local_yarn_config_dir() +"/core-site.xml"));
+				config.addResource(new Path(globals.local_yarn_config_dir() +"/hdfs-site.xml"));
+			}
+			else {
+				final String alternative = System.getenv("HADOOP_CONF_DIR");
+	
+				_logger.warn("Aleph2 yarn-config dir not found, try alternative: " + alternative);
+				// (another alternative would be HADOOP_HOME + "/conf")
+				
+				if ((null != alternative) && new File(alternative).exists()) {
+					config.addResource(new Path(alternative +"/yarn-site.xml"));
+					config.addResource(new Path(alternative +"/core-site.xml"));
+					config.addResource(new Path(alternative +"/hdfs-site.xml"));				
+				}
+				else  // last ditch - will work for local testing but never from anything remote
+					config.addResource("default_fs.xml");						
+			}
+			if (attempt > 10) { // (try sleeping here)
+				final long to_sleep = 500L + (new Date().getTime() % 100L); // (add random component)
+				try { Thread.sleep(to_sleep); } catch (Exception e) {}
+			}
+			
+			// These are not added by Hortonworks, so add them manually
+			config.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");									
+			config.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem");									
+			config.set("fs.AbstractFileSystem.hdfs.impl", "org.apache.hadoop.fs.Hdfs");
+			config.set("fs.AbstractFileSystem.file.impl", "org.apache.hadoop.fs.local.LocalFs");
+			return config;
+		}		
 	}
 }
