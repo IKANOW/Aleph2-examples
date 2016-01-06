@@ -411,7 +411,11 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 				return Validation.fail(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "getLogstashFormattedConfig", errMessage.toString()));
 			}//TESTED
 			
-			logstashConfig = logstashConfig.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals));
+			logstashConfig = logstashConfig
+					.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals))
+					.replace("_XXX_LSTEMPDIR_XXX_", System.getProperty("java.io.tmpdir") + "/logstash/" + bucket.full_name())
+					;
+			//logstashConfig = logstashConfig.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals));
 			// Replacement for #LOGSTASH{host} - currently only replacement supported (+ #IKANOW{} in main code)
 			try {
 				logstashConfig = logstashConfig.replace("#LOGSTASH{host}", java.net.InetAddress.getLocalHost().getHostName());

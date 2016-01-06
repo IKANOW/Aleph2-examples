@@ -43,7 +43,7 @@ public class LogstashConfigUtils {
 	//private static Pattern _validationRegexOutput = Pattern.compile("[^a-z]output[\\s\\n\\r]*\\{", Pattern.CASE_INSENSITIVE); // (<-REPLACED BY JSONIFIED LOGIC, RETAINED UNLESS A NEED FOR IT COMES BACK)
 	private static Pattern _validationRegexNoSourceKey = Pattern.compile("[^a-z0-9_]sourceKey[^a-z0-9_]", Pattern.CASE_INSENSITIVE);
 	private static Pattern _validationRegexAppendFields = Pattern.compile("\\}[\\s\\n\\r]*\\}[^a-z{}\"']*(filter[\\s\\n\\r]*\\{)", Pattern.CASE_INSENSITIVE);
-
+	
 	//TODO (INF-2533): some of the not allowed types should be allowed but only with certain param settings (eg client not server - or even more sophisticated stuff)
 	//eg would be good to allow elasticsearch but override indices
 
@@ -115,9 +115,11 @@ public class LogstashConfigUtils {
 			String inputType = m.group(2).toLowerCase();
 			
 			// If it's a file-based plugin then replace sincedb_path (check that it's not used during the JSON-ification):
-			if (inputType.equalsIgnoreCase("file") || inputType.equalsIgnoreCase("s3")) {
+			if (inputType.equalsIgnoreCase("file")) {
 				config = _validationRegexInputReplace.matcher(config).replaceFirst("$1\n      sincedb_path => \"_XXX_DOTSINCEDB_XXX_\"\n");
-			}//TESTED
+			} else if (inputType.equalsIgnoreCase("s3")) {
+				config = _validationRegexInputReplace.matcher(config).replaceFirst("$1\n      sincedb_path => \"_XXX_DOTSINCEDB_XXX_\"\n      temporary_directory => \"_XXX_LSTEMPDIR_XXX_\"");
+			}
 
 		}//TESTED
 		
