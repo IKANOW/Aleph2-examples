@@ -1,5 +1,6 @@
 package com.ikanow.aleph2.harvest.script.services;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -41,8 +42,12 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	public boolean canRunOnThisNode(DataBucketBean bucket,
 			IHarvestContext context) {
 		_logger.error("SCRIPT: canRun");
-		//I can run on any box I believe, just need to run a script locally
-		return true;
+		//if config has a required_assets field set, check they exist on this box, otherwise we can run anywhere
+		final ScriptHarvesterBucketConfigBean config = 
+				Optionals.ofNullable(bucket.harvest_configs()).stream().findFirst()														
+					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
+				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
+		return config.required_assets().stream().allMatch(ra -> new File(ra).exists());
 	}
 
 	@Override

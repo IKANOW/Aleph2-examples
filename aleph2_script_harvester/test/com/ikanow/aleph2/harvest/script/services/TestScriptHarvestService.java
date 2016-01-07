@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -75,7 +76,7 @@ public class TestScriptHarvestService {
 		final File file = new File(file_path);
 		try { file.delete(); } catch (Exception e) {} //cleanup if the file exists from previous test
 		//have to put quotes around the path on windows systems		
-		final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script1", Optional.of("touch \"" + file_path + "\""), Optional.empty(), Optional.empty(), new HashMap<String, String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
+		final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script1", Optional.of("touch \"" + file_path + "\""), Optional.empty(), Optional.empty(), new HashMap<String, String>(), new ArrayList<String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
 		final BasicMessageBean response = future.get();		
 		assertTrue(response.message(), response.success());
 		
@@ -104,7 +105,7 @@ public class TestScriptHarvestService {
 		//have to put quotes around the path on windows systems		
 		final Map<String, String> args = new HashMap<String, String>();
 		args.put("arg1", "my_val");
-		final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script1", Optional.of("touch \"" + file_path + "\"\necho \"$arg1\" >> \"" + file_path + "\""), Optional.empty(), Optional.empty(), args), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
+		final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script1", Optional.of("touch \"" + file_path + "\"\necho \"$arg1\" >> \"" + file_path + "\""), Optional.empty(), Optional.empty(), args, new ArrayList<String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
 		final BasicMessageBean response = future.get();		
 		assertTrue(response.message(), response.success());
 		
@@ -143,7 +144,7 @@ public class TestScriptHarvestService {
 				.append(" sleep 1\n")
 				.append("done\n")
 				.toString();
-		final DataBucketBean bucket = getTestbucket("/test/script1", Optional.of(script), Optional.empty(), Optional.empty(), new HashMap<String, String>());
+		final DataBucketBean bucket = getTestbucket("/test/script1", Optional.of(script), Optional.empty(), Optional.empty(), new HashMap<String, String>(), new ArrayList<String>());
 		final CompletableFuture<BasicMessageBean> future = harvester.onNewSource(bucket, getFakeContext(), true);
 		final BasicMessageBean response = future.get();		
 		assertTrue(response.message(), response.success());
@@ -204,7 +205,7 @@ public class TestScriptHarvestService {
 				.append(" done").append("\n")
 				.append("fi").append("\n")
 				.toString();
-		final DataBucketBean bucket = getTestbucket("/test/script1", Optional.of(script), Optional.empty(), Optional.empty(), new HashMap<String, String>());
+		final DataBucketBean bucket = getTestbucket("/test/script1", Optional.of(script), Optional.empty(), Optional.empty(), new HashMap<String, String>(), new ArrayList<String>());
 		final CompletableFuture<BasicMessageBean> future = harvester.onNewSource(bucket, getFakeContext(), true);
 		final BasicMessageBean response = future.get();		
 		assertTrue(response.message(), response.success());
@@ -265,7 +266,7 @@ public class TestScriptHarvestService {
 		IOUtils.write("touch \"" + file_path + "\"",new FileOutputStream(file_script));
 		
 		//have to put quotes around the path on windows systems		
-		final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script4", Optional.empty(), Optional.of(file_script_path), Optional.empty(), new HashMap<String, String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
+		final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script4", Optional.empty(), Optional.of(file_script_path), Optional.empty(), new HashMap<String, String>(), new ArrayList<String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
 		final BasicMessageBean response = future.get();		
 		assertTrue(response.message(), response.success());
 		
@@ -296,7 +297,7 @@ public class TestScriptHarvestService {
 				try { file.delete(); } catch (Exception e) {} //cleanup if the file exists from previous test								
 				
 				//have to put quotes around the path on windows systems		
-				final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script4", Optional.empty(), Optional.empty(), Optional.of("resource_test.sh"), new HashMap<String, String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
+				final CompletableFuture<BasicMessageBean> future = harvester.onTestSource(getTestbucket("/test/script4", Optional.empty(), Optional.empty(), Optional.of("resource_test.sh"), new HashMap<String, String>(), new ArrayList<String>()), new ProcessingTestSpecBean(10L, 10L), getFakeContext());
 				final BasicMessageBean response = future.get();		
 				assertTrue(response.message(), response.success());
 				
@@ -313,6 +314,37 @@ public class TestScriptHarvestService {
 				file.delete();
 	}
 	
+
+	
+	@Test
+	public void testCanRunRequiredAssets() throws IOException {
+		//create a source that requires some external assets
+		//test canRun returns false because they don't exist
+		//create assets
+		//test canrun returns true
+		final ScriptHarvestService harvester = new ScriptHarvestService();
+		harvester.onInit(getFakeContext());
+		
+		final String tmp_dir = System.getProperty("java.io.tmpdir");		
+		final File asset1 = new File(tmp_dir + File.separator + "asset1");
+		final File asset2 = new File(tmp_dir + File.separator + "asset1");
+		asset1.delete();
+		asset2.delete();
+		assertFalse(asset1.exists());
+		assertFalse(asset2.exists());
+		
+		final List<String> required_assets = Arrays.asList(asset1.getAbsolutePath(), asset2.getAbsolutePath());		
+		final DataBucketBean test_bucket = getTestbucket("/test/script5", Optional.of("echo hi"), Optional.empty(), Optional.empty(), new HashMap<String, String>(), required_assets);
+		assertFalse("should not have local files to run this", harvester.canRunOnThisNode(test_bucket, getFakeContext()));
+		
+		//create assets
+		asset1.createNewFile();
+		asset2.createNewFile();
+		assertTrue(asset1.exists());
+		assertTrue(asset2.exists());
+		
+		assertTrue("assets should now exist to run this", harvester.canRunOnThisNode(test_bucket, getFakeContext()));
+	}
 	
 	private static IHarvestContext getFakeContext() {		
 		return new IHarvestContext() {
@@ -511,7 +543,7 @@ public class TestScriptHarvestService {
 		};
 	}
 
-	private static DataBucketBean getTestbucket(final String full_name, final Optional<String> script, final Optional<String> local_script_file, Optional<String> resource_file, final Map<String, String> args) {
+	private static DataBucketBean getTestbucket(final String full_name, final Optional<String> script, final Optional<String> local_script_file, Optional<String> resource_file, final Map<String, String> args, final List<String> required_assets) {
 		final LinkedHashMap<String, Object> config = new LinkedHashMap<String, Object>();
 		if ( script.isPresent())
 			config.put("script", script.get());
@@ -520,6 +552,7 @@ public class TestScriptHarvestService {
 		if ( resource_file.isPresent()) 
 			config.put("resource_name", resource_file.get());
 		config.put("args", args);
+		config.put("required_assets", required_assets);
 		final List<HarvestControlMetadataBean> harvest_configs = new ArrayList<HarvestControlMetadataBean>();
 		harvest_configs.add(new HarvestControlMetadataBean("harvester_1", true, null, new ArrayList<String>(), null, config));
 		return BeanTemplateUtils.build(DataBucketBean.class)
