@@ -411,10 +411,12 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 				return Validation.fail(ErrorUtils.buildErrorMessage(this.getClass().getSimpleName(), "getLogstashFormattedConfig", errMessage.toString()));
 			}//TESTED
 			
-			logstashConfig = logstashConfig
-					.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals))
-					.replace("_XXX_LSTEMPDIR_XXX_", System.getProperty("java.io.tmpdir") + "/logstash/" + bucket.full_name())
-					;
+			logstashConfig = logstashConfig.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals));
+			if (BucketUtils.isTestBucket(bucket)) {
+				logstashConfig = logstashConfig.replace("_XXX_LSTEMPDIR_XXX_", System.getProperty("java.io.tmpdir") + "/logstash-test/" + bucket.full_name());
+			} else {
+				logstashConfig = logstashConfig.replace("_XXX_LSTEMPDIR_XXX_", System.getProperty("java.io.tmpdir") + "/logstash-runtime/" + bucket.full_name());
+			}
 			//logstashConfig = logstashConfig.replace("_XXX_DOTSINCEDB_XXX_", getFilePointer(bucket, config, globals));
 			// Replacement for #LOGSTASH{host} - currently only replacement supported (+ #IKANOW{} in main code)
 			try {
