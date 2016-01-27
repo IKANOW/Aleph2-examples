@@ -129,7 +129,6 @@ public class LogstashUtils {
 				
 			final String output = IOUtils.toString(LogstashHarvestService.class.getClassLoader().getResourceAsStream("output_elasticsearch.ls"),Charsets.UTF_8)
 					.replace("_XXX_INDEX_XXX_", BucketUtils.getUniqueSignature(bucket.full_name(), Optional.empty()) + time_suffix);
-			_logger.error(output);
 			return output;			
 		}
 		else return "";
