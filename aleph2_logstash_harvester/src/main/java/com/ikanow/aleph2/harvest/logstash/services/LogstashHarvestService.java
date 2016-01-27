@@ -26,8 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import scala.Tuple2;
 
@@ -56,7 +54,6 @@ import fj.data.Validation;
  * @author Alex
  */
 public class LogstashHarvestService implements IHarvestTechnologyModule {
-	private static final Logger _logger = LogManager.getLogger();
 	protected final SetOnce<LogstashHarvesterConfigBean> _globals = new SetOnce<>();
 	protected final SetOnce<IHarvestContext> _context = new SetOnce<>();
 	protected final SetOnce<GlobalPropertiesBean> _global_propertes = new SetOnce<>();
@@ -71,7 +68,6 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	 */
 	@Override
 	public void onInit(IHarvestContext context) {
-		_logger.error("LOGSTASH: init");
 		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), LogstashHarvesterConfigBean.class).get());
 		_context.set(context);
 		_global_propertes.set(context.getServiceContext().getGlobalProperties());		
@@ -83,11 +79,9 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public boolean canRunOnThisNode(DataBucketBean bucket,
 			IHarvestContext context) {
-		_logger.error("LOGSTASH: canRun");
 		final File master = new File(_globals.get().master_config_dir()); 
 		final File slave = new File(_globals.get().slave_config_dir()); 
 		if (BucketUtils.isTestBucket(bucket)) {
-			_logger.error("LOGSTASH: canRun test: " + new File(_globals.get().binary_path()).exists());
 			return new File(_globals.get().binary_path()).exists();
 		}
 		else if (Optional.ofNullable(bucket.multi_node_enabled()).orElse(false)) { // multi node
@@ -133,11 +127,9 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		
 		// Handle test case - use process utils to delete
 		if (BucketUtils.isTestBucket(new_bucket)) {
-			_logger.error("UPDATE SOURCE: trying to stop a test bucket, resetting file pointer");
 			resetFilePointer(new_bucket, config, _globals.get());
 			
 			//kill/log
-			_logger.error("Sending stop process");
 			final Tuple2<String, Boolean> kill_result = ProcessUtils.stopProcess(this.getClass().getSimpleName(), new_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
 			
 			return CompletableFuture.completedFuture(
@@ -207,7 +199,6 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
-		_logger.error("LOGSTASH: on periodic poll was called");
 		final LogstashBucketConfigBean config = Optionals.ofNullable(polled_bucket.harvest_configs()).stream().findFirst()														
 				.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
 				.orElse(BeanTemplateUtils.build(LogstashBucketConfigBean.class).done().get());
@@ -215,10 +206,8 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		//if yes: report its running
 		//if no: restart job
 		if ( isConfigRunning(polled_bucket, config, _globals.get())) {
-			_logger.error("LOGSTASH: on periodic poll was called, config was running, do nothing");
 			return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "Config is currently running!"));
 		} else {
-			_logger.error("LOGSTASH: on periodic poll was called, config was NOT running, restarting config job");
 			return CompletableFuture.completedFuture(startOrUpdateLogstash(polled_bucket, config, _globals.get(), context));
 			
 		}
@@ -240,7 +229,6 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onTestSource(
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
-		_logger.error("LOGSTASH: test was called");
 		
 		// Kill any previously running tests
 		ProcessUtils.stopProcess(this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
@@ -262,7 +250,6 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 		//final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.empty());
 		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.of(test_bucket.full_name()));
 		
-		_logger.error("LOGSTASH: process built was: " + pb.command().toString());
 		final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(new Tuple2<Long, Integer>(test_spec.max_run_time_secs(), 2)));
 	
 		if (null != err_pid._1()) {
