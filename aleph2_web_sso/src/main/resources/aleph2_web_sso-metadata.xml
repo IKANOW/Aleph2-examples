@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" ID="aleph2_web_sso" entityID="http://ikanow.com/aleph2_web_sso" validUntil="2036-01-25T21:17:12.325Z">
+    <md:Extensions xmlns:alg="urn:oasis:names:tc:SAML:metadata:algsupport">
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha224"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+        <alg:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#dsa-sha1"/>
+    </md:Extensions>
+    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol">
+        <md:Extensions xmlns:init="urn:oasis:names:tc:SAML:profiles:SSO:request-init">
+            <init:RequestInitiator Binding="urn:oasis:names:tc:SAML:profiles:SSO:request-init" Location="http://localhost:8080/aleph2_web_sso/callback?client_name=SAML2Client"/>
+        </md:Extensions>
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>MIIDkjCCAnoCCQCTMoL1IXoJfzANBgkqhkiG9w0BAQUFADCBijELMAkGA1UEBhMC
+VVMxEDAOBgNVBAgMB1Zlcm1vbnQxETAPBgNVBAcMCE1vcmV0b3duMRMwEQYDVQQK
+DApJS0FOT1cgTExDMQswCQYDVQQLDAJJVDETMBEGA1UEAwwKaWthbm93LmNvbTEf
+MB0GCSqGSIb3DQEJARYQaW5mcmFAaWthbm93LmNvbTAeFw0xNjAxMjIyMDAyNDNa
+Fw0yNjAxMTkyMDAyNDNaMIGKMQswCQYDVQQGEwJVUzEQMA4GA1UECAwHVmVybW9u
+dDERMA8GA1UEBwwITW9yZXRvd24xEzARBgNVBAoMCklLQU5PVyBMTEMxCzAJBgNV
+BAsMAklUMRMwEQYDVQQDDAppa2Fub3cuY29tMR8wHQYJKoZIhvcNAQkBFhBpbmZy
+YUBpa2Fub3cuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA85LO
+ACaA+zOEuQerp+ncWfY9Ciq5HpOffV4FVwd5bw7F1WTx65z9N/rtmUCBhwnzUJ4H
+HsaMyNXBd6C+cxhQNWTxmcjHj8wbDnVf9m9jCsRE89cnegndDSGbYdRuwxGH666t
+Qg35GtMnX/g0SsCeVekFAXw6WDMaAQCKsPje6qFPcX/V8+I84TkFnx1ThspaghNX
+2a6yMeMatAaHKBytJ8hRBwixjRGYngXbVwPQR4QoIegNyv0k/Sf0R9anf09V6X7/
+DejWNHE/giCDYjFk4oZeDjKL4Siex1nFUHNhYcHe47L6ffMeDS3vakx5KEG4+dXy
+wQICLPYfnDFSCp84/QIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQC7DX4+KVg5VEwZ
+dxqrjqJJCa9a6NwrI8FUAj/j/u1b1IZInEf+TUKq7sTorkLiU41m2FKyYvDINKOB
+eYr+hv8tZ6UMNIH80QutsPLEkOUm4wGPehzZEbZyqSL5eZV0yhtYNe22X6sS1CWu
+cYmV6p9JSZzZUYzFm6OSvwsftp/IV2vgqS9sPZD+vFGuhAqB39IEqeDKFsmGpIYL
++BfMDmIfzXLNln5MncRnYhhwEInqTYz9M/N9REEAJOhxbZ28ZHnKPvs4Chs3pVyF
+YD2MY8/L33LLCBjsRrMgNvz0Nuxb4A150PrYHskd16z8rGCtaCaRMt7Skjdn3ncf
+sG2i1Bvt
+</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:KeyDescriptor use="encryption">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>MIIDkjCCAnoCCQCTMoL1IXoJfzANBgkqhkiG9w0BAQUFADCBijELMAkGA1UEBhMC
+VVMxEDAOBgNVBAgMB1Zlcm1vbnQxETAPBgNVBAcMCE1vcmV0b3duMRMwEQYDVQQK
+DApJS0FOT1cgTExDMQswCQYDVQQLDAJJVDETMBEGA1UEAwwKaWthbm93LmNvbTEf
+MB0GCSqGSIb3DQEJARYQaW5mcmFAaWthbm93LmNvbTAeFw0xNjAxMjIyMDAyNDNa
+Fw0yNjAxMTkyMDAyNDNaMIGKMQswCQYDVQQGEwJVUzEQMA4GA1UECAwHVmVybW9u
+dDERMA8GA1UEBwwITW9yZXRvd24xEzARBgNVBAoMCklLQU5PVyBMTEMxCzAJBgNV
+BAsMAklUMRMwEQYDVQQDDAppa2Fub3cuY29tMR8wHQYJKoZIhvcNAQkBFhBpbmZy
+YUBpa2Fub3cuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA85LO
+ACaA+zOEuQerp+ncWfY9Ciq5HpOffV4FVwd5bw7F1WTx65z9N/rtmUCBhwnzUJ4H
+HsaMyNXBd6C+cxhQNWTxmcjHj8wbDnVf9m9jCsRE89cnegndDSGbYdRuwxGH666t
+Qg35GtMnX/g0SsCeVekFAXw6WDMaAQCKsPje6qFPcX/V8+I84TkFnx1ThspaghNX
+2a6yMeMatAaHKBytJ8hRBwixjRGYngXbVwPQR4QoIegNyv0k/Sf0R9anf09V6X7/
+DejWNHE/giCDYjFk4oZeDjKL4Siex1nFUHNhYcHe47L6ffMeDS3vakx5KEG4+dXy
+wQICLPYfnDFSCp84/QIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQC7DX4+KVg5VEwZ
+dxqrjqJJCa9a6NwrI8FUAj/j/u1b1IZInEf+TUKq7sTorkLiU41m2FKyYvDINKOB
+eYr+hv8tZ6UMNIH80QutsPLEkOUm4wGPehzZEbZyqSL5eZV0yhtYNe22X6sS1CWu
+cYmV6p9JSZzZUYzFm6OSvwsftp/IV2vgqS9sPZD+vFGuhAqB39IEqeDKFsmGpIYL
++BfMDmIfzXLNln5MncRnYhhwEInqTYz9M/N9REEAJOhxbZ28ZHnKPvs4Chs3pVyF
+YD2MY8/L33LLCBjsRrMgNvz0Nuxb4A150PrYHskd16z8rGCtaCaRMt7Skjdn3ncf
+sG2i1Bvt
+</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</md:NameIDFormat>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:8080/aleph2_web_sso/callback?client_name=SAML2Client" index="0"/>
+    </md:SPSSODescriptor>
+</md:EntityDescriptor>
