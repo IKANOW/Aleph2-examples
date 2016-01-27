@@ -17,6 +17,6 @@
 -->
 <Context>
  	<Loader  className="org.apache.catalina.loader.VirtualWebappLoader" 
- 	         virtualClasspath="/opt/aleph2-home/etc/"
+ 	         virtualClasspath="/opt/aleph2-home/etc/aleph2_web_sso"
     />
 </Context>
