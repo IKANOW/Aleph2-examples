@@ -1,0 +1,75 @@
+{
+            "aliases": [],
+            "analytic_thread": {"jobs": [{
+                "analytic_technology_name_or_id": "BatchEnrichmentService",
+                "analytic_type": "batch",
+                "config": {"enrich_pipeline": [
+                    {
+                        "config": {"script": "$$SCRIPT_js_1$$"},
+                        "enabled": true,
+                        "entry_point": "com.ikanow.aleph2.enrichment.utils.services.JsScriptEngineService",
+                        "module_name_or_id": "/app/aleph2/library/enrichment_utils.jar",
+                        "name": "jobA"
+                    },
+                    {
+                        "config": {"script": "$$SCRIPT_js_2$$"},
+                        "enabled": true,
+                        "entry_point": "com.ikanow.aleph2.enrichment.utils.services.JsScriptEngineService",
+                        "grouping_fields": ["email_key"],
+                        "module_name_or_id": "/app/aleph2/library/enrichment_utils.jar",
+                        "name": "jobB"
+                    },
+                    {
+                        "config": {},
+                        "enabled": true,
+                        "entry_point": "com.ikanow.aleph2.analytics.services.DeduplicationService",
+                        "name": "dedup"
+                    }
+                ]},
+                "enabled": true,
+                "inputs": [{
+                    "config": {},
+                    "data_service": "storage_service",
+                    "enabled": true,
+                    "resource_name_or_id": "/ce/user_data/user_profile_staging"
+                }],
+                "library_names_or_ids": ["/app/aleph2/library/enrichment_utils.jar"],
+                "name": "USER_PROFILE_MERGE",
+                "output": {
+                    "is_transient": false,
+                    "preserve_existing_data": true
+                }
+            }]},
+            "data_schema": {
+                "columnar_schema": {"field_type_include_list": [
+                    "date",
+                    "string",
+                    "long",
+                    "double"
+                ]},
+                "document_schema": {
+                    "custom_deduplication_configs": [{
+                        "config": {"script": "$$SCRIPT_js_3$$"},
+                        "enabled": true,
+                        "entry_point": "com.ikanow.aleph2.enrichment.utils.services.JsScriptEngineService",
+                        "name": "prep"
+                    }],
+                    "deduplication_fields": ["email_key"],
+                    "deduplication_policy": "custom",
+                    "deduplication_timing": "custom",
+                    "enabled": true
+                },
+                "search_index_schema": {
+                    "enabled": true,
+                    "technology_override_schema": {}
+                },
+                "temporal_schema": {
+                    "exist_age_max": "5 days",
+                    "grouping_time_period": "daily",
+                    "time_field": "@timestamp"
+                }
+            },
+            "full_name": "/alexce/user_data/user_profile",
+            "multi_node_enabled": false,
+            "node_list_rules": [""]
+        }
