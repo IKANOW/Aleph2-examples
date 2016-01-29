@@ -29,6 +29,70 @@
     </properties>
 
     <dependencies>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_data_model</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_core_security</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+<!--  	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_security_service_ikanow_web_v1</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	-->
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_security_service_ikanow_v1</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_web_utils</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>	
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_core_distributed_services_library</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_management_db_service</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_management_db_service_mongodb</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+		<exclusions>
+			<exclusion>
+				<artifactId>jsp-api</artifactId>
+				<groupId>javax.servlet.jsp</groupId>
+			</exclusion>
+			<exclusion>
+				<artifactId>jasper-runtime</artifactId>
+				<groupId>tomcat</groupId>
+			</exclusion>
+			<exclusion>
+				<artifactId>jasper-compiler</artifactId>
+				<groupId>tomcat</groupId>
+			</exclusion>
+		</exclusions>
+	</dependency>
         <dependency>
             <groupId>io.buji</groupId>
             <artifactId>buji-pac4j-servlet</artifactId>

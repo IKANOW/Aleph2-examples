@@ -7,6 +7,9 @@
 
     <absolute-ordering/>
 
+     <listener>
+        <listener-class>com.ikanow.aleph2.web_utils.GuiceContextListener</listener-class>
+    </listener>
     <listener>
         <listener-class>org.apache.shiro.web.env.EnvironmentLoaderListener</listener-class>
     </listener>
@@ -39,4 +42,20 @@
         <error-code>500</error-code>
         <location>/error500.jsp</location>
     </error-page>
+    
+    <context-param>
+	     <param-name>aleph2.config</param-name>
+	     <param-value>/opt/aleph2-home/etc/aleph2_web_sso/aleph2_web_sso.properties</param-value>
+	</context-param>
+<!-- 	<context-param>
+	     <param-name>aleph2.module_class</param-name>
+	    <param-value>com.ikanow.aleph2.security.module.IkanowV1WebSecurityModule</param-value>
+	</context-param>
+	-->
+	<context-param>
+	     <param-name>aleph2.application_class</param-name>
+	     <param-value>com.ikanow.aleph2.web_utils.DefaultInjectorContainer</param-value>
+	</context-param>
+    
 </web-app>
+
