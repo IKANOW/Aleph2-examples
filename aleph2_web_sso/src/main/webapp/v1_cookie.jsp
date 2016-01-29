@@ -47,13 +47,10 @@ if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
 	if(pP instanceof SAML2Profile){
 		SAML2Profile sp = (SAML2Profile)pP;
 		email = sp.getEmail();
-		out.print("Saml2Profile: "+sp);
-		out.print("<br/>");
-		out.print("Email: "+email);		
 	}
 
 CookieBean cb = cookieAuth.createCookieByEmail(email);
-
+if(cb!=null){
 // Create cookies for first and last names.      
 Cookie infiniteCookie = new Cookie("infinitecookie",  cb.getCookieId());
 infiniteCookie.setPath("/");
@@ -67,11 +64,18 @@ if ((443 == nClientPort) || (8443 == nClientPort)) {
 
 // Add both the cookies in the response header.
 response.addCookie( infiniteCookie );
-} 
+out.print("<h3>V1 cookie created!</h3>");
+}else{
+	out.print("<h3>Sorry, V1 cookie not created, check the log!</h3>");
+}
 
+}// if cb
+ out.print("profile :"+subject.getPrincipals());
  %>
- <%=email %>
- <%=nClientPort %>
+ <br/>
+Email:<%=email %>
+<br/>
+ClientPort: <%=nClientPort %>
 </shiro:authenticated>
 
 <shiro:notAuthenticated>
