@@ -121,7 +121,7 @@ public class LogstashUtils {
 			final Optional<String> grouping = Optionals.of(() -> bucket.data_schema().temporal_schema().grouping_time_period());
 			final String time_suffix = 
 					grouping
-						.<ChronoUnit>flatMap(g-> TimeUtils.getTimePeriod(g).validation(f->Optional.empty(), s->Optional.of(s)))
+						.<ChronoUnit>flatMap(g-> TimeUtils.getTimePeriod(g).<Optional<ChronoUnit>>validation(f->Optional.empty(), s->Optional.of(s)))
 						.map(p->TimeUtils.getTimeBasedSuffix(p, Optional.empty()))
 						.map(s->"_%{+" + s + "}")
 						//.map(s->"_%{+" + s.replaceAll("y", "Y") + "}")

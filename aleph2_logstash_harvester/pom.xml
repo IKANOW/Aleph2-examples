@@ -29,6 +29,7 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
 							<artifactSet>
 								<includes>
 								</includes>
