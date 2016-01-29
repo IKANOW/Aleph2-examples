@@ -78,6 +78,7 @@ clientsRealm.clients = $clients
 clientsFilter = io.buji.pac4j.ClientFilter
 clientsFilter.clients = $clients
 clientsFilter.failureUrl = /error500.jsp
+clientsFilter.successUrl = /v1_cookie.jsp
 
 facebookRoles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
 facebookRoles.client = $facebookClient
