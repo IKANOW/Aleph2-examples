@@ -24,6 +24,7 @@
 <%@ page import="org.pac4j.saml.profile.SAML2Profile" %>
 <%@page import="org.apache.shiro.subject.Subject"%>
 <%@page import="org.apache.shiro.SecurityUtils"%>
+<%@page import="java.util.ArrayList"%>
 
 <html>
 <head>
@@ -47,6 +48,17 @@ if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
 	if(pP instanceof SAML2Profile){
 		SAML2Profile sp = (SAML2Profile)pP;
 		email = sp.getEmail();
+		// todo test
+		if(email == null){
+			Object emailAttributes = sp.getAttribute("urn:oid:0.9.2342.19200300.100.1.3");
+			if(emailAttributes instanceof ArrayList){
+				ArrayList emails = (ArrayList)emailAttributes;
+				if(emails.size()>0){
+					email = ""+emails.get(0);		
+					out.print("<br/>Using Email Attribute (urn:oid:0.9.2342.19200300.100.1.3) instead of email :"+email+"<br/>");
+				}
+			}			
+		}
 	}
 
 CookieBean cb = cookieAuth.createCookieByEmail(email);
@@ -81,6 +93,15 @@ ClientPort: <%=nClientPort %>
 <shiro:notAuthenticated>
 <h2>Not authenticated!</h2>
 </shiro:notAuthenticated>
+
+<br />
+<a href="index.jsp">home</a>
+<br />
+<a href="logout">logout</a>
+<br/>
+<a href="http://idp001.dev.ikanow.com:8080/idp/profile/Logout">IDP logout (hardcoded for testing)</a>
+<br/>
+
 
 </body>
 </html>
