@@ -29,6 +29,8 @@
 
 <br />
 <a href="logout">logout</a>
+<br/>
+<a href="http://idp001.dev.ikanow.com:8080/idp/profile/Logout">IDP logout (hardcoded for testing)</a>
 <br /><br />
 profile : <%=subject.getPrincipals()%>
 <%--
