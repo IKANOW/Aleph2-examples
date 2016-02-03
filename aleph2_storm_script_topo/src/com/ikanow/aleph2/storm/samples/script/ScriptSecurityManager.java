@@ -37,7 +37,8 @@ public class ScriptSecurityManager extends NoSecurityManager {
 
 	@Override
 	public void setSecureFlag(boolean b) {
-		securityService.enableJvmSecurity(b);
+		//TODO: do nothing, need to disable this until the new security API is fixed
+		//securityService.enableJvmSecurity(b);
 	}
 
 }
