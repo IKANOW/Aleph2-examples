@@ -28,13 +28,13 @@ service.SecurityService.interface=com.ikanow.aleph2.data_model.interfaces.shared
 service.SecurityService.service=com.ikanow.aleph2.security.service.IkanowV1SecurityService
 
 #CONFIG:
-# GLOBALS:
-#(insert these by hand)
-#globals.local_root_dir=TEST_IS_OVERRIDDEN
-#MANAGEMENT DB:
-#MockMongoDbCrudServiceFactory.one_per_thread=false
 
 #MANAGEMENT DB:
 MongoDbManagementDbService.mongodb_connection=localhost:27017
-#MongoDbManagementDbService.mongodb_connection=db001.dev.ikanow.com:27017
+MongoDbManagementDbService.v1_enabled=false
+
+# CORE DISTRIBUTED SERVICES
+#(disable this for now, until it definitely needs to connect to Akka)
+#CoreDistributedServices.application_name=SsoWebapp
+#CoreDistributedServices.application_port.SsoWebapp=2253
 
