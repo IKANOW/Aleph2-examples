@@ -23,6 +23,12 @@
 	</dependency>
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_core_shared_library</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
 		<artifactId>aleph2_core_security</artifactId>
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
@@ -78,6 +84,12 @@
 				<groupId>tomcat</groupId>
 			</exclusion>
 		</exclusions>
+	</dependency>
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_crud_service_mongodb</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
 	</dependency>
         <dependency>
             <groupId>io.buji</groupId>
