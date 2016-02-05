@@ -28,13 +28,10 @@
         <dependent-module archiveName="aleph2_management_db_service_mongodb-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_management_db_service_mongodb/aleph2_management_db_service_mongodb">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="aleph2_core_shared_library-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_shared_library/aleph2_core_shared_library">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <dependent-module archiveName="aleph2_crud_service_mongodb-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_crud_service_mongodb/aleph2_crud_service_mongodb">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
-        <dependent-module archiveName="aleph2_storage_service_hdfs-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_storage_service_hdfs/aleph2_storage_service_hdfs">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
-        <dependent-module archiveName="aleph2_hadoop_dependencies-0.0.1-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_hadoop_dependencies/aleph2_hadoop_dependencies">
             <dependency-type>uses</dependency-type>
         </dependent-module>
         <property name="context-root" value="aleph2_web_login"/>

@@ -51,6 +51,7 @@ vkClient = org.pac4j.oauth.client.VkClient
 vkClient.key = 4224582
 vkClient.secret = nDc4IHTqu8ioFMkHKifq
 
+### SAML Config
 saml2Config = org.pac4j.saml.client.SAML2ClientConfiguration
 saml2Config.keystorePath = resource:samlKeystore.jks
 saml2Config.keystorePassword=welcome1
