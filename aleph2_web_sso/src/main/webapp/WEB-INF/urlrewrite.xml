@@ -1,0 +1,15 @@
+i?xml version="1.0" encoding="utf-8"?>
+
+    <!DOCTYPE urlrewrite
+        PUBLIC "-//tuckey.org//DTD UrlRewrite 3.0//EN"
+        "http://www.tuckey.org/res/dtds/urlrewrite3.0.dtd">
+
+    <urlrewrite>
+
+        <rule>
+            <from>/saml/index.jsp.*</from>
+            <set type="cookie" name="return_to">%{query-string}:%{server-name}:100:/</set>
+        </rule>
+
+    </urlrewrite>
+
