@@ -1,5 +1,6 @@
 <%@ page import="com.google.inject.Injector"%>
 <%@ page import="com.ikanow.aleph2.security.web.*"%>
+<%@ page import="com.ikanow.aleph2_web_sso.utils.*"%>
 
 <%
     // Get and delete v1 cookie
@@ -18,7 +19,7 @@
     // Logout from IDP
 
     //TODO: get this from the config
-    final String idp_logout = "http://idp001.dev.ikanow.com:8080/idp/profile/Logout";
+    final String idp_logout = Aleph2WebSsoConfig.getInstance().getLogoutUrl();//"http://idp001.dev.ikanow.com:8080/idp/profile/Logout";
 
     response.setStatus(response.SC_MOVED_TEMPORARILY);
     response.setHeader("Location", idp_logout);

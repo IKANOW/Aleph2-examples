@@ -30,7 +30,8 @@ service.SecurityService.service=com.ikanow.aleph2.security.service.IkanowV1Secur
 #CONFIG:
 
 #MANAGEMENT DB:
-MongoDbManagementDbService.mongodb_connection=localhost:27017
+#MongoDbManagementDbService.mongodb_connection=localhost:27017
+MongoDbManagementDbService.mongodb_connection=db001.dev.ikanow.com:27017
 MongoDbManagementDbService.v1_enabled=false
 
 # CORE DISTRIBUTED SERVICES

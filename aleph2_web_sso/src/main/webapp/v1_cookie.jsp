@@ -25,6 +25,7 @@
 <%@page import="org.apache.shiro.subject.Subject"%>
 <%@page import="org.apache.shiro.SecurityUtils"%>
 <%@page import="java.util.ArrayList"%>
+<%@ page import="com.ikanow.aleph2_web_sso.utils.*"%>
 
 <html>
 <head>
@@ -42,22 +43,17 @@ IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstan
 
 Subject subject = SecurityUtils.getSubject();
 String email = "";
+SAML2Profile sp = null;
 int nClientPort = request.getServerPort();
 if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
 	Object pP = 	subject.getPrincipals().asList().get(1);
 	if(pP instanceof SAML2Profile){
-		SAML2Profile sp = (SAML2Profile)pP;
+		sp = (SAML2Profile)pP;
 		email = sp.getEmail();
 		// todo test
 		if(email == null){
 			Object emailAttributes = sp.getAttribute("urn:oid:0.9.2342.19200300.100.1.3");
-			if(emailAttributes instanceof ArrayList){
-				ArrayList emails = (ArrayList)emailAttributes;
-				if(emails.size()>0){
-					email = ""+emails.get(0);		
-					out.print("<br/>Using Email Attribute (urn:oid:0.9.2342.19200300.100.1.3) instead of email :"+email+"<br/>");
-				}
-			}			
+			email = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.EMAIL_OID);
 		}
 	}
 
@@ -78,6 +74,20 @@ if ((443 == nClientPort) || (8443 == nClientPort)) {
 response.addCookie( infiniteCookie );
 out.print("<h3>V1 cookie created!</h3>");
 }else{
+	// check of we want to create the user
+	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
+		// TODO create user
+		String uid = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.UID_OID);
+		String fullName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.FULL_NAME_OID);
+		String firstName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.FIRST_NAME_OID);
+		String lastName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.FIRST_NAME_OID);
+		String phone = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.PHONE_OID);
+		cb = cookieAuth.createUser(uid, email, fullName, firstName, lastName, phone);
+		out.print("<h3>User and user cookie created!</h3>");		
+	}else{
+		
+	}
+	
 	out.print("<h3>Sorry, V1 cookie not created, check the log!</h3>");
 }
 
@@ -117,7 +127,7 @@ return;
 <br />
 <a href="logout">logout</a>
 <br/>
-<a href="http://idp001.dev.ikanow.com:8080/idp/profile/Logout">IDP logout (hardcoded for testing)</a>
+<a href=<%=Aleph2WebSsoConfig.getInstance().getLogoutUrl() %>>IDP logout</a>
 <br/>
 
 

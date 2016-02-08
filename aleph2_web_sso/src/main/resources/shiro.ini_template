@@ -69,6 +69,11 @@ clients = org.pac4j.core.client.Clients
 clients.callbackUrl = http://localhost:8080/aleph2_web_sso/callback
 clients.clients = $facebookClient,$twitterClient,$formClient,$basicAuthClient,$casClient,$vkClient,$saml2Client
 
+# SSO setup
+aleph2WebSsoConfig = com.ikanow.aleph2_web_sso.utils.Aleph2WebSsoConfig
+aleph2WebSsoConfig.createUser=true
+aleph2WebSsoConfig.logoutUrl=http://idp001.dev.ikanow.com:8080/idp/profile/Logout
+
 ############################################################################
 # REALM & FILTERS :
 ############################################################################
