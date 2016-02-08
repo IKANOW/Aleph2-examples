@@ -88,6 +88,24 @@ out.print("<h3>V1 cookie created!</h3>");
 Email:<%=email %>
 <br/>
 ClientPort: <%=nClientPort %>
+
+<%
+String url = null;
+for (Cookie c: request.getCookies()) {
+    if (c.getName().equals("return_url")) {
+        if (c.getValue().startsWith("return_url")) {
+            url = java.net.URLDecoder.decode(c.getValue().substring(11)); //(11=="return_url="
+        }
+    }
+}
+if (null != url) {
+response.setStatus(response.SC_MOVED_TEMPORARILY);
+response.setHeader("Location", url);
+return;
+}
+%>
+
+
 </shiro:authenticated>
 
 <shiro:notAuthenticated>

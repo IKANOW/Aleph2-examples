@@ -8,7 +8,7 @@ i?xml version="1.0" encoding="utf-8"?>
 
         <rule>
             <from>/saml/index.jsp.*</from>
-            <set type="cookie" name="return_to">%{query-string}:%{server-name}:100:/</set>
+            <set type="cookie" name="return_url">%{query-string}:%{server-name}:100:/</set>
         </rule>
 
     </urlrewrite>
