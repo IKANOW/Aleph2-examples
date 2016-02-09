@@ -78,7 +78,12 @@ if(cb==null){
 	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
 		// second attempt, creating user
 		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone);
-		out.print("<h3>User and user cookie created!</h3>");		
+		if(cb!=null){
+		out.print("<h3>User created!</h3>");
+		}
+		else{
+			out.print("<h3>User Not created check the logs!</h3>");			
+		}
 	}
 }
 
