@@ -77,6 +77,7 @@ if(cb==null){
 	// check of we want to create the user
 	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
 		// second attempt, creating user
+		cookieAuth.setApiRootUrl(Aleph2WebSsoConfig.getInstance().getApiRootUrl());
 		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone);
 		if(cb!=null){
 		out.print("<h3>User created!</h3>");

@@ -73,6 +73,7 @@ clients.clients = $facebookClient,$twitterClient,$formClient,$basicAuthClient,$c
 aleph2WebSsoConfig = com.ikanow.aleph2_web_sso.utils.Aleph2WebSsoConfig
 aleph2WebSsoConfig.createUser=true
 aleph2WebSsoConfig.logoutUrl=http://idp001.dev.ikanow.com:8080/idp/profile/Logout
+aleph2WebSsoConfig.apiRootUrl=http://api001.dev.ikanow.com:8080/api/
 aleph2WebSsoConfig.useProfile=false
 aleph2WebSsoConfig.useAttributes=true
 aleph2WebSsoConfig.emailOid=urn:oid:0.9.2342.19200300.100.1.3
