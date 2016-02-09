@@ -3,9 +3,10 @@
 <%@ page import="com.ikanow.aleph2_web_sso.utils.*"%>
 
 <%
-    // Get and delete v1 cookie
-
-    for (Cookie c: request.getCookies()) {
+// Get and delete v1 cookie
+Cookie[] cookies = request.getCookies();
+if(cookies!=null){
+    for (Cookie c: cookies) {
         if (c.getName().equals("infinitecookie")) {
             ServletContext sc = session.getServletContext();
             Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
@@ -13,6 +14,7 @@
             cookieAuth.deleteSessionCookieInDbById(c.getValue());
         }
     }
+}
 %>
 
 <%
