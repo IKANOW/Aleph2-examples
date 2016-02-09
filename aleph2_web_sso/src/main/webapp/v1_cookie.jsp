@@ -37,61 +37,70 @@
 <shiro:authenticated>
 <h2>You are authenticated!</h2>
 <%
-     ServletContext sc = session.getServletContext();
+ServletContext sc = session.getServletContext();
 Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
 IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
 
 Subject subject = SecurityUtils.getSubject();
 String email = "";
+String uid = null;
 SAML2Profile sp = null;
+String firstName = null;
+String lastName = null;
+String phone = null;
+
 int nClientPort = request.getServerPort();
 if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
 	Object pP = 	subject.getPrincipals().asList().get(1);
 	if(pP instanceof SAML2Profile){
 		sp = (SAML2Profile)pP;
-		email = sp.getEmail();
-		// todo test
-		if(email == null){
-			Object emailAttributes = sp.getAttribute("urn:oid:0.9.2342.19200300.100.1.3");
-			email = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.EMAIL_OID);
-		}
 	}
+}
+
+if(Aleph2WebSsoConfig.getInstance().isUseProfile()){	
+	uid = sp.getUsername();
+	email = sp.getEmail();
+	firstName = sp.getFirstName();
+	lastName = sp.getFamilyName();
+}
+
+if(Aleph2WebSsoConfig.getInstance().isUseAttributes()){
+	uid = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getUidOid());
+	email = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getEmailOid());
+	firstName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getFirstNameOid());
+	lastName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getLastnameOid());
+	phone = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getPhoneOid());	
+}
 
 CookieBean cb = cookieAuth.createCookieByEmail(email);
-if(cb!=null){
-// Create cookies for first and last names.      
-Cookie infiniteCookie = new Cookie("infinitecookie",  cb.getCookieId());
-infiniteCookie.setPath("/");
-//infiniteCookie.setAccessRestricted(true);
-//Indicates whether to restrict cookie access to untrusted parties. Currently this toggles the non-standard but widely supported HttpOnly cookie parameter. 
-infiniteCookie.setHttpOnly(true);
-
-if ((443 == nClientPort) || (8443 == nClientPort)) {
-	infiniteCookie.setSecure(true);
-}
-
-// Add both the cookies in the response header.
-response.addCookie( infiniteCookie );
-out.print("<h3>V1 cookie created!</h3>");
-}else{
+if(cb==null){
 	// check of we want to create the user
 	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
-		// TODO create user
-		String uid = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.UID_OID);
-		String fullName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.FULL_NAME_OID);
-		String firstName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.FIRST_NAME_OID);
-		String lastName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.FIRST_NAME_OID);
-		String phone = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoUtils.PHONE_OID);
-		cb = cookieAuth.createUser(uid, email, fullName, firstName, lastName, phone);
+		// second attempt, creating user
+		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone);
 		out.print("<h3>User and user cookie created!</h3>");		
-	}else{
-		
 	}
-	
-	out.print("<h3>Sorry, V1 cookie not created, check the log!</h3>");
 }
 
+if(cb!=null){
+	// Create cookies for first and last names.      
+	Cookie infiniteCookie = new Cookie("infinitecookie",  cb.getCookieId());
+	infiniteCookie.setPath("/");
+	//infiniteCookie.setAccessRestricted(true);
+	//Indicates whether to restrict cookie access to untrusted parties. Currently this toggles the non-standard but widely supported HttpOnly cookie parameter. 
+	infiniteCookie.setHttpOnly(true);
+
+	if ((443 == nClientPort) || (8443 == nClientPort)) {
+		infiniteCookie.setSecure(true);
+	}
+	// Add both the cookies in the response header.
+	response.addCookie( infiniteCookie );
+	out.print("<h3>V1 cookie created!</h3>");
+
 }// if cb
+else{
+	out.print("<h3>Sorry, V1 cookie not created, check the log!</h3>");
+}
  out.print("profile :"+subject.getPrincipals());
  %>
  <br/>
@@ -127,7 +136,7 @@ return;
 <br />
 <a href="logout">logout</a>
 <br/>
-<a href=<%=Aleph2WebSsoConfig.getInstance().getLogoutUrl() %>>IDP logout</a>
+<a href="<%=Aleph2WebSsoConfig.getInstance().getLogoutUrl() %>">IDP logout</a>
 <br/>
 
 

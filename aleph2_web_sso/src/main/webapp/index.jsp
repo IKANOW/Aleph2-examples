@@ -10,6 +10,7 @@
 <%@ page import="org.pac4j.core.client.Clients" %>
 <%@ page import="org.pac4j.core.context.J2EContext" %>
 <%@ page import="org.pac4j.saml.profile.SAML2Profile" %>
+<%@ page import="com.ikanow.aleph2_web_sso.utils.*"%>
 
 <%
 	J2EContext context = new J2EContext(request, response, new ShiroSessionStore());
@@ -30,25 +31,10 @@
 <br />
 <a href="logout">logout</a>
 <br/>
-<a href="http://idp001.dev.ikanow.com:8080/idp/profile/Logout">IDP logout (hardcoded for testing)</a>
+<a href="<%=Aleph2WebSsoConfig.getInstance().getLogoutUrl()%>">IDP logout</a>
 <br /><br />
 profile : <%=subject.getPrincipals()%>
-<%--
-	if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
-		Object pP = 	subject.getPrincipals().asList().get(1);
-		String email = "";
-		if(pP instanceof SAML2Profile){
-			SAML2Profile sp = (SAML2Profile)pP;
-			email = sp.getEmail();
-			out.print("Saml2Profile: "+sp);
-			out.print("<br/>");
-			out.print("Email: "+email);
-			
-		}
-			
-		
-	}
---%>
+
 <br /><br />
 <hr />
 <%
