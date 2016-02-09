@@ -116,12 +116,15 @@ ClientPort: <%=nClientPort %>
 
 <%
 String url = null;
-for (Cookie c: request.getCookies()) {
+Cookie[] cookies  = request.getCookies();
+if(cookies!=null){
+for (Cookie c: cookies) {
     if (c.getName().equals("return_url")) {
         if (c.getValue().startsWith("return_url")) {
             url = java.net.URLDecoder.decode(c.getValue().substring(11)); //(11=="return_url="
         }
     }
+}
 }
 if (null != url) {
 response.setStatus(response.SC_MOVED_TEMPORARILY);
