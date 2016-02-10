@@ -52,15 +52,48 @@ It can then be supplied to the the IDP server for configuration.
 
     saml2Config.serviceProviderMetadataPath = sp-metadata.xml
 
+####SSO urls and OIDs in shiro.ini
+Configure the Single Sign ON specific URLs and attribute OIDs:
+
+    aleph2WebSsoConfig = com.ikanow.aleph2_web_sso.utils.Aleph2WebSsoConfig
+
+If a user does not exist in V1 he can be created by enabling setting the _aleph2WebSsoConfig.createUser_ setting to true. 
+In this case either the saml2 profile needs to contain the data (attributes) to create the user or the attributes need to be configured separately (see below.)
+  
+    aleph2WebSsoConfig.createUser=true
+    aleph2WebSsoConfig.logoutUrl=http://idp001.dev.ikanow.com:8080/idp/profile/Logout
+    aleph2WebSsoConfig.apiRootUrl=http://api001.dev.ikanow.com:8080/api/
+
+Set useProfile setting to true if the Saml profile received from the IDP contains username, email, first,last-name attributes.
+  
+     aleph2WebSsoConfig.useProfile=false
+
+
+If attributes are received from the IDP, (vs using the Profile only) then configure the Attribute OIDs to match the IDP setting
+
+    aleph2WebSsoConfig.useAttributes=true
+    aleph2WebSsoConfig.emailOid=urn:oid:0.9.2342.19200300.100.1.3
+    aleph2WebSsoConfig.uidOid=urn:oid:0.9.2342.19200300.100.1.1
+    aleph2WebSsoConfig.firstNameOid=urn:oid:2.5.4.42
+    aleph2WebSsoConfig.lastnameOid=urn:oid:2.5.4.4
+    aleph2WebSsoConfig.fullNameOid=urn:oid:2.16.840.1.113730.3.1.241
+    aleph2WebSsoConfig.phoneOid=urn:oid:2.5.4.20 
+
 
 ### Aleph2 services configuration
 
-Place a copy of the aleph2_web_sso.properties file inside /opt/aleph2-home/etc/aleph2_web_sso
+Place a copy of the aleph2_web_sso.properties file inside /opt/aleph2-home/etc/aleph2_web_sso .<br/>
+Edit the mongodb connection, e.g.
+     
+    MongoDbManagementDbService.mongodb_connection=db001.dev.ikanow.com:27017
 
+<br>
 
+----
 
+<br>
 
-###LDAP configuration in shiro.ini
+#LDAP configuration in shiro.ini (Informative only, not used for saml based SSO) 
 This is a sample configuration binding directly to an entry using the Format resolver. For further configuration please refer to the 
 [ldaptive library documentation](http://www.ldaptive.org/docs/guide/authentication.html)
  
