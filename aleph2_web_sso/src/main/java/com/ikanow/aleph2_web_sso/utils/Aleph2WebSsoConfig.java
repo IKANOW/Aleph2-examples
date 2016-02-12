@@ -45,6 +45,8 @@ public class Aleph2WebSsoConfig {
 	private boolean useProfile=true;
 	private boolean useAttributes=true;
 
+	private String apiRootUrl="http://localhost:8080/api/";
+
 
 	public boolean isUseProfile() {
 		return useProfile;
@@ -126,8 +128,14 @@ public class Aleph2WebSsoConfig {
 	public void setPhoneOid(String phoneOid) {
 		this.phoneOid = phoneOid;
 	}
-	
-	
-	
+
+	public String getApiRootUrl() {
+		return apiRootUrl;
+	}
+
+	public void setApiRootUrl(String apiRootUrl) {
+		this.apiRootUrl = apiRootUrl;
+	}
+
 	
 }

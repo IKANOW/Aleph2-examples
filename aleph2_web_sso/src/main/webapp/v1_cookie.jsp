@@ -77,8 +77,14 @@ if(cb==null){
 	// check of we want to create the user
 	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
 		// second attempt, creating user
+		cookieAuth.setApiRootUrl(Aleph2WebSsoConfig.getInstance().getApiRootUrl());
 		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone);
-		out.print("<h3>User and user cookie created!</h3>");		
+		if(cb!=null){
+		out.print("<h3>User created!</h3>");
+		}
+		else{
+			out.print("<h3>User Not created check the logs!</h3>");			
+		}
 	}
 }
 
@@ -110,12 +116,15 @@ ClientPort: <%=nClientPort %>
 
 <%
 String url = null;
-for (Cookie c: request.getCookies()) {
+Cookie[] cookies  = request.getCookies();
+if(cookies!=null){
+for (Cookie c: cookies) {
     if (c.getName().equals("return_url")) {
         if (c.getValue().startsWith("return_url")) {
             url = java.net.URLDecoder.decode(c.getValue().substring(11)); //(11=="return_url="
         }
     }
+}
 }
 if (null != url) {
 response.setStatus(response.SC_MOVED_TEMPORARILY);
