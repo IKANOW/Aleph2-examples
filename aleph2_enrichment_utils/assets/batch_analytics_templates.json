@@ -2,7 +2,7 @@
 	"display_name": "Javascript Enrichment",
 	"categories": ["Javascript"],
 	"key": "enrichment_meta",
-	"filters": ["**/analytic_job"],
+	"filters": ["Bucket/**"],
 	"expandable": false,
 	"schema": [{
 		"key": "name",
@@ -58,7 +58,7 @@
 	}],
 	"form_info": "JS Enrichment element, allows writing some JS to run in the pipeline",
 	"building_function": {
-		"$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj \u003d {};\n        config_obj.entry_point \u003d template.element.form_model.entry_point;\n        config_obj.module_name_or_id \u003d template.element.form_model.module_name_or_id;\n        config_obj.name \u003d template.element.form_model.name;\n        config_obj.enabled \u003d true;\n        config_obj.library_names_or_ids \u003d template.element.form_model.library_names_or_ids;\n        var script_obj \u003d {};\n        script_obj.script \u003d template.element.form_model.js_script;\n        config_obj.config \u003d script_obj;\n        curr_obj.config.enrich_pipeline.push(config_obj); \n      }"
+		"$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj \u003d {};\n        config_obj.entry_point \u003d template.element.form_model.entry_point;\n        config_obj.module_name_or_id \u003d template.element.form_model.module_name_or_id;\n        config_obj.name \u003d template.element.form_model.name;\n        config_obj.enabled \u003d true;\n        config_obj.library_names_or_ids \u003d template.element.form_model.library_names_or_ids;\n        var script_obj \u003d {};\n        script_obj.script \u003d template.element.form_model.js_script;\n        config_obj.config \u003d script_obj;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }"
 	}
 }, {
 	"display_name": "Bucket Input",
