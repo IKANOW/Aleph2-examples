@@ -1,0 +1,88 @@
+[
+  {
+    "display_name": "Logstash Harvester",
+    "form_info": "<p>Provide the required parameter configuration settings to configure the Logstash Harvester.</p>\n\n<p>Script: Provide your logstash configuration script using input and filter blocks.</p>\n\n<p>Logstash Destination: Use dropdown to select HDFS or elasticsearch.  Default is HDFS.</p>\n\n<p>Enable Logstash Debug Logging:  Sets logging to debug (trace) - more verbose.  Otherwise, defaults to less verbose.</p>\n\nNote: only for testing purposes!\n\nWrite Settings Override: Settings that control log file creation, flushing.",
+    "expandable": false,
+    "key": "logstash_harvester",
+    "categories": [
+      "Harvester"
+    ],
+    "filters": [
+      "Bucket"
+    ],
+    "schema": [
+      {
+        "key": "script",
+        "type": "code_input",
+        "templateOptions": {
+          "codemirror": {
+            "lineNumbers": true,
+            "smartIndent": true,
+            "mode": "properties"
+          },
+          "label": "Script",
+          "required": false
+        }
+      },
+      {
+        "templateOptions": {
+          "required": true,
+          "label": "Logstash Destination",
+          "options": [
+            {
+              "name": "HDFS",
+              "value": "hdfs"
+            },
+            {
+              "name": "Direct Elasticsearch (for debugging)",
+              "value": "elasticsearch"
+            }
+          ]
+        },
+        "type": "horizontalSelect",
+        "key": "output_override"
+      },
+      {
+        "templateOptions": {
+          "label": "Enable Logstash Debug Logging In Test Mode",
+          "placeholder": "Sets logging to debug (trace) - more verbose.  Otherwise, defaults to less verbose."
+        },
+        "type": "horizontalCheckbox",
+        "key": "debug_verbosity"
+      },
+      {
+        "className": "section-label",
+        "template": "<hr /><div><strong>Write Settings Override</strong></div>"
+      },
+      {
+        "templateOptions": {
+          "required": false,
+          "label": "Threshold Before Segmentation",
+          "placeholder": "Max objects to process before segmenting to a new file."
+        },
+        "key": "batch_max_objects",
+        "type": "horizontalInput"
+      },
+      {
+        "templateOptions": {
+          "required": false,
+          "label": "Log Flush Interval",
+          "placeholder": "Sets the interval at which logs should be flushed.  Default setting is 300s.  Is overridden to 10s during testing for quick viewing of test logs."
+        },
+        "key": "batch_flush_interval",
+        "type": "horizontalInput"
+      }
+    ],
+    "building_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  curr_obj.harvest_technology_name_or_id = \"/app/aleph2/library/logstash_harvester.jar\";\n  curr_obj.multi_node_enabled = false;\n  curr_obj.lock_to_nodes = true;\n  \n  var ls_obj = {};\n  ls_obj.script = template.element.form_model.script;\n  ls_obj.output_override = template.element.form_model.output_override;\n  ls_obj.debug_verbosity = template.element.form_model.debug_verbosity;\n  curr_obj.harvest_configs = [ { config: ls_obj } ];\n}"
+    },
+    "post_building_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+    },
+    "default_model": {
+      "output_override": "hdfs",
+      "debug_verbosity": false,
+      "script": "input {\n}\n\nfilter {\n}\n\n"
+    }
+  }
+]
