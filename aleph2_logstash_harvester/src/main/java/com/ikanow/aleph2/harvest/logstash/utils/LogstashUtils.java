@@ -65,10 +65,16 @@ public class LogstashUtils {
 	 */
 	public static ProcessBuilder buildLogstashTest(final LogstashHarvesterConfigBean global, final LogstashBucketConfigBean bucket_config, final String logstash_config, final long requested_docs, final Optional<String> bucket_path ) {
 		
+		final String log_file = System.getProperty("java.io.tmpdir") + File.separator + BucketUtils.getUniqueSignature(bucket_path.get(), Optional.empty());
+		try { //(delete log file if it exists)
+			new File(log_file).delete();
+		}
+		catch (Exception e) {}
+		
 		ArrayList<String> args = new ArrayList<String>();
 		args.addAll(Arrays.asList(global.binary_path(), "-e", logstash_config));
 		if ( bucket_path.isPresent() ) {
-			args.addAll(Arrays.asList("-l", System.getProperty("java.io.tmpdir") + File.separator + BucketUtils.getUniqueSignature(bucket_path.get(), Optional.empty())));
+			args.addAll(Arrays.asList("-l", log_file));
 		}
 		if (0L == requested_docs) {
 			args.add("-t"); // test mode, must faster
