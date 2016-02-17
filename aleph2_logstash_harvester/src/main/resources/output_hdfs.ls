@@ -3,6 +3,7 @@ output {
 	    webhdfs {
 	     	#remove_field => [ "sourceKey" ] 
 	        path => '_XXX_PATH_XXX_'
+	        single_file_per_thread => true,
 	        host => '_XXX_HOST_XXX_'
 	        port => '_XXX_PORT_XXX_'
 	        user => '_XXX_USER_XXX_'

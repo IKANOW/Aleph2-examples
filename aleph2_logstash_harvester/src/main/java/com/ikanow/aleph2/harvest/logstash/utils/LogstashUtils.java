@@ -49,7 +49,7 @@ import com.ikanow.aleph2.harvest.logstash.services.LogstashHarvestService;
  */
 public class LogstashUtils {
 	private static final Logger _logger = LogManager.getLogger();
-	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}.json"; // (new file every minute unless flushed first)
+	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}_%{thread_id}.json"; // (new file every minute unless flushed first)
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
 	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
 	private static final String HDFS_NAMENODE_HTTP_ADDRESS = "dfs.namenode.http-address";

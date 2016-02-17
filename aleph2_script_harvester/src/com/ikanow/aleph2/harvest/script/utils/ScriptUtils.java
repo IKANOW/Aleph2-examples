@@ -104,7 +104,7 @@ public class ScriptUtils {
 		pb.environment().put(ENV_MODULE_PATH, context.getHarvestContextLibraries(Optional.empty()).stream().collect(Collectors.joining(":")));
 		pb.environment().put(ENV_LIBRARY_PATH, context.getHarvestLibraries(Optional.of(bucket)).get().values().stream().collect(Collectors.joining(":")));
 		pb.environment().put(ENV_CLASS_PATH, classpath);
-		pb.environment().put(ENV_BUCKET_HDFS_PATH, aleph_root_path + LOCAL_RUN_DIR_SUFFIX + File.separator + bucket.full_name()); //TODO this isn't right, it should be something like /app/aleph2/<bucket.fullname>
+		pb.environment().put(ENV_BUCKET_HDFS_PATH, aleph_root_path + bucket.full_name()); 
 		pb.environment().put(ENV_BUCKET_PATH, bucket.full_name()); 		
 		pb.environment().put(ENV_BUCKET_STR, BeanTemplateUtils.toJson(bucket).toString());
 		//add user args	as env vars

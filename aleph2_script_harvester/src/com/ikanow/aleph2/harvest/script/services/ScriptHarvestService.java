@@ -45,9 +45,11 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	protected final SetOnce<IHarvestContext> _context = new SetOnce<>();
 	protected final SetOnce<GlobalPropertiesBean> _global_propertes = new SetOnce<>();
 	
+	protected static final boolean DEBUG = false;
+	
 	@Override
 	public void onInit(IHarvestContext context) {
-		_logger.error("SCRIPT: init");
+		if (DEBUG) _logger.error("SCRIPT: init");
 		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), ScriptHarvesterConfigBean.class).get());
 		_context.set(context);
 		_global_propertes.set(context.getServiceContext().getGlobalProperties());
@@ -56,7 +58,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public boolean canRunOnThisNode(DataBucketBean bucket,
 			IHarvestContext context) {
-		_logger.error("SCRIPT: canRun");
+		if (DEBUG) _logger.error("SCRIPT: canRun");
 		//if config has a required_assets field set, check they exist on this box, otherwise we can run anywhere
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(bucket.harvest_configs()).stream().findFirst()														
@@ -87,7 +89,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			DataBucketBean old_bucket, DataBucketBean new_bucket,
 			boolean is_enabled, Optional<BucketDiffBean> diff,
 			IHarvestContext context) {
-		_logger.error("SCRIPT: onUPDATE, enabled: " + is_enabled);
+		if (DEBUG) _logger.error("SCRIPT: onUPDATE, enabled: " + is_enabled);
 		// stop any currently running pid for this job, if enabled start up again
 		final ScriptHarvesterBucketConfigBean config = 
 				Optionals.ofNullable(new_bucket.harvest_configs()).stream().findFirst()														
@@ -138,7 +140,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	@Override
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
-		_logger.error("SCRIPT: onPeriodicPoll was called");
+		if (DEBUG) _logger.error("SCRIPT: onPeriodicPoll was called");
 		
 		final boolean is_running =  ScriptUtils.isProcessRunning(polled_bucket, _global_propertes.get().local_root_dir());
 		final ScriptHarvesterBucketConfigBean config = 
@@ -164,7 +166,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onTestSource(
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
-		_logger.error("SCRIPT: test was called");
+		if (DEBUG) _logger.error("SCRIPT: test was called");
 				
 		//TODO loop over every harvest config and run for every one enabled rather than just the first
 		final ScriptHarvesterBucketConfigBean config = 
