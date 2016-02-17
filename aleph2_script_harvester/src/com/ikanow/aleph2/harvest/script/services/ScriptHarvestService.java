@@ -139,11 +139,19 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onPeriodicPoll(
 			DataBucketBean polled_bucket, IHarvestContext context) {
 		_logger.error("SCRIPT: onPeriodicPoll was called");
-		// report if the process is still running?
-		return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + ScriptUtils.isProcessRunning(polled_bucket, _global_propertes.get().local_root_dir())));
 		
+		final boolean is_running =  ScriptUtils.isProcessRunning(polled_bucket, _global_propertes.get().local_root_dir());
+		final ScriptHarvesterBucketConfigBean config = 
+				Optionals.ofNullable(polled_bucket.harvest_configs()).stream().findFirst()														
+					.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
+				.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 		
-//		return CompletableFuture.completedFuture(ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "onPeriodicPoll", "NYI"));
+		if (is_running || !config.watchdog_enabled()) {
+			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + is_running));			
+		}
+		else { // isn't running AND watch dog enabled, so restart
+			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(polled_bucket, context, _global_propertes.get().local_root_dir(), config, "onPeriodicPoll", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+		}
 	}
 
 	@Override
