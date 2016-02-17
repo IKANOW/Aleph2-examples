@@ -51,7 +51,6 @@ public class LogstashUtils {
 	private static final Logger _logger = LogManager.getLogger();
 	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}.json"; // (new file every minute unless flushed first)
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
-	private static final Integer DEFAULT_MAX_OBJECTS = 33554432;
 	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
 	private static final String HDFS_NAMENODE_HTTP_ADDRESS = "dfs.namenode.http-address";
 	
@@ -109,7 +108,7 @@ public class LogstashUtils {
 									.replace("_XXX_PORT_XXX_", hdfs_server_url.substring(hdfs_server_url.indexOf(":")+1))
 									.replace("_XXX_USER_XXX_", "tomcat") //TODO this should be a field in the HDFS config (see xxx_server_xxx)
 									.replace("_XXX_IDLE_FLUSH_TIME_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_FLUSH_INTERVAL).toString())									
-									.replace("_XXX_FLUSH_SIZE_XXX_", Optional.ofNullable(config.write_settings_override().batch_max_objects()).orElse(DEFAULT_MAX_OBJECTS).toString())
+									.replace("_XXX_FLUSH_SIZE_XXX_", Optional.ofNullable(config.write_settings_override().batch_max_objects()).orElse(LogstashBucketConfigBean.DEFAULT_MAX_OBJECTS).toString())
 									;
 			return output;			
 		}

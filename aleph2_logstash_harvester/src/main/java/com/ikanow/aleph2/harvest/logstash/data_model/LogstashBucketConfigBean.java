@@ -23,6 +23,8 @@ import com.ikanow.aleph2.data_model.objects.data_import.DataSchemaBean.WriteSett
  * @author Alex
  */
 public class LogstashBucketConfigBean {
+	public static final Integer DEFAULT_MAX_OBJECTS = 32768;
+	
 	/** Jackson c'tor
 	 */
 	protected LogstashBucketConfigBean() {}
@@ -43,7 +45,7 @@ public class LogstashBucketConfigBean {
 	 */
 	public String output_override() { return Optional.ofNullable(output_override).orElse("hdfs"); }			
 	
-	public WriteSettings write_settings_override() { return Optional.ofNullable(write_settings_override).orElse(new WriteSettings(33554432, 0L, 300, 0)); }
+	public WriteSettings write_settings_override() { return Optional.ofNullable(write_settings_override).orElse(new WriteSettings(DEFAULT_MAX_OBJECTS, 0L, 300, 0)); }
 	
 	private String script;
 	private String output_override;
