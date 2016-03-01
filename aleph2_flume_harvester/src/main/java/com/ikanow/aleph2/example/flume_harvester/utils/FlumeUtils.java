@@ -154,7 +154,7 @@ public class FlumeUtils {
 									final int count = counter.incrementAndGet();
 									
 									// (some tidy up that occurs in test mode)
-									return acc
+									return Optional.<ImmutableMap.Builder<String,String>>of(acc
 											.put("sources:file_in_" + count + ":type", "spooldir")
 											.put("sources:file_in_" + count + ":channels", "mem")
 											.put("sources:file_in_" + count + ":trackerDir", getTrackingDirSuffix(bucket))
@@ -163,7 +163,26 @@ public class FlumeUtils {
 													test_mode
 													? v.path() + "/" + getTestDirSuffix(bucket)
 													: v.path())
-											.put("sources:file_in_" + count + ":ignorePattern", Optional.ofNullable(v.ignore_pattern()).orElse("^$"));
+											.put("sources:file_in_" + count + ":ignorePattern", Optional.ofNullable(v.ignore_pattern()).orElse("^$")))
+											// Some optional fields
+											.map(acc2 -> {
+												return Optional.ofNullable(v.append_basename_field())
+																.map(field -> 
+																	acc2.put("sources:file_in_" + count + ":basenameHeader", "true")
+																		.put("sources:file_in_" + count + ":basenameHeaderKey", field)
+																)
+																.orElse(acc);
+											})
+											.map(acc2 -> {
+												return Optional.ofNullable(v.append_path_field())
+																.map(field -> 
+																	acc2.put("sources:file_in_" + count + ":fileHeader", "true")
+																		.put("sources:file_in_" + count + ":fileHeaderKey", field)
+																)
+																.orElse(acc);
+											})
+											.get()
+											;
 								}
 								,
 								(acc1, acc2) -> acc1 // (can't happen in practice)	

@@ -100,12 +100,24 @@ public class FlumeBucketConfigBean {
 			 */
 			public boolean delete_on_ingest() { return Optional.ofNullable(delete_on_ingest).orElse(true); }
 			
+			/** Optional field that appends the input basename as the designated fieldname (and also inserts into CSV streams)
+			 * @return
+			 */
+			public String append_basename_field() { return append_basename_field; }
+			
+			/** Optional field that appends the input file path as the designated fieldname (and also inserts into CSV streams)
+			 * @return
+			 */
+			public String append_path_field() { return append_path_field; }
+			
 			private Boolean enabled;
 			private String path;
 			private String test_src_path;
 			private String tracker_dir;
 			private String ignore_pattern;
 			private Boolean delete_on_ingest;
+			private String append_basename_field;
+			private String append_path_field;
 		}		
 		public List<SpoolDirConfig> spool_dirs() { return Optional.ofNullable(spool_dirs).map(Collections::unmodifiableList).orElse(Collections.emptyList()); }
 		private List<SpoolDirConfig> spool_dirs;
@@ -158,7 +170,7 @@ public class FlumeBucketConfigBean {
 			 * @return
 			 */
 			public List<String> header_fields() { return header_fields; }
-			/** A regex that is applied line by line, anything matching is discarded
+			/** A regex that is applied line by line, anything matching is discarded (entire line has to match)
 			 * @return
 			 */
 			public String ignore_regex() { return ignore_regex; }
@@ -179,6 +191,11 @@ public class FlumeBucketConfigBean {
 			 */
 			public Map<String, List<String>> non_string_type_map() { return Optional.ofNullable(non_string_type_map).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
 			
+			/** A list of fields that if present are copied into the object after CSV parsing
+			 * @return
+			 */
+			public List<String> append_event_fields() { return Optional.ofNullable(append_event_fields).map(Collections::unmodifiableList).orElse(Collections.emptyList()); }
+			
 			private Boolean enabled;
 			private String separator;
 			private List<String> header_fields;
@@ -187,6 +204,7 @@ public class FlumeBucketConfigBean {
 			private String quote_char;
 			private Map<String, String> non_string_types; // "int", "long", "boolean", "double", "hex", "date"
 			private Map<String, List<String>> non_string_type_map; // as above except "int": [ "field1", "field2", ... ]
+			private List<String> append_event_fields;
 		}
 		/** For JSON output
 		 * @return

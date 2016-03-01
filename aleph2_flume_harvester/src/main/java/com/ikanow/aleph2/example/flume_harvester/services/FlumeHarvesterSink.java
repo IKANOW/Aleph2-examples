@@ -146,6 +146,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 											)
 					;
 			
+			//TODO: this is just a bug no? not sure why it's here...
 			_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field());
 			
 			//DEBUG
@@ -354,7 +355,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 				return Optional.empty();
 			}
 			final String[] fields = csv.parser.parseLine(line);
-			final ObjectNode ret_val = StreamUtils.zipWithIndex(Arrays.stream(fields))
+			final ObjectNode ret_val_pre = StreamUtils.zipWithIndex(Arrays.stream(fields))
 				.reduce(_mapper.createObjectNode(), 
 						(acc, v) -> {
 							if (v.getIndex() >= csv.headers.size()) return acc;
@@ -365,37 +366,49 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 								}
 								else {
 									try {
-										return Patterns.match((String) csv.type_map.get(field_name)).<ObjectNode>andReturn()
-														.when(t -> null == t, __ -> acc.put(field_name, v.getValue())) //(string)
-														.when(t -> t.equalsIgnoreCase("long"),		__ -> acc.put(field_name, Long.parseLong(v.getValue())))
-														.when(t -> t.equalsIgnoreCase("int") || t.equalsIgnoreCase("integer"), 
-																									__ -> acc.put(field_name, Integer.parseInt(v.getValue())))
-														.when(t -> t.equalsIgnoreCase("double") || t.equalsIgnoreCase("numeric"), 
-																									__ -> acc.put(field_name, Double.parseDouble(v.getValue())))
-														.when(t -> t.equalsIgnoreCase("float"),		__ -> acc.put(field_name, Float.parseFloat(v.getValue())))
-														.when(t -> t.equalsIgnoreCase("boolean"),	__ -> acc.put(field_name, Boolean.parseBoolean(v.getValue())))
-														.when(t -> t.equalsIgnoreCase("hex"),		__ -> acc.put(field_name, Long.parseLong(v.getValue(), 16)))
-														.when(t -> t.equalsIgnoreCase("date"),		__ -> { 
-															Validation<String, Date> res = TimeUtils.getSchedule(v.getValue(), Optional.empty());
-															return res.validation(left -> acc, right -> acc.put(field_name, right.toString()));
-														})
-														.otherwise(__ -> acc.put(field_name, v.getValue())) // (string)
-														;
+										return addField(acc, field_name, v.getValue(), csv.type_map);
 									}
 									catch (Exception e) {
 										return acc;
 									}
-									//return acc.put(field_name, v.getValue());
 								}
 							}
 						},
 						(acc1, acc2) -> acc1); // (can't occur in practice)
 			;
+			final ObjectNode ret_val = config.append_event_fields().stream()
+					.reduce(ret_val_pre,
+							(acc, v) -> {
+								final String value = evt.getHeaders().get(v);
+								return (null == value) ? acc : addField(acc, v, value, csv.type_map);
+							},
+							(acc1, acc2) -> acc1 // (can't occur in practice)
+							)
+							;
 			return Optional.of(ret_val);
 		}
 		catch (Exception e) {
 			return Optional.empty();
 		}		
+	}
+	
+	protected static ObjectNode addField(final ObjectNode mutable_obj, final String field_name, final String value, Map<String, String> type_map) {
+		return Patterns.match((String) type_map.get(field_name)).<ObjectNode>andReturn()
+				.when(t -> null == t, __ -> mutable_obj.put(field_name, value)) //(string)
+				.when(t -> t.equalsIgnoreCase("long"),		__ -> mutable_obj.put(field_name, Long.parseLong(value)))
+				.when(t -> t.equalsIgnoreCase("int") || t.equalsIgnoreCase("integer"), 
+															__ -> mutable_obj.put(field_name, Integer.parseInt(value)))
+				.when(t -> t.equalsIgnoreCase("double") || t.equalsIgnoreCase("numeric"), 
+															__ -> mutable_obj.put(field_name, Double.parseDouble(value)))
+				.when(t -> t.equalsIgnoreCase("float"),		__ -> mutable_obj.put(field_name, Float.parseFloat(value)))
+				.when(t -> t.equalsIgnoreCase("boolean"),	__ -> mutable_obj.put(field_name, Boolean.parseBoolean(value)))
+				.when(t -> t.equalsIgnoreCase("hex"),		__ -> mutable_obj.put(field_name, Long.parseLong(value, 16)))
+				.when(t -> t.equalsIgnoreCase("date"),		__ -> { 
+					Validation<String, Date> res = TimeUtils.getSchedule(value, Optional.empty());
+					return res.validation(left -> mutable_obj, right -> mutable_obj.put(field_name, right.toString()));
+				})
+				.otherwise(__ -> mutable_obj.put(field_name, value)) // (string)
+				;		
 	}
 	
 	/** State object for direct output
