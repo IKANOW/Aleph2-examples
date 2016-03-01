@@ -146,9 +146,6 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 											)
 					;
 			
-			//TODO: this is just a bug no? not sure why it's here...
-			_time_field = Optionals.of(() -> _bucket.data_schema().temporal_schema().time_field());
-			
 			//DEBUG
 			_logger.debug("_time_field = " + _time_field);		
 		}
