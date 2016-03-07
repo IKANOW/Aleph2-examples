@@ -1,5 +1,5 @@
 output {
-  if [sourceKey] == "_XXX_SOURCEKEY_XXX_" {
+  if [@metadata][sourceKey] == "_XXX_SOURCEKEY_XXX_" {
   	#todo we need to remove this field eventually  	
   	#remove_field => [ "sourceKey" ]
     elasticsearch {	   

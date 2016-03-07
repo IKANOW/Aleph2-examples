@@ -135,7 +135,7 @@ public class LogstashConfigUtils {
 		m = _validationRegexAppendFields.matcher(config);
 		StringBuffer newConfig = new StringBuffer();
 		if (m.find()) {
-			m.appendReplacement(newConfig, "add_field => [ \"sourceKey\", \""+sourceKey+"\"] \n\n" + m.group() + " \n if [sourceKey] == \""+sourceKey+"\" { \n\n ");
+			m.appendReplacement(newConfig, "add_field => [  \"[@metadata][sourceKey]\", \""+sourceKey+"\"] \n\n" + m.group() + " \n if [@metadata][sourceKey] == \""+sourceKey+"\" { \n\n ");
 		}
 		else {
 			errorMessage.append("Invalid input format, should be 'input { INPUT_TYPE { ... } }' (only one INPUT_TYPE) and also contain a filter, no \"s around them. (4)");
@@ -144,7 +144,7 @@ public class LogstashConfigUtils {
 		m.appendTail(newConfig);
 		config = newConfig.toString();
 		config = config.replaceAll("}[^}]*$", ""); // (remove the last })
-		config += "\n\n mutate { update => [ \"sourceKey\", \""+sourceKey+"\"] } \n}\n}\n"; // double check the sourceKey hasn't been overwritten and close the if from above
+		config += "\n\n mutate { update => [ \"[@metadata][sourceKey]\", \""+sourceKey+"\"] } \n}\n}\n"; // double check the sourceKey hasn't been overwritten and close the if from above
 		//TESTED (syntactically correct and does overwrite sourceKey everywhere - success_2_2)
 		
 		return config;
