@@ -67,7 +67,7 @@ public class LogstashUtils {
 	 */
 	public static ProcessBuilder buildLogstashTest(final LogstashHarvesterConfigBean global, final LogstashBucketConfigBean bucket_config, final String logstash_config, final long requested_docs, final Optional<String> bucket_path ) {
 		
-		final String log_file = System.getProperty("java.io.tmpdir") + File.separator + BucketUtils.getUniqueSignature(bucket_path.get(), Optional.empty());
+		final String log_file = System.getProperty("java.io.tmpdir") + File.separator + BucketUtils.getUniqueSignature(bucket_path.orElse("DNE"), Optional.empty());
 		try { //(delete log file if it exists)
 			new File(log_file).delete();
 		}
