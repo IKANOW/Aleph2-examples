@@ -79,7 +79,7 @@
   },
   {
     "display_name": "Bucket Input",
-    "form_info": "Input element for adding bucket data",
+    "form_info": "Input element for adding bucket data. Leave resource name blank to target this bucket's batch or streaming input queue.",
     "expandable": false,
     "key": "analytic_input",
     "categories": [
@@ -106,35 +106,64 @@
         "templateOptions": {
           "label": "Resource Name",
           "placeholder": "Path or ID of the data service you want e.g. bucket full name",
-          "required": true
+          "required": false
         }
       },
       {
         "key": "time_max",
         "type": "horizontalInput",
-        "defaultValue": "2 days",
         "templateOptions": {
           "label": "Time Max",
-          "placeholder": "Max days to check (?)",
-          "required": true
+          "placeholder": "Oldest selected data (eg '4 days')",
+          "required": false
         }
       },
       {
         "key": "time_min",
         "type": "horizontalInput",
-        "defaultValue": "4 days",
         "templateOptions": {
           "label": "Time Min",
-          "placeholder": "Min days to check (?)",
-          "required": true
+          "placeholder": "Newest selected data (eg '2 days')",
+          "required": false
         }
+      },
+      {
+        "template": "<hr/>"
+      },
+      {
+        "templateOptions": {
+          "label": "Filter Input?",
+          "placeholder": ""
+        },
+        "type": "checkbox",
+        "key": "filter_input"
+      },
+      {
+        "hideExpression": "!model.filter_input",
+        "fieldGroup": [
+          {
+            "key": "filter",
+            "type": "code_input",
+            "templateOptions": {
+              "codemirror": {
+                "lineNumbers": true,
+                "smartIndent": true,
+                "mode": "javascript"
+              },
+              "label": "Input Filter"
+            }
+          }
+        ]
       }
     ],
     "building_function": {
-      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj = {};\n        obj.data_service = template.element.form_model.data_service;\n        obj.enabled = true;\n        obj.resource_name_or_id = template.element.form_model.resource_name_or_id;\n        var config_obj = {};\n        config_obj.time_max = template.element.form_model.time_max;\n        config_obj.time_min = template.element.form_model.time_min;\n        obj.config = config_obj;\n        curr_obj.inputs.push(obj);\n      }"
+      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj = {};\n        obj.data_service = template.element.form_model.data_service;\n        obj.enabled = true;\n        obj.resource_name_or_id = (template.element.form_model.resource_name_or_id || \"\");\n        var config_obj = {};\n        config_obj.time_max = template.element.form_model.time_max;\n        config_obj.time_min = template.element.form_model.time_min;\n        obj.config = config_obj;\n  \t\tif (template.element.form_model.filter_input) {\n          obj.filter = JSON.parse(template.element.form_model.filter);\n        }\n        curr_obj.inputs.push(obj);\n      }"
     },
     "post_building_function": {
       "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+    },
+    "default_model": {
+      "filter": "{\n   \"technology_override\": {}\n}"
     }
   },
   {
