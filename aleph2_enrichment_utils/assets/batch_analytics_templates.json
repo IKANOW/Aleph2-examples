@@ -1,137 +1,178 @@
-[{
-	"display_name": "Javascript Enrichment",
-	"categories": ["Javascript"],
-	"key": "enrichment_meta",
-	"filters": ["Bucket/**"],
-	"expandable": false,
-	"schema": [{
-		"key": "name",
-		"type": "horizontalInput",
-		"templateOptions": {
-			"label": "Unique Job Name",
-			"pattern": "[a-zA-Z0-9_]+",
-			"placeholder": "A Short Name For This Element (Alphanumeric/_ only, no spaces - used for dependencies etc)",
-			"required": true
-		}
-	}, {
-		"key": "module_name_or_id",
-		"type": "horizontalInput",
-		"defaultValue": "/app/aleph2/library/enrichment_utils.jar",
-		"templateOptions": {
-			"label": "Module Name or ID",
-			"placeholder": "Library needed for this batch enrichment engine",
-			"required": true
-		}
-	}, {
-		"key": "entry_point",
-		"type": "horizontalInput",
-		"defaultValue": "com.ikanow.aleph2.enrichment.utils.services.JsScriptEngineService",
-		"templateOptions": {
-			"label": "Entry Point",
-			"placeholder": "Class path to enrichment entry point.",
-			"required": true
-		}
-	}, {
-		"key": "library_names_or_ids",
-		"type": "multiInput",
-		"defaultValue": ["/app/aleph2/library/enrichment_utils.jar"],
-		"templateOptions": {
-			"label": "Additional javascript libraries",
-			"inputOptions": {
-				"type": "input"
-			},
-			"placeholder": "Path for any additional javascript libraries required",
-			"required": false
-		}
-	}, {
-		"key": "js_script",
-		"type": "code_input",
-		"defaultValue": "function handle_batch_java(json_stream, len, grouping_key) {\n\tvar it \u003d json_stream.iterator();\n\twhile (it.hasNext()) {\n\t\tvar json \u003d it.next();\n\t\t_a2.emit(json);\n\t}\n}",
-		"templateOptions": {
-			"label": "JS code to run",
-			"codemirror": {
-				"lineNumbers": true,
-				"smartIndent": true,
-				"mode": "javascript"
-			}
-		}
-	}],
-	"form_info": "JS Enrichment element, allows writing some JS to run in the pipeline",
-	"building_function": {
-		"$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj \u003d {};\n        config_obj.entry_point \u003d template.element.form_model.entry_point;\n        config_obj.module_name_or_id \u003d template.element.form_model.module_name_or_id;\n        config_obj.name \u003d template.element.form_model.name;\n        config_obj.enabled \u003d true;\n        config_obj.library_names_or_ids \u003d template.element.form_model.library_names_or_ids;\n        var script_obj \u003d {};\n        script_obj.script \u003d template.element.form_model.js_script;\n        config_obj.config \u003d script_obj;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }"
-	}
-}, {
-	"display_name": "Bucket Input",
-	"categories": ["Input"],
-	"key": "analytic_input",
-	"filters": ["Bucket/**"],
-	"expandable": false,
-	"schema": [{
-		"key": "data_service",
-		"type": "horizontalInput",
-		"defaultValue": "search_index_service",
-		"templateOptions": {
-			"label": "Data Service",
-			"placeholder": "Name of the data service you want to read from (search_index_service, storage_service, document_service.V1DocumentService)",
-			"required": true
-		}
-	}, {
-		"key": "resource_name_or_id",
-		"type": "horizontalInput",
-		"defaultValue": "/some/other/bucket",
-		"templateOptions": {
-			"label": "Resource Name",
-			"placeholder": "Path or ID of the data service you want e.g. bucket full name",
-			"required": true
-		}
-	}, {
-		"key": "time_max",
-		"type": "horizontalInput",
-		"defaultValue": "2 days",
-		"templateOptions": {
-			"label": "Time Max",
-			"placeholder": "Max days to check (?)",
-			"required": true
-		}
-	}, {
-		"key": "time_min",
-		"type": "horizontalInput",
-		"defaultValue": "4 days",
-		"templateOptions": {
-			"label": "Time Min",
-			"placeholder": "Min days to check (?)",
-			"required": true
-		}
-	}],
-	"form_info": "Input element for adding bucket data",
-	"building_function": {
-		"$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj \u003d {};\n        obj.data_service \u003d template.element.form_model.data_service;\n        obj.enabled \u003d true;\n        obj.resource_name_or_id \u003d template.element.form_model.resource_name_or_id;\n        var config_obj \u003d {};\n        config_obj.time_max \u003d template.element.form_model.time_max;\n        config_obj.time_min \u003d template.element.form_model.time_min;\n        obj.config \u003d config_obj;\n        curr_obj.inputs.push(obj);\n      }"
-	}
-}, {
-	"display_name": "Basic Output",
-	"categories": ["Output"],
-	"key": "analytic_output",
-	"filters": ["Bucket/**"],
-	"expandable": false,
-	"schema": [{
-		"key": "is_transient",
-		"type": "horizontalCheckbox",
-		"defaultValue": "false",
-		"templateOptions": {
-			"label": "Is Transient?",
-			"required": false
-		}
-	}, {
-		"key": "preserve_existing_data",
-		"type": "horizontalCheckbox",
-		"defaultValue": "false",
-		"templateOptions": {
-			"label": "Preserve existing data?",
-			"required": false
-		}
-	}],
-	"form_info": "Input element for adding bucket data",
-	"building_function": {
-		"$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj \u003d {};\n        obj.is_transient \u003d template.element.form_model.is_transient || false;\n        obj.preserve_existing_data \u003d template.element.form_model.preserve_existing_data || false;        \n        curr_obj.output \u003d obj;\n      }"
-	}
-}]
+[
+  {
+    "display_name": "Javascript Enrichment",
+    "form_info": "JS Enrichment element, allows writing some JS to run in the pipeline",
+    "expandable": false,
+    "key": "enrichment_meta",
+    "categories": [
+      "Javascript"
+    ],
+    "filters": [
+      "Bucket/**"
+    ],
+    "schema": [
+      {
+        "key": "name",
+        "type": "horizontalInput",
+        "templateOptions": {
+          "label": "Unique Job Name",
+          "pattern": "[a-zA-Z0-9_]+",
+          "placeholder": "A Short Name For This Element (Alphanumeric/_ only, no spaces - used for dependencies etc)",
+          "required": true
+        }
+      },
+      {
+        "key": "module_name_or_id",
+        "type": "horizontalInput",
+        "defaultValue": "/app/aleph2/library/enrichment_utils.jar",
+        "templateOptions": {
+          "label": "Module Name or ID",
+          "placeholder": "Library needed for this batch enrichment engine",
+          "required": true
+        }
+      },
+      {
+        "key": "entry_point",
+        "type": "horizontalInput",
+        "defaultValue": "com.ikanow.aleph2.enrichment.utils.services.JsScriptEngineService",
+        "templateOptions": {
+          "label": "Entry Point",
+          "placeholder": "Class path to enrichment entry point.",
+          "required": true
+        }
+      },
+      {
+        "key": "library_names_or_ids",
+        "type": "multiInput",
+        "defaultValue": [
+          "/app/aleph2/library/enrichment_utils.jar"
+        ],
+        "templateOptions": {
+          "label": "Additional javascript libraries",
+          "inputOptions": {
+            "type": "input"
+          },
+          "placeholder": "Path for any additional javascript libraries required",
+          "required": false
+        }
+      },
+      {
+        "key": "js_script",
+        "type": "code_input",
+        "defaultValue": "function handle_batch_java(json_stream, len, grouping_key) {\n\tvar it = json_stream.iterator();\n\twhile (it.hasNext()) {\n\t\tvar json = it.next();\n\t\t_a2.emit(json);\n\t}\n}",
+        "templateOptions": {
+          "label": "JS code to run",
+          "codemirror": {
+            "lineNumbers": true,
+            "smartIndent": true,
+            "mode": "javascript"
+          }
+        }
+      }
+    ],
+    "building_function": {
+      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.name = template.element.form_model.name;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }"
+    },
+    "post_building_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+    }
+  },
+  {
+    "display_name": "Bucket Input",
+    "form_info": "Input element for adding bucket data",
+    "expandable": false,
+    "key": "analytic_input",
+    "categories": [
+      "Input"
+    ],
+    "filters": [
+      "Bucket/**"
+    ],
+    "schema": [
+      {
+        "key": "data_service",
+        "type": "horizontalInput",
+        "defaultValue": "search_index_service",
+        "templateOptions": {
+          "label": "Data Service",
+          "placeholder": "Name of the data service you want to read from (search_index_service, storage_service, document_service.V1DocumentService)",
+          "required": true
+        }
+      },
+      {
+        "key": "resource_name_or_id",
+        "type": "horizontalInput",
+        "defaultValue": "/some/other/bucket",
+        "templateOptions": {
+          "label": "Resource Name",
+          "placeholder": "Path or ID of the data service you want e.g. bucket full name",
+          "required": true
+        }
+      },
+      {
+        "key": "time_max",
+        "type": "horizontalInput",
+        "defaultValue": "2 days",
+        "templateOptions": {
+          "label": "Time Max",
+          "placeholder": "Max days to check (?)",
+          "required": true
+        }
+      },
+      {
+        "key": "time_min",
+        "type": "horizontalInput",
+        "defaultValue": "4 days",
+        "templateOptions": {
+          "label": "Time Min",
+          "placeholder": "Min days to check (?)",
+          "required": true
+        }
+      }
+    ],
+    "building_function": {
+      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj = {};\n        obj.data_service = template.element.form_model.data_service;\n        obj.enabled = true;\n        obj.resource_name_or_id = template.element.form_model.resource_name_or_id;\n        var config_obj = {};\n        config_obj.time_max = template.element.form_model.time_max;\n        config_obj.time_min = template.element.form_model.time_min;\n        obj.config = config_obj;\n        curr_obj.inputs.push(obj);\n      }"
+    },
+    "post_building_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+    }
+  },
+  {
+    "display_name": "Basic Output",
+    "form_info": "Input element for adding bucket data",
+    "expandable": false,
+    "key": "analytic_output",
+    "categories": [
+      "Output"
+    ],
+    "filters": [
+      "Bucket/**"
+    ],
+    "schema": [
+      {
+        "key": "is_transient",
+        "type": "horizontalCheckbox",
+        "defaultValue": "false",
+        "templateOptions": {
+          "label": "Is Transient?",
+          "required": false
+        }
+      },
+      {
+        "key": "preserve_existing_data",
+        "type": "horizontalCheckbox",
+        "defaultValue": "false",
+        "templateOptions": {
+          "label": "Preserve existing data?",
+          "required": false
+        }
+      }
+    ],
+    "building_function": {
+      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj = {};\n        obj.is_transient = template.element.form_model.is_transient || false;\n        obj.preserve_existing_data = template.element.form_model.preserve_existing_data || false;        \n        curr_obj.output = obj;\n      }"
+    },
+    "post_building_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+    }
+  }
+]
