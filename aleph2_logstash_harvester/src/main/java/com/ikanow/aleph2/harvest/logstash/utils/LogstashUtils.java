@@ -21,6 +21,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
@@ -49,10 +50,11 @@ import com.ikanow.aleph2.harvest.logstash.services.LogstashHarvestService;
  */
 public class LogstashUtils {
 	private static final Logger _logger = LogManager.getLogger();
-	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}_%{thread_id}.json"; // (new file every minute unless flushed first)
+	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}_%{[@metadata][thread_id]}.json"; // (new file every minute unless flushed first)
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
 	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
-	private static final String HDFS_NAMENODE_HTTP_ADDRESS = "dfs.namenode.http-address";
+	private static final String HDFS_NAMENODE1_HTTP_ADDRESS = "dfs.namenode.http-address.dev.nn1";
+	private static final String HDFS_NAMENODE2_HTTP_ADDRESS = "dfs.namenode.http-address.dev.nn2";
 	
 	/** Builds a process to execute
 	 * @param global
@@ -106,12 +108,14 @@ public class LogstashUtils {
 //			final String temp_dir = hadoop_root_path + storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
 			final String import_dir = (storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TO_IMPORT_DATA_SUFFIX + OUTPUT_FILE_SYNTAX).replaceAll("//", "/");
 //			final String temp_dir = storage_service.getBucketRootPath() + bucket.full_name() + IStorageService.TEMP_DATA_SUFFIX + OUTPUT_FILE_SYNTAX;
-			final String hdfs_server_url = getHDFSServerURL(globals);
+			final List<String> hdfs_server_url = getHDFSServerURL(globals);
 			final String output = IOUtils.toString(LogstashHarvestService.class.getClassLoader().getResourceAsStream("output_hdfs.ls"),Charsets.UTF_8)
 //									.replace("_XXX_TEMPORARY_PATH_XXX_", temp_dir)
 									.replace("_XXX_PATH_XXX_", import_dir)
-									.replace("_XXX_HOST_XXX_", hdfs_server_url.substring(0, hdfs_server_url.indexOf(":")))
-									.replace("_XXX_PORT_XXX_", hdfs_server_url.substring(hdfs_server_url.indexOf(":")+1))
+									.replace("_XXX_HOST1_XXX_", hdfs_server_url.get(0).substring(0, hdfs_server_url.get(0).indexOf(":")))
+									.replace("_XXX_PORT1_XXX_", hdfs_server_url.get(0).substring(hdfs_server_url.get(0).indexOf(":")+1))
+									.replace("_XXX_HOST2_XXX_", hdfs_server_url.get(1).substring(0, hdfs_server_url.get(1).indexOf(":")))
+									.replace("_XXX_PORT2_XXX_", hdfs_server_url.get(1).substring(hdfs_server_url.get(1).indexOf(":")+1))
 									.replace("_XXX_USER_XXX_", "tomcat") //TODO this should be a field in the HDFS config (see xxx_server_xxx)
 									.replace("_XXX_IDLE_FLUSH_TIME_XXX_", BucketUtils.isTestBucket(bucket) ? TEST_SEGMENT_PERIOD_OVERRIDE : Optional.ofNullable(config.write_settings_override().batch_flush_interval()).orElse(DEFAULT_FLUSH_INTERVAL).toString())									
 									.replace("_XXX_FLUSH_SIZE_XXX_", Optional.ofNullable(config.write_settings_override().batch_max_objects()).orElse(LogstashBucketConfigBean.DEFAULT_MAX_OBJECTS).toString())
@@ -139,9 +143,9 @@ public class LogstashUtils {
 		else return "";
 	}
 
-	private static String getHDFSServerURL(final GlobalPropertiesBean globals) {
+	private static List<String> getHDFSServerURL(final GlobalPropertiesBean globals) {
 		final Configuration config = getConfiguration(globals);
-		return config.get(HDFS_NAMENODE_HTTP_ADDRESS);
+		return Arrays.asList(config.get(HDFS_NAMENODE1_HTTP_ADDRESS), config.get(HDFS_NAMENODE2_HTTP_ADDRESS));
 	}
 	
 	/** 
