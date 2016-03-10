@@ -53,8 +53,8 @@ public class LogstashUtils {
 	private static final String OUTPUT_FILE_SYNTAX = "ls_input_%{+yyyy.MM.dd.hh}_%{[@metadata][thread_id]}.json"; // (new file every minute unless flushed first)
 	private static final String TEST_SEGMENT_PERIOD_OVERRIDE = "10";
 	private static final Integer DEFAULT_FLUSH_INTERVAL = 300;
-	private static final String HDFS_NAMENODE1_HTTP_ADDRESS = "dfs.namenode.http-address.dev.nn1";
-	private static final String HDFS_NAMENODE2_HTTP_ADDRESS = "dfs.namenode.http-address.dev.nn2";
+	private static final String HDFS_NAMENODE_HTTP_ADDRESS = "dfs.namenode.http-address."; //dev.nn1 dev.nn2 etc
+	private static final String HDFS_NAMESERVICES = "dfs.nameservices";
 	
 	/** Builds a process to execute
 	 * @param global
@@ -145,7 +145,9 @@ public class LogstashUtils {
 
 	private static List<String> getHDFSServerURL(final GlobalPropertiesBean globals) {
 		final Configuration config = getConfiguration(globals);
-		return Arrays.asList(config.get(HDFS_NAMENODE1_HTTP_ADDRESS), config.get(HDFS_NAMENODE2_HTTP_ADDRESS));
+		//first get the dfs.nameservices
+		final String dfs_name = config.get(HDFS_NAMESERVICES);
+		return Arrays.asList(config.get(HDFS_NAMENODE_HTTP_ADDRESS + dfs_name + ".nn1"), config.get(HDFS_NAMENODE_HTTP_ADDRESS + dfs_name + ".nn2"));
 	}
 	
 	/** 
