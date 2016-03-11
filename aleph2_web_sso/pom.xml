@@ -8,7 +8,7 @@
     <name>Aleph2 webapp for single sign on using the buji-pac4j security extension</name>
     <properties>
 	<aleph2.scope>compile</aleph2.scope>
-	<aleph2.version>2.7.0-SNAPSHOT</aleph2.version>
+	<aleph2.version>2.8.0-SNAPSHOT</aleph2.version>
         <pac4jVersion>1.8.1</pac4jVersion>
         <bujiVersion>1.4.0</bujiVersion>
         <javaVersion>1.8</javaVersion>
