@@ -4,34 +4,34 @@
         <wb-resource deploy-path="/" source-path="/src/main/webapp" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
-        <dependent-module archiveName="aleph2_data_model-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_data_model/aleph2_data_model">
+        <dependent-module archiveName="aleph2_data_model-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_data_model/aleph2_data_model">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_core_security-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_security/aleph2_core_security">
+        <dependent-module archiveName="aleph2_core_security-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_security/aleph2_core_security">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_security_service_ikanow_web_v1-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_security_service_ikanow_web_v1/aleph2_security_service_ikanow_web_v1">
+        <dependent-module archiveName="aleph2_security_service_ikanow_web_v1-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_security_service_ikanow_web_v1/aleph2_security_service_ikanow_web_v1">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_security_service_ikanow_v1-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_security_service_ikanow_v1/aleph2_security_service_ikanow_v1">
+        <dependent-module archiveName="aleph2_security_service_ikanow_v1-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_security_service_ikanow_v1/aleph2_security_service_ikanow_v1">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_web_utils-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_web_utils/aleph2_web_utils">
+        <dependent-module archiveName="aleph2_web_utils-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_web_utils/aleph2_web_utils">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_core_distributed_services_library-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_distributed_services_library/aleph2_core_distributed_services_library">
+        <dependent-module archiveName="aleph2_core_distributed_services_library-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_distributed_services_library/aleph2_core_distributed_services_library">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_management_db_service-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_management_db_service/aleph2_management_db_service">
+        <dependent-module archiveName="aleph2_management_db_service-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_management_db_service/aleph2_management_db_service">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_core_shared_library-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_shared_library/aleph2_core_shared_library">
+        <dependent-module archiveName="aleph2_core_shared_library-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_core_shared_library/aleph2_core_shared_library">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_management_db_service_mongodb-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_management_db_service_mongodb/aleph2_management_db_service_mongodb">
+        <dependent-module archiveName="aleph2_management_db_service_mongodb-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_management_db_service_mongodb/aleph2_management_db_service_mongodb">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="aleph2_crud_service_mongodb-2.6.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_crud_service_mongodb/aleph2_crud_service_mongodb">
+        <dependent-module archiveName="aleph2_crud_service_mongodb-2.7.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_crud_service_mongodb/aleph2_crud_service_mongodb">
             <dependency-type>uses</dependency-type>
         </dependent-module>
         <property name="context-root" value="aleph2_web_login"/>

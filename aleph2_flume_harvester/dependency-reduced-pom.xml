@@ -133,7 +133,7 @@
   </dependencies>
   <properties>
     <aleph2.scope>provided</aleph2.scope>
-    <aleph2.version>2.6.0-SNAPSHOT</aleph2.version>
+    <aleph2.version>2.7.0-SNAPSHOT</aleph2.version>
   </properties>
 </project>
 
