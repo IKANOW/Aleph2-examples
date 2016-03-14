@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +30,6 @@ import scala.Tuple2;
 
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestTechnologyModule;
-import com.ikanow.aleph2.data_model.interfaces.shared_services.ISubject;
 import com.ikanow.aleph2.data_model.objects.data_import.BucketDiffBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
@@ -437,13 +435,10 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	 * @return
 	 */
 	protected static boolean isAdmin(final String user_id, IHarvestContext context) {
-		final ISubject system_user = context.getServiceContext().getSecurityService().loginAsSystem();
 		try {
-			context.getServiceContext().getSecurityService().runAs(system_user, Arrays.asList(user_id)); // (Switch to bucket owner user)
-			return context.getServiceContext().getSecurityService().hasRole(system_user, "admin");
+			return context.getServiceContext().getSecurityService().hasUserRole(user_id, "admin");
 		}
 		finally {
-			context.getServiceContext().getSecurityService().releaseRunAs(system_user);
 		}
 	}
 	
