@@ -46,6 +46,7 @@ import scala.Tuple2;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IUnderlyingService;
@@ -385,20 +386,6 @@ public class TestScriptHarvestService {
 			}
 			
 			@Override
-			public void logStatusForBucketOwner(Optional<DataBucketBean> bucket,
-					BasicMessageBean message) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void logStatusForBucketOwner(Optional<DataBucketBean> bucket,
-					BasicMessageBean message, boolean roll_up_duplicates) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
 			public void initializeNewContext(String signature) {
 				// TODO Auto-generated method stub
 				
@@ -519,6 +506,12 @@ public class TestScriptHarvestService {
 			public void emergencyDisableBucket(Optional<DataBucketBean> bucket) {
 				// TODO Auto-generated method stub
 				
+			}
+
+			@Override
+			public IBucketLogger getLogger(Optional<DataBucketBean> bucket) {
+				// TODO Auto-generated method stub
+				return null;
 			}
 		};
 	}
