@@ -13,6 +13,14 @@
 // handle_batch - TBD
 
 // Provided:
-function aleph2_global_handle_batch(batch, batch_size, grouping_key) {
-	handle_batch_java(batch, batch_size, grouping_key);
+function aleph2_global_handle_batch(batch_record, batch_json, batch_size, grouping_key) {
+	if (typeof handle_batch_java === "function") {
+		handle_batch_java(batch_json, batch_size, grouping_key);
+	}
+	else if (typeof handle_batch_java_record === "function") {
+		handle_batch_java_record(batch_record, batch_size, grouping_key);		
+	}
+	else {
+		throw "Must implement one of handle_batch_java, handle_batch_java_record";
+	}
 }

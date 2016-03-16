@@ -118,7 +118,8 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 	public void onObjectBatch(Stream<Tuple2<Long, IBatchRecord>> batch,
 			Optional<Integer> batch_size, Optional<JsonNode> grouping_key) {		
 		try {
-			((Invocable)_engine.get()).invokeFunction("aleph2_global_handle_batch", 
+			((Invocable)_engine.get()).invokeFunction("aleph2_global_handle_batch",
+					batch,
 					batch.map(x -> x._2().getJson()), 
 					batch_size.orElse(null), 
 					grouping_key.orElse(null));
