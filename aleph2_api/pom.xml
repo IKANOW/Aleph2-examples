@@ -9,7 +9,7 @@
     <properties>
 	<aleph2.scope>compile</aleph2.scope>
 	<aleph2.version>2.8.0-SNAPSHOT</aleph2.version>
-        <pac4jVersion>1.8.1</pac4jVersion>
+        <pac4jVersion>1.8.2</pac4jVersion>
         <bujiVersion>1.4.0</bujiVersion>
         <javaVersion>1.8</javaVersion>
     </properties>
@@ -42,7 +42,7 @@
 	-->
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
-		<artifactId>aleph2_security_service_ikanow_v1</artifactId>
+		<artifactId>aleph2_security_service_ikanow_v2</artifactId>
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
 	</dependency>
@@ -95,6 +95,11 @@
             <groupId>io.buji</groupId>
             <artifactId>buji-pac4j-servlet</artifactId>
             <version>${bujiVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.pac4j</groupId>
+            <artifactId>pac4j-jwt</artifactId>
+            <version>${pac4jVersion}</version>
         </dependency>
         <dependency>
             <groupId>org.pac4j</groupId>

@@ -1,5 +1,5 @@
 <%@ page import="com.google.inject.Injector"%>
-<%@ page import="com.ikanow.aleph2.security.web.*"%>
+<%--@ page import="com.ikanow.aleph2.security.web.*"--%>
 <%-- @ page import="com.ikanow.aleph2_api.utils.*"--%>
 
 <%
@@ -10,8 +10,9 @@ if(cookies!=null){
         if (c.getName().equals("infinitecookie")) {
             ServletContext sc = session.getServletContext();
             Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
-            IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
-            cookieAuth.deleteSessionCookieInDbById(c.getValue());
+            //TODO fix
+          //  IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
+           // cookieAuth.deleteSessionCookieInDbById(c.getValue());
         }
     }
 }

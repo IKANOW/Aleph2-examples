@@ -27,6 +27,24 @@ ldaptiveAuthenticator.authenticationHandler=$authHandler
 pac4JLdapAuthenticator = org.pac4j.ldap.credentials.authenticator.LdapAuthenticator
 pac4JLdapAuthenticator.ldapAuthenticator=$ldaptiveAuthenticator
 
+#// REST authent with JWT for a token passed in the url as the token parameter
+#ParameterClient parameterClient = new ParameterClient("token", new JwtAuthenticator(Constants.JWT_SALT));
+#parameterClient.setSupportGetRequest(true);
+#parameterClient.setSupportPostRequest(false);
+
+#Rest configuration, direct Parameter client for rest services
+#this authenticator will change
+nonBlankAuthenticator=org.pac4j.http.credentials.authenticator.test.SimpleTestTokenAuthenticator
+jwtAuthenticator=org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
+jwtAuthenticator.signingSecret=some_very_secret_key
+
+directClient=org.pac4j.http.client.direct.ParameterClient
+directClient.authenticator = $jwtAuthenticator
+directClient.parameterName=token
+directClient.supportGetRequest=true
+directClient.supportPostRequest=false
+
+
 ###
 formClient = org.pac4j.http.client.indirect.FormClient
 formClient.loginUrl = http://localhost:8080/aleph2_api/loginForm.jsp
@@ -52,7 +70,7 @@ saml2Client.callbackUrl=http://localhost:8080/aleph2_api/callback?client_name=SA
 
 clients = org.pac4j.core.client.Clients
 clients.callbackUrl = http://localhost:8080/aleph2_api/callback
-clients.clients = $formClient,$basicAuthClient,$saml2Client
+clients.clients = $formClient,$basicAuthClient,$saml2Client,$directClient
 
 # SSO config
 #aleph2WebSsoConfig = com.ikanow.aleph2_api.utils.Aleph2WebSsoConfig
@@ -80,6 +98,8 @@ clientsFilter.clients = $clients
 clientsFilter.failureUrl = /error500.jsp
 clientsFilter.successUrl = /v1_cookie.jsp
 
+#RequiresAuthenticationFilter.java
+
 formRoles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
 formRoles.client = $formClient
 basicAuthRoles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
@@ -90,6 +110,7 @@ saml2Roles.client = $saml2Client
 
 [urls]
 /form/** = formRoles[ROLE_USER]
+/rest/** = clientsFilter
 /basicauth/** = basicAuthRoles[ROLE_USER]
 /saml/** = saml2Roles[ROLE_USER]
 /callback = clientsFilter
