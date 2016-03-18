@@ -77,7 +77,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 						.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 					.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 						
-			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 		else {		
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket {0} created but suspended", new_bucket.full_name()));
@@ -101,7 +101,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onUpdatedSource", "No change to bucket"));			
 		}
 		if (is_enabled) {
-			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 		else { // Just stop
 			//(this does nothing if the bucket isn't actually running)
@@ -152,7 +152,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + is_running));			
 		}
 		else { // isn't running AND watch dog enabled, so restart
-			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(polled_bucket, context, _global_propertes.get().local_root_dir(), config, "onPeriodicPoll", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(polled_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onPeriodicPoll", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
 		}
 	}
 
@@ -176,7 +176,7 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 		//kill any already running scripts
 		ScriptUtils.stopScriptProcess(test_bucket, config, "onTestSource", _globals.get().working_dir(), _global_propertes.get().local_root_dir());
 		
-		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, _global_propertes.get().local_root_dir(), config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
+		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
 	}
 
 }

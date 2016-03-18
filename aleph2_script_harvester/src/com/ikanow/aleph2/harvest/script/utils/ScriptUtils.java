@@ -55,6 +55,7 @@ public class ScriptUtils {
 	private static final String ENV_CLASS_PATH = "A2_CLASS_PATH"; //path of lib + module jars
 	private static final String ENV_BUCKET_HDFS_PATH = "A2_BUCKET_HDFS_PATH"; //path of bucket in hdfs
 	private static final String ENV_BUCKET_PATH = "A2_BUCKET_PATH"; //subpath to bucket
+	private static final String ENV_BUCKET_SIGNATURE = "A2_BUCKET_SIGNATURE"; //subpath to bucket
 	private static final String ENV_BUCKET_STR = "A2_BUCKET_STR"; //string of bucket json
 	private static final String LOCAL_RUN_DIR_SUFFIX = "run" + File.separator;
 	
@@ -66,7 +67,6 @@ public class ScriptUtils {
 	 * @param script_output_file
 	 */
 	public static String saveScriptToTempFile(final String script, final DataBucketBean bucket) throws IOException {		
-		//TODO clean these up?
 		final File script_output_file = new File(createTmpScriptFilePath(bucket));
 		FileUtils.writeStringToFile(script_output_file, script);
 		return script_output_file.getAbsolutePath();
@@ -84,8 +84,9 @@ public class ScriptUtils {
 	 */
 	public static ProcessBuilder createProcessBuilderForScriptFile(final String script_file_path, final String working_dir, 
 			final Optional<Long> test_requested_num_objects, final Optional<Long> test_max_runtime_s, 
-			final Map<String, String> user_args, final IHarvestContext context, final DataBucketBean bucket, final String aleph_root_path) throws JsonProcessingException, InterruptedException, ExecutionException {
-		_logger.error("create pb for script file: " + script_file_path);
+			final Map<String, String> user_args, final IHarvestContext context, final DataBucketBean bucket, final String aleph_global_root_path) throws JsonProcessingException, InterruptedException, ExecutionException {
+		_logger.debug("create pb for script file: " + script_file_path);
+		
 		ArrayList<String> args = new ArrayList<String>();
 		args.add("sh");
 		args.add(script_file_path);
@@ -104,7 +105,8 @@ public class ScriptUtils {
 		pb.environment().put(ENV_MODULE_PATH, context.getHarvestContextLibraries(Optional.empty()).stream().collect(Collectors.joining(":")));
 		pb.environment().put(ENV_LIBRARY_PATH, context.getHarvestLibraries(Optional.of(bucket)).get().values().stream().collect(Collectors.joining(":")));
 		pb.environment().put(ENV_CLASS_PATH, classpath);
-		pb.environment().put(ENV_BUCKET_HDFS_PATH, aleph_root_path + bucket.full_name()); 
+		pb.environment().put(ENV_BUCKET_HDFS_PATH, aleph_global_root_path + bucket.full_name()); 
+		pb.environment().put(ENV_BUCKET_SIGNATURE, BucketUtils.getUniqueSignature(bucket.full_name(), Optional.empty())); 		
 		pb.environment().put(ENV_BUCKET_PATH, bucket.full_name()); 		
 		pb.environment().put(ENV_BUCKET_STR, BeanTemplateUtils.toJson(bucket).toString());
 		//add user args	as env vars
@@ -136,14 +138,17 @@ public class ScriptUtils {
 	 * 
 	 * @param bucket
 	 */
-	public static BasicMessageBean startScriptProcess(final DataBucketBean bucket, final IHarvestContext context, final String aleph_root_path, final ScriptHarvesterBucketConfigBean config, 
+	public static BasicMessageBean startScriptProcess(final DataBucketBean bucket, final IHarvestContext context, 
+			final String aleph_local_root_path, 
+			final String aleph_global_root_path, 
+			final ScriptHarvesterBucketConfigBean config, 
 			final String message, final String working_dir, 
 			Optional<Long> requested_num_objects, Optional<Long> max_run_time_secs) {
 		//TODO pass on user args in config.args to script call
 		//TODO start script, record pid so we can kill later if need be
 		//validate one of the 3 script fields was supplied
 		if ( !config.script().isEmpty() || !config.local_script_url().isEmpty() || !config.resource_name().isEmpty()) {
-			_logger.error("Running a script or script_file: " + config.script() + " or local: " + config.local_script_url() + " or resource: " + config.resource_name());			
+			_logger.debug("Running a script or script_file: " + config.script() + " or local: " + config.local_script_url() + " or resource: " + config.resource_name());			
 			String script_file_path;
 			//get the script file path from the 3 config options
 			if ( !config.script().isEmpty() ) { 	
@@ -170,11 +175,11 @@ public class ScriptUtils {
 			//run the script file (or script we copied into one)
 			ProcessBuilder pb;
 			try {
-				pb = ScriptUtils.createProcessBuilderForScriptFile(script_file_path, working_dir, requested_num_objects, max_run_time_secs, config.args(), context, bucket, aleph_root_path);
+				pb = ScriptUtils.createProcessBuilderForScriptFile(script_file_path, working_dir, requested_num_objects, max_run_time_secs, config.args(), context, bucket, aleph_global_root_path);
 			} catch (JsonProcessingException | InterruptedException | ExecutionException e) {
 				return ErrorUtils.buildErrorMessage(ScriptHarvestService.class.getSimpleName(), message, "Could not create process to run: " + e.getMessage());
 			}
-			final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, ScriptHarvestService.class.getSimpleName(), bucket, aleph_root_path + LOCAL_RUN_DIR_SUFFIX, 
+			final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, ScriptHarvestService.class.getSimpleName(), bucket, aleph_local_root_path + LOCAL_RUN_DIR_SUFFIX, 
 					max_run_time_secs.isPresent() ? Optional.of(new Tuple2<Long, Integer>(max_run_time_secs.get(), 9)) : Optional.empty());
 			
 			if (null != err_pid._1()) {
@@ -219,10 +224,10 @@ public class ScriptUtils {
 	 * Just a helper function that calls stopScriptProcess then startScriptProcess
 	 * @param bucket
 	 */
-	public static BasicMessageBean restartScriptProcess(final DataBucketBean bucket, final IHarvestContext context, final String aleph_root_path, final ScriptHarvesterBucketConfigBean config, final String message, final String working_dir, 
+	public static BasicMessageBean restartScriptProcess(final DataBucketBean bucket, final IHarvestContext context, final String aleph_local_root_path, final String aleph_global_root_path, final ScriptHarvesterBucketConfigBean config, final String message, final String working_dir, 
 			Optional<Long> requested_num_objects, Optional<Long> max_run_time_secs) {
-		final BasicMessageBean stop_result = stopScriptProcess(bucket, config, message, working_dir, aleph_root_path);
-		final BasicMessageBean start_result = startScriptProcess(bucket, context, aleph_root_path, config, message, working_dir, requested_num_objects, max_run_time_secs);
+		final BasicMessageBean stop_result = stopScriptProcess(bucket, config, message, working_dir, aleph_local_root_path);
+		final BasicMessageBean start_result = startScriptProcess(bucket, context, aleph_local_root_path, aleph_global_root_path, config, message, working_dir, requested_num_objects, max_run_time_secs);
 		//merge the results and return that bean
 		final Map<String, String> details = new HashMap<String, String>();
 		if ( stop_result.details() != null )
