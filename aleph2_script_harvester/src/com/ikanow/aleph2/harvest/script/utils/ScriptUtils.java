@@ -105,7 +105,7 @@ public class ScriptUtils {
 		pb.environment().put(ENV_MODULE_PATH, context.getHarvestContextLibraries(Optional.empty()).stream().collect(Collectors.joining(":")));
 		pb.environment().put(ENV_LIBRARY_PATH, context.getHarvestLibraries(Optional.of(bucket)).get().values().stream().collect(Collectors.joining(":")));
 		pb.environment().put(ENV_CLASS_PATH, classpath);
-		pb.environment().put(ENV_BUCKET_HDFS_PATH, aleph_global_root_path + bucket.full_name()); 
+		pb.environment().put(ENV_BUCKET_HDFS_PATH, aleph_global_root_path + "/data" + bucket.full_name()); 
 		pb.environment().put(ENV_BUCKET_SIGNATURE, BucketUtils.getUniqueSignature(bucket.full_name(), Optional.empty())); 		
 		pb.environment().put(ENV_BUCKET_PATH, bucket.full_name()); 		
 		pb.environment().put(ENV_BUCKET_STR, BeanTemplateUtils.toJson(bucket).toString());
