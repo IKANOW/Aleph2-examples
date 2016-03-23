@@ -38,11 +38,16 @@ nonBlankAuthenticator=org.pac4j.http.credentials.authenticator.test.SimpleTestTo
 jwtAuthenticator=org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 jwtAuthenticator.signingSecret=some_very_secret_key
 
-directClient=org.pac4j.http.client.direct.ParameterClient
-directClient.authenticator = $jwtAuthenticator
-directClient.parameterName=token
-directClient.supportGetRequest=true
-directClient.supportPostRequest=false
+parameterClient=org.pac4j.http.client.direct.ParameterClient
+#parameterClient.authenticator = $nonBlankAuthenticator
+parameterClient.authenticator = $jwtAuthenticator
+parameterClient.parameterName=token
+parameterClient.supportGetRequest=true
+parameterClient.supportPostRequest=false
+
+#directBasicAuthClient = new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator());
+directBasicAuthClient=org.pac4j.http.client.direct.DirectBasicAuthClient
+directBasicAuthClient.authenticator = $simpleAuthenticator
 
 
 ###
@@ -70,7 +75,7 @@ saml2Client.callbackUrl=http://localhost:8080/aleph2_api/callback?client_name=SA
 
 clients = org.pac4j.core.client.Clients
 clients.callbackUrl = http://localhost:8080/aleph2_api/callback
-clients.clients = $formClient,$basicAuthClient,$saml2Client,$directClient
+clients.clients = $formClient,$basicAuthClient,$saml2Client
 
 # SSO config
 #aleph2WebSsoConfig = com.ikanow.aleph2_api.utils.Aleph2WebSsoConfig
@@ -99,6 +104,9 @@ clientsFilter.failureUrl = /error500.jsp
 clientsFilter.successUrl = /v1_cookie.jsp
 
 #RequiresAuthenticationFilter.java
+requiresAuthenticationFilter=org.pac4j.j2e.filter.RequiresAuthenticationFilter
+requiresAuthenticationFilter.clientName=$directBasicAuthClient
+
 
 formRoles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
 formRoles.client = $formClient
@@ -110,7 +118,7 @@ saml2Roles.client = $saml2Client
 
 [urls]
 /form/** = formRoles[ROLE_USER]
-/rest/** = clientsFilter
+/rest/** = requiresAuthenticationFilter
 /basicauth/** = basicAuthRoles[ROLE_USER]
 /saml/** = saml2Roles[ROLE_USER]
 /callback = clientsFilter
