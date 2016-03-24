@@ -1,126 +1,31 @@
 [main]
-############################################################################
-# PROVIDERS :
-############################################################################
-subjectFactory = io.buji.pac4j.ClientSubjectFactory
-securityManager.subjectFactory = $subjectFactory
+authc = com.ikanow.aleph2_api.shiro.PreserveFormOnFailureFormAuthenticationFilter
+#test later use Authenticating filter based on the session token or UserFilter by looking up session
 
-simpleAuthenticator = org.pac4j.http.credentials.authenticator.test.SimpleTestUsernamePasswordAuthenticator
+authc.loginUrl = /web/login.jsp
+authc.failureKeyAttribute = shiroLoginFailure
 
-#ldap setup
-dnResolver=org.ldaptive.auth.FormatDnResolver
-dnResolver.format=cn=%s,ou=users,ou=aleph2,dc=ikanow,dc=com
-ldapConnectionConfig=org.ldaptive.ConnectionConfig
-ldapConnectionConfig.ldapUrl=ldap://localhost:10389
-ldapConnectionConfig.connectTimeout=500
-ldapConnectionConfig.responseTimeout=1000
+sessionManager = org.apache.shiro.web.session.mgt.DefaultWebSessionManager
+#sessionDAO = org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO
 
-ldapConnectionFactory=org.ldaptive.DefaultConnectionFactory
-ldapConnectionFactory.connectionConfig=$ldapConnectionConfig
-authHandler=org.ldaptive.auth.BindAuthenticationHandler
-authHandler.connectionFactory=$ldapConnectionFactory
+securityManager.sessionManager = $sessionManager
+#securityManager.sessionManager.sessionDAO = $sessionDAO
 
-ldaptiveAuthenticator=org.ldaptive.auth.Authenticator
-ldaptiveAuthenticator.dnResolver=$dnResolver
-ldaptiveAuthenticator.authenticationHandler=$authHandler
+# Configure The EhCacheManager:
+cacheManager = com.ikanow.aleph2.security.service.UserSpecificEhCacheManager
 
-pac4JLdapAuthenticator = org.pac4j.ldap.credentials.authenticator.LdapAuthenticator
-pac4JLdapAuthenticator.ldapAuthenticator=$ldaptiveAuthenticator
+# Configure the above CacheManager on Shiro's SecurityManager to use it for all of Shiro's caching needs:
+securityManager.cacheManager = $cacheManager
 
-#// REST authent with JWT for a token passed in the url as the token parameter
-#ParameterClient parameterClient = new ParameterClient("token", new JwtAuthenticator(Constants.JWT_SALT));
-#parameterClient.setSupportGetRequest(true);
-#parameterClient.setSupportPostRequest(false);
+[users]
+user = user123, user
 
-#Rest configuration, direct Parameter client for rest services
-#this authenticator will change
-nonBlankAuthenticator=org.pac4j.http.credentials.authenticator.test.SimpleTestTokenAuthenticator
-jwtAuthenticator=org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
-jwtAuthenticator.signingSecret=some_very_secret_key
-
-parameterClient=org.pac4j.http.client.direct.ParameterClient
-#parameterClient.authenticator = $nonBlankAuthenticator
-parameterClient.authenticator = $jwtAuthenticator
-parameterClient.parameterName=token
-parameterClient.supportGetRequest=true
-parameterClient.supportPostRequest=false
-
-#directBasicAuthClient = new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator());
-directBasicAuthClient=org.pac4j.http.client.direct.DirectBasicAuthClient
-directBasicAuthClient.authenticator = $simpleAuthenticator
-
-
-###
-formClient = org.pac4j.http.client.indirect.FormClient
-formClient.loginUrl = http://localhost:8080/aleph2_api/loginForm.jsp
-#formClient.authenticator = $pac4JLdapAuthenticator
-formClient.authenticator = $simpleAuthenticator
-
-basicAuthClient = org.pac4j.http.client.indirect.IndirectBasicAuthClient
-basicAuthClient.authenticator = $simpleAuthenticator
-
-### SAML Config
-saml2Config = org.pac4j.saml.client.SAML2ClientConfiguration
-saml2Config.keystorePath = resource:samlKeystore.jks
-saml2Config.keystorePassword=welcome1
-saml2Config.privateKeyPassword=welcome1_key
-saml2Config.identityProviderMetadataPath = resource:idp-metadata.xml
-saml2Config.maximumAuthenticationLifetime = 3600
-saml2Config.serviceProviderEntityId = http://localhost:8080/aleph2_api/callback?client_name=SAML2Client
-saml2Config.serviceProviderMetadataPath = sp-metadata.xml
-
-saml2Client = org.pac4j.saml.client.SAML2Client
-saml2Client.configuration = $saml2Config
-saml2Client.callbackUrl=http://localhost:8080/aleph2_api/callback?client_name=SAML2Client
-
-clients = org.pac4j.core.client.Clients
-clients.callbackUrl = http://localhost:8080/aleph2_api/callback
-clients.clients = $formClient,$basicAuthClient,$saml2Client
-
-# SSO config
-#aleph2WebSsoConfig = com.ikanow.aleph2_api.utils.Aleph2WebSsoConfig
-#aleph2WebSsoConfig.createUser=true
-#aleph2WebSsoConfig.logoutUrl=http://idp001.dev.ikanow.com:8080/idp/profile/Logout
-#aleph2WebSsoConfig.apiRootUrl=http://api001.dev.ikanow.com:8080/api/
-#aleph2WebSsoConfig.useProfile=false
-#aleph2WebSsoConfig.useAttributes=true
-#aleph2WebSsoConfig.emailOid=urn:oid:0.9.2342.19200300.100.1.3
-#aleph2WebSsoConfig.uidOid=urn:oid:0.9.2342.19200300.100.1.1
-#aleph2WebSsoConfig.firstNameOid=urn:oid:2.5.4.42
-#aleph2WebSsoConfig.lastnameOid=urn:oid:2.5.4.4
-#aleph2WebSsoConfig.fullNameOid=urn:oid:2.16.840.1.113730.3.1.241
-#aleph2WebSsoConfig.phoneOid=urn:oid:2.5.4.20 
-
-############################################################################
-# REALM & FILTERS :
-############################################################################
-clientsRealm = io.buji.pac4j.ClientRealm
-clientsRealm.defaultRoles = ROLE_USER
-clientsRealm.clients = $clients
-
-clientsFilter = io.buji.pac4j.ClientFilter
-clientsFilter.clients = $clients
-clientsFilter.failureUrl = /error500.jsp
-clientsFilter.successUrl = /v1_cookie.jsp
-
-#RequiresAuthenticationFilter.java
-requiresAuthenticationFilter=org.pac4j.j2e.filter.RequiresAuthenticationFilter
-requiresAuthenticationFilter.clientName=$directBasicAuthClient
-
-
-formRoles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
-formRoles.client = $formClient
-basicAuthRoles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
-basicAuthRoles.client = $basicAuthClient
-saml2Roles = io.buji.pac4j.filter.ClientRolesAuthorizationFilter
-saml2Roles.client = $saml2Client
-
+[roles]
+user = standard
 
 [urls]
-/form/** = formRoles[ROLE_USER]
-/rest/** = requiresAuthenticationFilter
-/basicauth/** = basicAuthRoles[ROLE_USER]
-/saml/** = saml2Roles[ROLE_USER]
-/callback = clientsFilter
-/logout = logout
-/** = anon
+/web/login.jsp = authc
+/web/** = authc
+/rest/** = authcBasic
+#/rest/* = anon
+
