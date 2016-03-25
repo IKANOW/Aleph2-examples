@@ -76,26 +76,48 @@ public class FlumeLaunchUtils {
 					.map(hmap -> BeanTemplateUtils.from(hmap, FlumeBucketConfigBean.class).get())
 					;
 			
-			final String classpath = Stream.concat(
+			final String classpath = Stream.<Stream<String>>of(
 					context.getHarvestContextLibraries(getContextLibraries(config)).stream(),
-					context.getHarvestLibraries(Optional.of(bucket)).get().values().stream()
+					context.getHarvestLibraries(Optional.of(bucket)).get().values().stream(),
+					global_config.flume_classpath_override() ? Stream.of(global_config.flume_lib_path() + "/*") : Stream.empty()
 					)
+					.flatMap(__->__)
 					.collect(Collectors.joining(":"))
 					;
 			
 			ProcessBuilder pb = new ProcessBuilder(
-					Arrays.<String>asList(
-							global_config.flume_service_path(), "agent",
-							"-c", global_config.flume_config_path(),
-							"-C", classpath,
-							"-f", flume_info._2().toString(),
-							"-n", flume_info._1()							
-							))
+					Stream.concat(
+						Stream.of(
+								global_config.flume_service_path(), "agent",
+								"-c", global_config.flume_config_path(),
+								"-C", classpath,
+								"-f", flume_info._2().toString(),
+								"-n", flume_info._1()							
+								)
+								,
+						Stream.concat(Stream.of("-Xmx" + global_config.default_memory_usage()), 
+										global_config.java_overrides().stream().filter(s -> s.startsWith("-X") || s.startsWith("-D")))
+						)
+						.collect(Collectors.toList())
+					)
 			.redirectErrorStream(true)
 			.redirectOutput(new File("/dev/null")) // (just ignore stdout/stderr for this simple example)
 			//DEBUG
 			//.redirectOutput(new File("/tmp/external_harvest_test.txt"))
 			;
+			
+			if (global_config.flume_classpath_override()) {
+				pb.environment().put("FLUME_HOME", "/DUMMY_DIR");
+			}
+			if (!global_config.include_hadoop_classpath()) {
+				pb.environment().put("HADOOP_HOME", "/DUMMY_DIR");
+			}
+			if (!global_config.include_hbase_classpath()) {
+				pb.environment().put("HBASE_HOME", "/DUMMY_DIR");
+			}
+			if (!global_config.include_hive_classpath()) {
+				pb.environment().put("HIVE_HOME", "/DUMMY_DIR");
+			}
 			
 			final Process px = pb.start();
 			

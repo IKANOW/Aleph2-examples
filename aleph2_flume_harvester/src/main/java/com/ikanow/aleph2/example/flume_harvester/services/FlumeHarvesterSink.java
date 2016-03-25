@@ -51,6 +51,7 @@ import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean.MasterEnrichmentType;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ContextUtils;
+import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.Patterns;
@@ -162,6 +163,9 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 	public Status process() throws EventDeliveryException {
 		Status status = null;
 
+		//TODO (ALEPH-10): handy to know: there's a timeout that appears to occur, so can log a heartbeat every N seconds and use in the poll freq to ensure this thread hasn't crashed...
+		//TODO (ALEPH-10): also have a log the first time an error occurs, and maybe hourly log messages reporting data sizes
+		
 		// Start transaction
 		final Channel ch = getChannel();
 		final Transaction txn = ch.getTransaction();
@@ -186,7 +190,7 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 					this.directOutput(json_event, _config.get(), _bucket);
 				}
 				else {
-					if (_streaming) {
+					if (_streaming) {						
 						_context.sendObjectToStreamingPipeline(Optional.empty(), Either.left(json_event));
 					}
 					if (_batch) {
@@ -531,6 +535,8 @@ public class FlumeHarvesterSink extends AbstractSink implements Configurable {
 			}
 		}
 		catch (Throwable t) {
+			//DEBUG
+			//System.out.println(ErrorUtils.getLongForm("{0}", t));
 			//DEBUG
 			//_logger.warn("Error", t);
 		}
