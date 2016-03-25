@@ -10,16 +10,17 @@
      <listener>
         <listener-class>com.ikanow.aleph2.web_utils.GuiceContextListener</listener-class>
     </listener>
-    <listener>
+ <!-- comment when used with shiro.ini     
+ 	<listener>
         <listener-class>org.apache.shiro.web.env.EnvironmentLoaderListener</listener-class>
     </listener>
-
+-->
 	  <servlet>
 	    <servlet-name>Resteasy</servlet-name>
 	    <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
 	    <init-param>
 	      <param-name>javax.ws.rs.Application</param-name>
-	      <param-value>com.ikanow.aleph2.examples.application.ExampleApplication</param-value>
+	      <param-value>com.ikanow.aleph2_api.application.ApiApplication</param-value>
 	    </init-param>
 	  </servlet>
   <!-- We map the api calls to something other than /* so we can serve up the static webpages in WebContent -->
@@ -78,11 +79,11 @@
 	     <param-name>aleph2.config</param-name>
 	     <param-value>/opt/aleph2-home/etc/aleph2_api/aleph2_api.properties</param-value>
 	</context-param>
-<!-- 	<context-param>
+ 	<context-param>
 	     <param-name>aleph2.module_class</param-name>
-	    <param-value>com.ikanow.aleph2.security.module.IkanowV1WebSecurityModule</param-value>
+	    <param-value>com.ikanow.aleph2.security.module.IkanowV2WebSecurityModule</param-value>
 	</context-param>
-	-->
+	
 	<context-param>
 	     <param-name>aleph2.application_class</param-name>
 	     <param-value>com.ikanow.aleph2.web_utils.DefaultInjectorContainer</param-value>

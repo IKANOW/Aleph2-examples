@@ -5,11 +5,12 @@
     <artifactId>aleph2_api</artifactId>
   <version>${aleph2.version}</version>
     <packaging>war</packaging>
-    <name>Aleph2 webapp for single sign on using the buji-pac4j security extension</name>
+    <name>Aleph2 webapp for rest services API</name>
     <properties>
 	<aleph2.scope>compile</aleph2.scope>
 	<aleph2.version>2.8.0-SNAPSHOT</aleph2.version>
-        <pac4jVersion>1.8.1</pac4jVersion>
+        <pac4jVersion>1.8.2</pac4jVersion>
+        <j2ePac4jVersion>1.2.2</j2ePac4jVersion>
         <bujiVersion>1.4.0</bujiVersion>
         <javaVersion>1.8</javaVersion>
     </properties>
@@ -33,20 +34,18 @@
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
 	</dependency>
-<!--  	<dependency>
-		<groupId>com.ikanow.aleph2</groupId>
-		<artifactId>aleph2_security_service_ikanow_web_v1</artifactId>
-		<version>${aleph2.version}</version>
-		<scope>${aleph2.scope}</scope>
-	</dependency>
-	-->
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
-		<artifactId>aleph2_security_service_ikanow_v1</artifactId>
+		<artifactId>aleph2_security_service_ikanow_web_v2</artifactId>
+		<version>${aleph2.version}</version>
+		<scope>${aleph2.scope}</scope>
+	</dependency>	
+	<dependency>
+		<groupId>com.ikanow.aleph2</groupId>
+		<artifactId>aleph2_security_service_ikanow_v2</artifactId>
 		<version>${aleph2.version}</version>
 		<scope>${aleph2.scope}</scope>
 	</dependency>
-	
 	<dependency>
 		<groupId>com.ikanow.aleph2</groupId>
 		<artifactId>aleph2_web_utils</artifactId>
@@ -92,71 +91,6 @@
 		<scope>${aleph2.scope}</scope>
 	</dependency>
         <dependency>
-            <groupId>io.buji</groupId>
-            <artifactId>buji-pac4j-servlet</artifactId>
-            <version>${bujiVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-oauth</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-openid</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-cas</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-http</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-saml</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-oidc</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-gae</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-ldap</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-sql</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-mongo</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pac4j</groupId>
-            <artifactId>pac4j-stormpath</artifactId>
-            <version>${pac4jVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.0.13</version>
-        </dependency>
-        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.0.1</version>
@@ -182,7 +116,8 @@
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-guice</artifactId>
 			<version>3.0.13.Final</version>
-		</dependency>    
+		</dependency>
+		  
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
