@@ -76,7 +76,7 @@ public class TestLogstashUtils {
 	public void test_sendOutputToLogger() throws IOException {
 		final TestBucketLogger bucket_logger = new TestBucketLogger();		
 		LogstashUtils.sendOutputToLogger(bucket_logger, Level.ERROR, new File("src/test/resources/ls_output.test"));
-		assertEquals(62, bucket_logger.logged_messages.size());
+		assertEquals(63, bucket_logger.logged_messages.size());
 	}
 	
 	@Test
@@ -108,7 +108,7 @@ public class TestLogstashUtils {
 		public CompletableFuture<?> inefficientLog(Level level,
 				BasicMessageBean message) {
 			logged_messages.add(message);
-			System.out.println(ErrorUtils.show(message));
+			System.out.println(ErrorUtils.show(message) + " " + message.details());
 			return CompletableFuture.completedFuture(true);
 		}
 

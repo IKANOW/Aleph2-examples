@@ -27,6 +27,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -36,8 +41,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
@@ -240,12 +245,14 @@ public class LogstashUtils {
 			try {
 				//convert line to valid json, then parse json, build BMB object from it
 				final String fixed_line = line.replaceAll(logstash_colon_search, logstash_colon_replace).replaceAll(logstash_arrow_search, logstash_arrow_replace); //replace => with :
-				final JsonNode line_node = _mapper.readTree(fixed_line);
-				logger.inefficientLog(Level.valueOf(line_node.get("level").asText()), new BasicMessageBean(parseLogstashDate(line_node.get("timestamp").asText()), true, LogstashHarvestService.class.getSimpleName(), "test_output", null, line_node.get("message").asText(), 
-						ImmutableMap.of(
-								"file", line_node.get("file").asText(),
-								"line", line_node.get("line").asText(),
-								"method", line_node.get("method").asText())));
+				final ObjectNode line_object = (ObjectNode) _mapper.readTree(fixed_line);
+				//move specific fields we want into BMB
+				final Date date = parseLogstashDate(line_object.remove("timestamp").asText());
+				final Level logstash_level = Level.valueOf(line_object.remove("level").asText());				
+				final String message = line_object.remove("message").asText();
+				//move everything else into details map
+				logger.inefficientLog(logstash_level, new BasicMessageBean(date, true, LogstashHarvestService.class.getSimpleName(), "test_output", null, message, 
+						StreamSupport.stream(Spliterators.spliteratorUnknownSize(line_object.fields(), Spliterator.ORDERED), true).collect(Collectors.toMap(e->e.getKey(), e->e.getValue().asText()))));
 			} catch (Exception ex) {
 				//fallback on conversion failure
 				logger.inefficientLog(level, ErrorUtils.buildSuccessMessage(LogstashHarvestService.class.getSimpleName(), line, ""));

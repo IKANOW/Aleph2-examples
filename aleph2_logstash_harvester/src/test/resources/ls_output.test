@@ -60,3 +60,4 @@
 {:timestamp=>"2016-03-24T09:38:04.284000-0400", :message=>"_sincedb_open: reading from /opt/logstash-infinite/logstash/.sincedb_aleph2_testing_test_logstash4__f59beccc1a64", :level=>:debug, :file=>"filewatch/tail.rb", :line=>"219", :method=>"_sincedb_open"}
 {:timestamp=>"2016-03-24T09:38:04.290000-0400", :message=>"_sincedb_open: setting [\"272501\", 0, 51776] to 63", :level=>:debug, :file=>"filewatch/tail.rb", :line=>"223", :method=>"_sincedb_open"}
 {:timestamp=>"2016-03-24T09:38:04.294000-0400", :message=>"_sincedb_open: setting [\"275028\", 0, 51776] to 63", :level=>:debug, :file=>"filewatch/tail.rb", :line=>"223", :method=>"_sincedb_open"}
+{:timestamp=>"2016-03-28T09:32:39.504000-0400", :message=>"Received line", :path=>"/tmp/sample_data/sample4.csv", :text=>"c, 3", :level=>:debug, :file=>"logstash/inputs/file.rb", :line=>"207", :method=>"log_line_received"}
