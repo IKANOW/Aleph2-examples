@@ -17,6 +17,9 @@ package com.ikanow.aleph2.harvest.logstash.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,16 +30,22 @@ import java.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IHarvestContext;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IStorageService;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
+import com.ikanow.aleph2.data_model.objects.shared.BasicMessageBean;
 import com.ikanow.aleph2.data_model.objects.shared.GlobalPropertiesBean;
 import com.ikanow.aleph2.data_model.utils.BucketUtils;
+import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.Patterns;
 import com.ikanow.aleph2.data_model.utils.TimeUtils;
@@ -211,5 +220,49 @@ public class LogstashUtils {
 			config.set("fs.AbstractFileSystem.file.impl", "org.apache.hadoop.fs.local.LocalFs");
 			return config;
 		}		
+	}
+	
+	private static final String logstash_colon_search = "=>:(\\w+)";
+	private static final String logstash_colon_replace = "=>\"$1\"";
+	private static final String logstash_arrow_search = ":(\\w+)=>";
+	private static final String logstash_arrow_replace = "\"$1\":";
+	private static final ObjectMapper _mapper = new ObjectMapper();
+	/**
+	 * Reads the given output file and outputs it to the logger with the spec'd log level.
+	 * @param logger
+	 * @param level
+	 * @param output_file
+	 * @throws IOException 
+	 */
+	public static void sendOutputToLogger(final IBucketLogger logger, final Level level, final File output_file) throws IOException {
+//		_logger.error("Reading output file: " + output_file + " to send to logger at level: " + level);
+		Files.lines(output_file.toPath()).forEach(line -> {
+			try {
+				//convert line to valid json, then parse json, build BMB object from it
+				final String fixed_line = line.replaceAll(logstash_colon_search, logstash_colon_replace).replaceAll(logstash_arrow_search, logstash_arrow_replace); //replace => with :
+				final JsonNode line_node = _mapper.readTree(fixed_line);
+				logger.inefficientLog(Level.valueOf(line_node.get("level").asText()), new BasicMessageBean(parseLogstashDate(line_node.get("timestamp").asText()), true, LogstashHarvestService.class.getSimpleName(), "test_output", null, line_node.get("message").asText(), 
+						ImmutableMap.of(
+								"file", line_node.get("file").asText(),
+								"line", line_node.get("line").asText(),
+								"method", line_node.get("method").asText())));
+			} catch (Exception ex) {
+				//fallback on conversion failure
+				logger.inefficientLog(level, ErrorUtils.buildSuccessMessage(LogstashHarvestService.class.getSimpleName(), line, ""));
+			}						
+		});
+		//TODO should we delete log file after we've read it?
+	}
+
+	private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"); 
+	/**
+	 * Parses logstash specific format into a date object, logstash dates look like: 2016-03-24T09:38:03.770000-0400
+	 * 
+	 * @param string
+	 * @return
+	 * @throws ParseException 
+	 */
+	public static Date parseLogstashDate(final String date_string) throws ParseException {
+		return formatter.parse(date_string);
 	}
 }
