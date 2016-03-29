@@ -18,4 +18,4 @@
   --%>
 
 <%-- Forward the user to the home page --%>
-<jsp:forward page="v1_cookie.jsp"/>
+<jsp:forward page="showPrincipal.jsp"/>
