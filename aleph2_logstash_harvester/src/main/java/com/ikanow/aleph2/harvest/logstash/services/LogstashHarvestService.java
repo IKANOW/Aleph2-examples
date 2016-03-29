@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.Level;
 
 import scala.Tuple2;
 
@@ -68,7 +69,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	public void onInit(IHarvestContext context) {
 		_globals.set(BeanTemplateUtils.from(Optional.ofNullable(context.getTechnologyLibraryConfig().library_config()).orElse(Collections.emptyMap()), LogstashHarvesterConfigBean.class).get());
 		_context.set(context);
-		_global_propertes.set(context.getServiceContext().getGlobalProperties());		
+		_global_propertes.set(context.getServiceContext().getGlobalProperties());
 	}
 
 	/* (non-Javadoc)
@@ -129,6 +130,14 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			
 			//kill/log
 			final Tuple2<String, Boolean> kill_result = ProcessUtils.stopProcess(this.getClass().getSimpleName(), new_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
+			
+			//log any output (don't crash if something goes wrong, this is just icing)
+			try {
+				final String log_file = System.getProperty("java.io.tmpdir") + File.separator + BucketUtils.getUniqueSignature(new_bucket.full_name(), Optional.empty());
+				LogstashUtils.sendOutputToLogger(context.getLogger(Optional.empty()), Level.DEBUG, new File(log_file));
+			} catch ( Exception ex) {
+				context.getLogger(Optional.empty()).log(Level.ERROR, ErrorUtils.lazyBuildMessage(false, ()->this.getClass().getSimpleName(), ()->"onUpdatedSource", ()->null, ()->ErrorUtils.getLongForm("Error getting logstash test output: {0}", ex), ()->Collections.emptyMap()));
+			}
 			
 			return CompletableFuture.completedFuture(
 					ErrorUtils.buildMessage(true, this.getClass().getSimpleName(), "Bucket suspended: {0}", kill_result._1()));
@@ -227,12 +236,11 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 	public CompletableFuture<BasicMessageBean> onTestSource(
 			DataBucketBean test_bucket, ProcessingTestSpecBean test_spec,
 			IHarvestContext context) {
-		
+		context.getLogger(Optional.empty()).log(Level.TRACE, ErrorUtils.lazyBuildMessage(false, ()->this.getClass().getSimpleName(), ()->"onTestSource", ()->null, ()->"Logstash about to run a test boss!", ()->Collections.emptyMap()));
 		// Kill any previously running tests
 		ProcessUtils.stopProcess(this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(2));
 		
-		// Build the logstash config file
-		
+		// Build the logstash config file		
 		final LogstashBucketConfigBean config = 
 				Optionals.ofNullable(test_bucket.harvest_configs()).stream().findFirst()														
 					.map(cfg -> BeanTemplateUtils.from(cfg.config(), LogstashBucketConfigBean.class).get())
@@ -243,9 +251,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ls_config.fail());
 		}
 		
-		// Launch the binary in a separate process
-		
-		//final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.empty());
+		// Launch the binary in a separate process		
 		final ProcessBuilder pb = LogstashUtils.buildLogstashTest(_globals.get(), config, ls_config.success(), Optional.ofNullable(test_spec.requested_num_objects()).orElse(10L), Optional.of(test_bucket.full_name()));
 		
 		final Tuple2<String, String> err_pid = ProcessUtils.launchProcess(pb, this.getClass().getSimpleName(), test_bucket, _global_propertes.get().local_root_dir() + LOCAL_RUN_DIR_SUFFIX, Optional.of(new Tuple2<Long, Integer>(test_spec.max_run_time_secs(), 2)));

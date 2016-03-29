@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         metadata-complete="true">
+    <display-name>aleph2_mock_login</display-name>
+
+    <absolute-ordering/>
+
+     <listener>
+        <listener-class>com.ikanow.aleph2.web_utils.GuiceContextListener</listener-class>
+    </listener>
+ <!-- comment when used with shiro.ini     
+ 	<listener>
+        <listener-class>org.apache.shiro.web.env.EnvironmentLoaderListener</listener-class>
+    </listener>
+-->
+    <filter>
+        <filter-name>ShiroFilter</filter-name>
+        <filter-class>org.apache.shiro.web.servlet.ShiroFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>ShiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>INCLUDE</dispatcher>
+        <dispatcher>ERROR</dispatcher>
+    </filter-mapping>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/error401.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error403.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error500.jsp</location>
+    </error-page>
+    
+    <context-param>
+	     <param-name>aleph2.config</param-name>
+	     <param-value>/opt/aleph2-home/etc/aleph2_mock_login/aleph2_mock_login.properties</param-value>
+	</context-param>
+ 	<context-param>
+	     <param-name>aleph2.module_class</param-name>
+	    <param-value>com.ikanow.aleph2.security.module.IkanowMocklLoginWebSecurityModule</param-value>
+	</context-param>
+	
+	<context-param>
+	     <param-name>aleph2.application_class</param-name>
+	     <param-value>com.ikanow.aleph2.web_utils.DefaultInjectorContainer</param-value>
+	</context-param>
+    
+</web-app>
+

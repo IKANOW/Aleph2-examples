@@ -37,11 +37,11 @@ import com.ikanow.aleph2.security.shiro.MongoDbSessionDao;
 
 import org.apache.shiro.session.mgt.eis.SessionDAO;
 
-public class IkanowV2WebSecurityModule extends ShiroWebModule {
+public class IkanowMocklLoginWebSecurityModule extends ShiroWebModule {
 	private static final Logger logger = LogManager.getLogger(IkanowV2WebSecurityModule.class);
 
 	
-	public IkanowV2WebSecurityModule(ServletContext sc) {
+	public IkanowMocklLoginWebSecurityModule(ServletContext sc) {
         super(sc);
     }
 
