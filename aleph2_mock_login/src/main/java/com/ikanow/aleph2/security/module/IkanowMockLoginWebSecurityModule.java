@@ -15,6 +15,12 @@
  *******************************************************************************/
 package com.ikanow.aleph2.security.module;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javax.servlet.ServletContext;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
 import org.apache.shiro.guice.web.ShiroWebModule;
 import org.apache.shiro.session.mgt.SessionManager;
+import org.apache.shiro.session.mgt.eis.SessionDAO;
 import org.apache.shiro.web.servlet.Cookie;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
@@ -29,19 +36,53 @@ import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+import com.ikanow.aleph2.data_model.objects.shared.AuthorizationBean;
+import com.ikanow.aleph2.security.interfaces.IAuthProvider;
 import com.ikanow.aleph2.security.interfaces.IRoleProvider;
-import com.ikanow.aleph2.security.service.IkanowV2MongoRoleProvider;
-import com.ikanow.aleph2.security.shiro.ActiveSessionCredentialMatcher;
-import com.ikanow.aleph2.security.shiro.ActiveSessionRealm;
+import com.ikanow.aleph2.security.service.CoreRealm;
+import com.ikanow.aleph2.security.service.MapAuthProvider;
+import com.ikanow.aleph2.security.service.MapRoleProvider;
+import com.ikanow.aleph2.security.shiro.IkanowV2Realm;
+import com.ikanow.aleph2.security.shiro.Login123CredentialMatcher;
 import com.ikanow.aleph2.security.shiro.MongoDbSessionDao;
 
-import org.apache.shiro.session.mgt.eis.SessionDAO;
-
-public class IkanowMocklLoginWebSecurityModule extends ShiroWebModule {
+public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 	private static final Logger logger = LogManager.getLogger(IkanowV2WebSecurityModule.class);
 
-	
-	public IkanowMocklLoginWebSecurityModule(ServletContext sc) {
+	protected static Map<String, Set<String>> rolesMap = new HashMap<String, Set<String>>();
+	protected static Map<String, Set<String>> permissionsMap = new HashMap<String, Set<String>>();
+	protected static Map<String, AuthorizationBean> authMap = new HashMap<String, AuthorizationBean>();
+	protected static MapRoleProvider roleProvider =  new MapRoleProvider(rolesMap, permissionsMap);
+	protected static MapAuthProvider authProvider = new MapAuthProvider(authMap);
+
+	static{
+		//System.setProperty(IKANOW_SYSTEM_LOGIN, "system");
+		//System.setProperty(IKANOW_SYSTEM_PASSWORD, "system123");
+
+		AuthorizationBean ab1 = new AuthorizationBean("admin");
+		ab1.setCredentials("admin123");
+		authMap.put("admin",ab1);
+		AuthorizationBean ab2 = new AuthorizationBean("user");
+		ab2.setCredentials("user123");
+		authMap.put("user",ab2);
+		AuthorizationBean ab3 = new AuthorizationBean("testUser");
+		ab3.setCredentials("testUser123");
+		authMap.put("testUser",ab3);
+		AuthorizationBean ab4 = new AuthorizationBean("system");
+		ab4.setCredentials("system123");
+		authMap.put("system",ab4);
+		
+		permissionsMap.put("admin", new HashSet<String>(Arrays.asList("*")));
+		permissionsMap.put("user", new HashSet<String>(Arrays.asList("permission1","permission2","permission3","read:tmp:data:misc","package:*","permission:*","DataBucketBean:read:bucketId1","community:*:communityId1")));
+		permissionsMap.put("testUser", new HashSet<String>(Arrays.asList("t1","t2","t3")));
+
+		rolesMap.put("admin", new HashSet<String>(Arrays.asList("admin")));
+		rolesMap.put("user", new HashSet<String>(Arrays.asList("user")));
+		rolesMap.put("testUser", new HashSet<String>(Arrays.asList("testUser")));
+
+	}
+
+	public IkanowMockLoginWebSecurityModule(ServletContext sc) {
         super(sc);
     }
 
@@ -76,11 +117,9 @@ public class IkanowMocklLoginWebSecurityModule extends ShiroWebModule {
         addFilterChain("/stuff/forbidden/**", AUTHC_BASIC, config(PERMS, "no"));
         addFilterChain("/**", AUTHC_BASIC);
         */
-     	addFilterChain("/login.jsp", AUTHC);
+     	addFilterChain("/login.jsp", ANON);
      	addFilterChain("/logout", LOGOUT);
         addFilterChain("/rest/**", AUTHC, config(PERMS, "no"));
-     	
-
 	}
 	
 	
@@ -92,7 +131,7 @@ public class IkanowMocklLoginWebSecurityModule extends ShiroWebModule {
 	}
 
 	protected void bindRealms() {
-		bindRealm().to(ActiveSessionRealm.class).asEagerSingleton();		
+		bindRealm().to(IkanowV2Realm.class).asEagerSingleton();		
 	}
 
 	/** 
@@ -100,16 +139,18 @@ public class IkanowMocklLoginWebSecurityModule extends ShiroWebModule {
      */
     protected void bindAuthProviders(){
     	logger.debug("bindAuthProviders -placeholder, override in sub-modules");
+ 		bind(IAuthProvider.class).toInstance(authProvider);
     }
 	
 
     protected void bindRoleProviders(){
-		Multibinder<IRoleProvider> uriBinder = Multibinder.newSetBinder(binder(), IRoleProvider.class);
-	    uriBinder.addBinding().to(IkanowV2MongoRoleProvider.class);
+		Multibinder<IRoleProvider> uriBinder = Multibinder.newSetBinder(binder(), IRoleProvider.class);					
+	    uriBinder.addBinding().toInstance(roleProvider);
+
     }
 	
 	protected void bindCredentialsMatcher() {
- 		bind(CredentialsMatcher.class).to(ActiveSessionCredentialMatcher.class);
+ 		bind(CredentialsMatcher.class).to(Login123CredentialMatcher.class);
 	}
 
 	@Override

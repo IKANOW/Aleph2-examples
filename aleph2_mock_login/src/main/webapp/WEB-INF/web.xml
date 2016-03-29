@@ -50,7 +50,7 @@
 	</context-param>
  	<context-param>
 	     <param-name>aleph2.module_class</param-name>
-	    <param-value>com.ikanow.aleph2.security.module.IkanowMocklLoginWebSecurityModule</param-value>
+	    <param-value>com.ikanow.aleph2.security.module.IkanowMockLoginWebSecurityModule</param-value>
 	</context-param>
 	
 	<context-param>
