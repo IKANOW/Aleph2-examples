@@ -29,6 +29,7 @@ import com.google.inject.Injector;
 import com.ikanow.aleph2.data_model.interfaces.data_services.IDocumentService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService.Cursor;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService.IReadOnlyCrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
@@ -81,7 +82,7 @@ public class SimpleReadableCrudTest {
 		final DataBucketBean bucket = BeanTemplateUtils.from(bucket_str, DataBucketBean.class).get();
 		
 		
-		final Optional<ICrudService<JsonNode>> maybe_read_crud = 
+		final Optional<IReadOnlyCrudService<JsonNode>> maybe_read_crud = 
 				_service_context.getService(IDocumentService.class, Optional.empty())
 						.flatMap(ds -> ds.getDataService())
 						.flatMap(ds -> ds.getReadableCrudService(JsonNode.class, Arrays.asList(bucket), Optional.empty()))
