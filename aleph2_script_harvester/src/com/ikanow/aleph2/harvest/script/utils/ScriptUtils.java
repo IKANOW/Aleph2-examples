@@ -229,7 +229,7 @@ public class ScriptUtils {
 		final BasicMessageBean stop_result = stopScriptProcess(bucket, config, message, working_dir, aleph_local_root_path);
 		final BasicMessageBean start_result = startScriptProcess(bucket, context, aleph_local_root_path, aleph_global_root_path, config, message, working_dir, requested_num_objects, max_run_time_secs);
 		//merge the results and return that bean
-		final Map<String, String> details = new HashMap<String, String>();
+		final Map<String, Object> details = new HashMap<String, Object>();
 		if ( stop_result.details() != null )
 			details.putAll(stop_result.details());
 		if ( start_result.details() != null)

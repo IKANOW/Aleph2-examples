@@ -26,15 +26,18 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import scala.Tuple2;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableMap;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IBatchRecord;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentBatchModule;
 import com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentModuleContext;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
 import com.ikanow.aleph2.data_model.objects.data_import.EnrichmentControlMetadataBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
@@ -54,6 +57,8 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 	final protected SetOnce<Boolean> java_api = new SetOnce<>(); // (whether we're using the java api or the JS api)	
 	final protected SetOnce<ScriptEngine> _engine = new SetOnce<>();
 	final protected SetOnce<ScriptContext> _script_context = new SetOnce<>();
+	
+	final protected SetOnce<IBucketLogger> _bucket_logger = new SetOnce<>();
 	
 	/* (non-Javadoc)
 	 * @see com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentBatchModule#onStageInitialize(com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentModuleContext, com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean, com.ikanow.aleph2.data_model.objects.data_import.EnrichmentControlMetadataBean, boolean)
@@ -75,6 +80,8 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 		_engine.trySet(manager.getEngineByName("JavaScript"));
 		_script_context.trySet(_engine.get().getContext()); // (actually not needed since we're compiling things)
 
+		_bucket_logger.set(context.getLogger(Optional.of(bucket)));
+		
 		// Load globals:
 		_engine.get().put("_a2_global_context", _context.get());
 		_engine.get().put("_a2_global_grouping_fields", grouping_fields.orElse(Collections.emptyList()));
@@ -83,6 +90,8 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 		_engine.get().put("_a2_global_bucket", bucket);
 		_engine.get().put("_a2_global_config", BeanTemplateUtils.configureMapper(Optional.empty()).convertValue(config_bean.config(), JsonNode.class));
 		_engine.get().put("_a2_global_mapper", BeanTemplateUtils.configureMapper(Optional.empty()));
+		_engine.get().put("_a2_bucket_logger", _bucket_logger.optional().orElse(null));
+		_engine.get().put("_a2_enrichment_name", Optional.ofNullable(control.name()).orElse("no_name"));
 		
 		// Load the resources:
 		Stream.concat(config_bean.imports().stream(), Stream.of("aleph2_js_globals_before.js", "", "aleph2_js_globals_after.js"))
@@ -93,7 +102,15 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 						}
 						else return IOUtils.toString(JsScriptEngineService.class.getClassLoader().getResourceAsStream(import_path), "UTF-8");
 					}
-					catch (Exception e) {
+					catch (Throwable e) {
+						_bucket_logger.optional().ifPresent(l -> l.log(Level.ERROR, 
+								ErrorUtils.lazyBuildMessage(false, () -> this.getClass().getSimpleName(), 
+										() -> Optional.ofNullable(control.name()).orElse("no_name") + ".onStageInitialize", 
+										() -> null, 
+										() -> ErrorUtils.get("Error initializing stage {0} (script {1}): {2}", Optional.ofNullable(control.name()).orElse("(no name)"), import_path, e.getMessage()), 
+										() -> ImmutableMap.<String, Object>of("full_error", ErrorUtils.getLongForm("{0}", e)))
+								));
+						
 						_logger.error(ErrorUtils.getLongForm("onStageInitialize: {0}", e));		
 						throw e; // ignored
 					}
@@ -102,7 +119,15 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 			try {
 				_engine.get().eval(script);
 			}
-			catch (Exception e) {
+			catch (Throwable e) {
+				_bucket_logger.optional().ifPresent(l -> l.log(Level.ERROR, 
+						ErrorUtils.lazyBuildMessage(false, () -> this.getClass().getSimpleName(), 
+								() -> Optional.ofNullable(control.name()).orElse("no_name") + ".onStageInitialize", 
+								() -> null, 
+								() -> ErrorUtils.get("Error initializing stage {0} (main script): {1}", Optional.ofNullable(control.name()).orElse("(no name)"), e.getMessage()), 
+								() -> ImmutableMap.<String, Object>of("full_error", ErrorUtils.getLongForm("{0}", e)))
+						));
+				
 				_logger.error(ErrorUtils.getLongForm("onStageInitialize: {0}", e));		
 				throw e; // ignored
 			}
@@ -134,7 +159,9 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 	 */
 	@Override
 	public void onStageComplete(boolean is_original) {
-		//(nothing to do)
+		if (is_original) {
+			_bucket_logger.optional().ifPresent(l -> l.flush());			
+		}
 	}
 
 	/* (non-Javadoc)
