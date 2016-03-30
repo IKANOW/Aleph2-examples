@@ -74,7 +74,7 @@ public class TestJsScriptEngineService {
 		    	  try {
 			    	  Object[] args  = invocation.getArguments();
 			    	  assertTrue("Unexpected call to context object during test: " + invocation.getMethod().getName(), invocation.getMethod().getName().equals("emitMutableObject") ||
-			    			  invocation.getMethod().getName().equals("externalEmit")
+			    			  invocation.getMethod().getName().equals("externalEmit") || invocation.getMethod().getName().equals("getLogger") 
 			    			  );
 			    	  if (invocation.getMethod().getName().equals("emitMutableObject")) {
 			    		  final Optional<JsonNode> grouping = (Optional<JsonNode>) args[3];

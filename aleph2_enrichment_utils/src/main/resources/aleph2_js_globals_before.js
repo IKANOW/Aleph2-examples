@@ -6,6 +6,8 @@
 // _a2_global_config - com.fasterxml.jackson.databind.node.ObjectNode
 // _a2_global_mapper - com.fasterxml.jackson.databind.ObjectMapper
 // _a2_global_bucket - com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean
+// _a2_bucket_logger - 
+// _a2_enrichment_name
 
 // Global methods
 function _a2_global_js_to_json(json) {
@@ -48,6 +50,14 @@ function _a2_global_list_to_js(jlist) {
 	return Java.from(jlist);
 }
 
+//TODO (make this more sophisticated)
+function _a2_bucket_log(level, msg) {
+	var success = (level != org.apache.logging.log4j.Level.ERROR) && (level != org.apache.logging.log4j.Level.WARN);
+	_a2_bucket_logger.inefficientLog(level,
+			com.ikanow.aleph2.data_model.utils.ErrorUtils.buildMessage(success, "JsScriptEngineService", _a2_enrichment_name + ".handle_batch_java", msg)
+			);
+}
+
 function Aleph2Api() {
 	this.context = _a2_global_context;
 	this.grouping_fields = _a2_global_list_to_js(_a2_global_grouping_fields);
@@ -59,6 +69,12 @@ function Aleph2Api() {
 	this.externalEmit = _a2_global_emit_external;
 	this.to_json = _a2_global_to_json;
 	this.list_to_js = _a2_global_list_to_js;
+	this.logger = _a2_bucket_logger;
+	this.log_trace = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.TRACE); }
+	this.log_debug = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.DEBUG); }
+	this.log_info = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.INFO); }
+	this.log_warn = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.WARN); }
+	this.log_error = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.ERROR); }
 }
 var _a2 = new Aleph2Api();
 
