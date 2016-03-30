@@ -26,6 +26,7 @@ import javax.servlet.ServletContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
+import org.apache.shiro.authc.credential.SimpleCredentialsMatcher;
 import org.apache.shiro.guice.web.ShiroWebModule;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.session.mgt.eis.SessionDAO;
@@ -39,11 +40,9 @@ import com.google.inject.name.Names;
 import com.ikanow.aleph2.data_model.objects.shared.AuthorizationBean;
 import com.ikanow.aleph2.security.interfaces.IAuthProvider;
 import com.ikanow.aleph2.security.interfaces.IRoleProvider;
-import com.ikanow.aleph2.security.service.CoreRealm;
 import com.ikanow.aleph2.security.service.MapAuthProvider;
 import com.ikanow.aleph2.security.service.MapRoleProvider;
 import com.ikanow.aleph2.security.shiro.IkanowV2Realm;
-import com.ikanow.aleph2.security.shiro.Login123CredentialMatcher;
 import com.ikanow.aleph2.security.shiro.MongoDbSessionDao;
 
 public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
@@ -110,16 +109,16 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 
 	@SuppressWarnings("unchecked")
 	public void addFilterChains(){
-    	
+		 bindConstant().annotatedWith(Names.named("shiro.loginUrl")).to("/login.jsp");
     	/* samples
      	addFilterChain("/public/**", ANON);    	 
         addFilterChain("/stuff/allowed/**", AUTHC_BASIC, config(PERMS, "yes"));
         addFilterChain("/stuff/forbidden/**", AUTHC_BASIC, config(PERMS, "no"));
         addFilterChain("/**", AUTHC_BASIC);
         */
-     	addFilterChain("/login.jsp", ANON);
+     	addFilterChain("/login.jsp", AUTHC);
      	addFilterChain("/logout", LOGOUT);
-        addFilterChain("/rest/**", AUTHC, config(PERMS, "no"));
+        addFilterChain("/rest/**", AUTHC);
 	}
 	
 	
@@ -150,7 +149,7 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
     }
 	
 	protected void bindCredentialsMatcher() {
- 		bind(CredentialsMatcher.class).to(Login123CredentialMatcher.class);
+ 		bind(CredentialsMatcher.class).to(SimpleCredentialsMatcher.class);
 	}
 
 	@Override
