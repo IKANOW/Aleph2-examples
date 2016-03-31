@@ -18,4 +18,4 @@
   --%>
 
 <%-- Forward the user to the home page --%>
-<jsp:forward page="showPrincipal.jsp"/>
+<jsp:forward page="login.jsp"/>

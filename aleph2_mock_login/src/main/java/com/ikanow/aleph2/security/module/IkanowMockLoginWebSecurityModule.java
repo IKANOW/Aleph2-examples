@@ -32,7 +32,6 @@ import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.session.mgt.eis.SessionDAO;
 import org.apache.shiro.web.servlet.Cookie;
 import org.apache.shiro.web.servlet.SimpleCookie;
-import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.multibindings.Multibinder;
@@ -56,9 +55,6 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 	protected static MapAuthProvider authProvider = new MapAuthProvider(authMap);
 
 	static{
-		//System.setProperty(IKANOW_SYSTEM_LOGIN, "system");
-		//System.setProperty(IKANOW_SYSTEM_PASSWORD, "system123");
-
 		AuthorizationBean ab1 = new AuthorizationBean("admin");
 		ab1.setCredentials("admin123");
 		authMap.put("admin",ab1);
@@ -79,7 +75,6 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 		rolesMap.put("admin", new HashSet<String>(Arrays.asList("admin")));
 		rolesMap.put("user", new HashSet<String>(Arrays.asList("user")));
 		rolesMap.put("testUser", new HashSet<String>(Arrays.asList("testUser")));
-
 	}
 
 	public IkanowMockLoginWebSecurityModule(ServletContext sc) {
@@ -102,21 +97,11 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 	protected void bindSessionDao()
 	{
 		bind(SessionDAO.class).to(MongoDbSessionDao.class);
-		expose(SessionDAO.class);
-		//bind(SessionDAO.class).to(MySessionDao.class);
-		//bind(SessionFactory.class).to(MySessionFactory.class);
-		//bind(CacheManager.class).to(EhCacheManager.class);		
 	}
 
 	@SuppressWarnings("unchecked")
 	public void addFilterChains(){
 		 bindConstant().annotatedWith(Names.named("shiro.loginUrl")).to("/login.jsp");
-    	/* samples
-     	addFilterChain("/public/**", ANON);    	 
-        addFilterChain("/stuff/allowed/**", AUTHC_BASIC, config(PERMS, "yes"));
-        addFilterChain("/stuff/forbidden/**", AUTHC_BASIC, config(PERMS, "no"));
-        addFilterChain("/**", AUTHC_BASIC);
-        */
      	addFilterChain("/login.jsp", AUTHC);
      	addFilterChain("/logout", LOGOUT);
         addFilterChain("/rest/**", AUTHC);
@@ -125,9 +110,6 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 	
 	
 	protected void bindMisc() {
-		// do not just bind the implementation class,e.g. IkanowV1DataModificationChecker. This somehow creates an error about EhCachemanager already created.
-	//bind(IModificationChecker.class).to(IkanowV1DataModificationChecker.class).asEagerSingleton();
-		//expose(IModificationChecker.class);
 	}
 
 	protected void bindRealms() {
@@ -158,6 +140,5 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 		bindConstant().annotatedWith(Names.named("shiro.globalSessionTimeout")).to(5000L);
 		bind(Cookie.class).toInstance(new SimpleCookie("aleph2_session"));		
 		bind.to(MongoWebSessionManager.class).asEagerSingleton();
-		//expose(MongoWebSessionManager.class);
 	}
 }
