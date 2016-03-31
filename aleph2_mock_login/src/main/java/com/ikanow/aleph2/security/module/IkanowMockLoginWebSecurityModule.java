@@ -44,6 +44,7 @@ import com.ikanow.aleph2.security.service.MapAuthProvider;
 import com.ikanow.aleph2.security.service.MapRoleProvider;
 import com.ikanow.aleph2.security.shiro.IkanowV2Realm;
 import com.ikanow.aleph2.security.shiro.MongoDbSessionDao;
+import com.ikanow.aleph2.security.shiro.MongoWebSessionManager;
 
 public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 	private static final Logger logger = LogManager.getLogger(IkanowV2WebSecurityModule.class);
@@ -100,8 +101,8 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 
 	protected void bindSessionDao()
 	{
-		bind(SessionDAO.class).to(MongoDbSessionDao.class).asEagerSingleton();
-	
+		bind(SessionDAO.class).to(MongoDbSessionDao.class);
+		expose(SessionDAO.class);
 		//bind(SessionDAO.class).to(MySessionDao.class);
 		//bind(SessionFactory.class).to(MySessionFactory.class);
 		//bind(CacheManager.class).to(EhCacheManager.class);		
@@ -154,8 +155,9 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 
 	@Override
 	protected void bindSessionManager(AnnotatedBindingBuilder<SessionManager> bind) {
-		bind.to(DefaultWebSessionManager.class);
 		bindConstant().annotatedWith(Names.named("shiro.globalSessionTimeout")).to(5000L);
 		bind(Cookie.class).toInstance(new SimpleCookie("aleph2_session"));		
+		bind.to(MongoWebSessionManager.class).asEagerSingleton();
+		//expose(MongoWebSessionManager.class);
 	}
 }
