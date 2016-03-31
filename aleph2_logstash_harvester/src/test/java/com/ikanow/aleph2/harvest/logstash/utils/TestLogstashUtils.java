@@ -182,8 +182,8 @@ public class TestLogstashUtils {
 				Level level,
 				IBasicMessageBeanSupplier message,
 				String merge_key,
-				BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean> merge_operation,
-				Optional<Function<Tuple2<BasicMessageBean, Map<String, Object>>, Boolean>> rule_function) {
+				Optional<Function<Tuple2<BasicMessageBean, Map<String, Object>>, Boolean>> rule_function,
+				@SuppressWarnings("unchecked") BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean>... merge_operation) {
 			// TODO Auto-generated method stub
 			return null;
 		}
