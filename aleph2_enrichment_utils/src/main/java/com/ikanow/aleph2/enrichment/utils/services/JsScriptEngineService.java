@@ -159,7 +159,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 			
 			final Level level = Lambdas.get(() -> {
 				if (_mutable_first_error.isSet()) {
-					return Level.TRACE;
+					return Level.DEBUG;
 				}
 				else {
 					_mutable_first_error.set(false);
