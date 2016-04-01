@@ -54,7 +54,7 @@ function _a2_global_list_to_js(jlist) {
 function _a2_bucket_log(level, msg) {
 	var success = (level != org.apache.logging.log4j.Level.ERROR) && (level != org.apache.logging.log4j.Level.WARN);
 	_a2_bucket_logger.inefficientLog(level,
-			com.ikanow.aleph2.data_model.utils.ErrorUtils.buildMessage(success, "JsScriptEngineService", _a2_enrichment_name + ".handle_batch_java", msg)
+			com.ikanow.aleph2.data_model.utils.ErrorUtils.buildMessage(success, "JsScriptEngineService." + _a2_enrichment_name, _a2_enrichment_name + ".handle_batch_java", msg)
 			);
 }
 

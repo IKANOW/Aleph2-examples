@@ -44,8 +44,15 @@ public class JsScriptEngineBean implements Serializable {
 	 * @return
 	 */
 	public Map<String, Object> config() { return Optional.ofNullable(config).map(Collections::unmodifiableMap).orElse(Collections.emptyMap()); }
+
+	/** If true (default: false) then errors during record processing will cause the entire module to error out
+	 *  (falling back on whatever the underlying technology does in the case of errors)
+	 * @return
+	 */
+	public Boolean exit_on_error() { return Optional.ofNullable(exit_on_error).orElse(false); }
 	
 	private String script;
 	private List<String> imports; 
 	private Map<String, Object> config;	
+	private Boolean exit_on_error;
 }
