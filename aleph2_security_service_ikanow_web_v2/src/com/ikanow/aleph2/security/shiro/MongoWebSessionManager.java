@@ -20,6 +20,7 @@ public class MongoWebSessionManager extends DefaultWebSessionManager {
 		setSessionDAO(mongoSessionDao);
         Cookie cookie = new SimpleCookie(COOKIE_NAME);
         cookie.setHttpOnly(true); //more secure, protects against XSS attacks
+        cookie.setPath("/");
         long sessionTimeout = getGlobalSessionTimeout();
         if(sessionTimeout>0){
         	cookie.setMaxAge((int)(sessionTimeout/1000));
