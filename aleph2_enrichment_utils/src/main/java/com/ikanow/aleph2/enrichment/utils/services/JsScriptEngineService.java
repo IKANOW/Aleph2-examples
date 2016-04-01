@@ -170,7 +170,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 					ErrorUtils.lazyBuildMessage(false, () -> this.getClass().getSimpleName(), 
 							() -> Optional.ofNullable(_control.get().name()).orElse("no_name") + ".onObjectBatch", 
 							() -> null, 
-							() -> ErrorUtils.get("Error on batch: {1} (first_seen={2})", Optional.ofNullable(_control.get().name()).orElse("(no name)"), e.getMessage(), (level == Level.ERROR)), 
+							() -> ErrorUtils.get("Error on batch in job {0}: {1} (first_seen={2})", Optional.ofNullable(_control.get().name()).orElse("(no name)"), e.getMessage(), (level == Level.ERROR)), 
 							() -> ImmutableMap.<String, Object>of("full_error", ErrorUtils.getLongForm("{0}", e)))
 					));
 			
