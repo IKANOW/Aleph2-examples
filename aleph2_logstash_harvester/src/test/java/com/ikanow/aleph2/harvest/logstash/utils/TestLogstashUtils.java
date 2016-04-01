@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
@@ -175,15 +176,57 @@ public class TestLogstashUtils {
 		}
 
 		/* (non-Javadoc)
-		 * @see com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger#log(org.apache.logging.log4j.Level, com.ikanow.aleph2.data_model.interfaces.shared_services.IBasicMessageBeanSupplier, java.lang.String, java.util.function.BiFunction, java.util.Optional)
+		 * @see com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger#log(org.apache.logging.log4j.Level, com.ikanow.aleph2.data_model.interfaces.shared_services.IBasicMessageBeanSupplier, java.lang.String, java.util.Collection, java.util.Optional, java.util.function.BiFunction[])
 		 */
 		@Override
 		public CompletableFuture<?> log(
 				Level level,
 				IBasicMessageBeanSupplier message,
 				String merge_key,
-				Optional<Function<Tuple2<BasicMessageBean, Map<String, Object>>, Boolean>> rule_function,
-				@SuppressWarnings("unchecked") BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean>... merge_operation) {
+				Collection<Function<Tuple2<BasicMessageBean, Map<String, Object>>, Boolean>> rule_functions,
+				Optional<Function<BasicMessageBean, BasicMessageBean>> formatter,
+				@SuppressWarnings("unchecked") BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean>... merge_operations) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/* (non-Javadoc)
+		 * @see com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger#log(org.apache.logging.log4j.Level, com.ikanow.aleph2.data_model.interfaces.shared_services.IBasicMessageBeanSupplier, java.lang.String, java.util.function.BiFunction[])
+		 */
+		@Override
+		public CompletableFuture<?> log(
+				Level level,
+				IBasicMessageBeanSupplier message,
+				String merge_key,
+				@SuppressWarnings("unchecked") BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean>... merge_operations) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/* (non-Javadoc)
+		 * @see com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger#log(org.apache.logging.log4j.Level, com.ikanow.aleph2.data_model.interfaces.shared_services.IBasicMessageBeanSupplier, java.lang.String, java.util.function.Function, java.util.function.BiFunction[])
+		 */
+		@Override
+		public CompletableFuture<?> log(
+				Level level,
+				IBasicMessageBeanSupplier message,
+				String merge_key,
+				Function<BasicMessageBean, BasicMessageBean> formatter,
+				@SuppressWarnings("unchecked") BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean>... merge_operations) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		/* (non-Javadoc)
+		 * @see com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger#log(org.apache.logging.log4j.Level, com.ikanow.aleph2.data_model.interfaces.shared_services.IBasicMessageBeanSupplier, java.lang.String, java.util.Collection, java.util.function.BiFunction[])
+		 */
+		@Override
+		public CompletableFuture<?> log(
+				Level level,
+				IBasicMessageBeanSupplier message,
+				String merge_key,
+				Collection<Function<Tuple2<BasicMessageBean, Map<String, Object>>, Boolean>> rule_functions,
+				@SuppressWarnings("unchecked") BiFunction<BasicMessageBean, BasicMessageBean, BasicMessageBean>... merge_operations) {
 			// TODO Auto-generated method stub
 			return null;
 		}
