@@ -81,7 +81,7 @@
 	</context-param>
  	<context-param>
 	     <param-name>aleph2.module_class</param-name>
-	    <param-value>com.ikanow.aleph2.security.module.IkanowV2WebSecurityModule</param-value>
+	    <param-value>com.ikanow.aleph2_api.security.module.IkanowApiSecurityModule</param-value>
 	</context-param>
 	
 	<context-param>

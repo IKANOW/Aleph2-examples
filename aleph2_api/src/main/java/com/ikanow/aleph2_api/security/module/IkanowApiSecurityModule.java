@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package com.ikanow.aleph2.security.module;
+package com.ikanow.aleph2_api.security.module;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,10 +26,11 @@ import javax.servlet.ServletContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
-import org.apache.shiro.authc.credential.SimpleCredentialsMatcher;
 import org.apache.shiro.guice.web.ShiroWebModule;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.session.mgt.eis.SessionDAO;
+import org.apache.shiro.web.servlet.Cookie;
+import org.apache.shiro.web.servlet.SimpleCookie;
 
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.multibindings.Multibinder;
@@ -42,9 +43,10 @@ import com.ikanow.aleph2.security.service.MapRoleProvider;
 import com.ikanow.aleph2.security.shiro.IkanowV2Realm;
 import com.ikanow.aleph2.security.shiro.MongoDbSessionDao;
 import com.ikanow.aleph2.security.shiro.MongoWebSessionManager;
+import com.ikanow.aleph2.security.shiro.ActiveSessionCredentialMatcher;
 
-public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
-	private static final Logger logger = LogManager.getLogger(IkanowMockLoginWebSecurityModule.class);
+public class IkanowApiSecurityModule extends ShiroWebModule {
+	private static final Logger logger = LogManager.getLogger(IkanowApiSecurityModule.class);
 
 	protected static Map<String, Set<String>> rolesMap = new HashMap<String, Set<String>>();
 	protected static Map<String, Set<String>> permissionsMap = new HashMap<String, Set<String>>();
@@ -52,7 +54,7 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 	protected static MapRoleProvider roleProvider =  new MapRoleProvider(rolesMap, permissionsMap);
 	protected static MapAuthProvider authProvider = new MapAuthProvider(authMap);
 
-	static{
+/*	static{
 		AuthorizationBean ab1 = new AuthorizationBean("admin");
 		ab1.setCredentials("admin123");
 		authMap.put("admin",ab1);
@@ -74,8 +76,8 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 		rolesMap.put("user", new HashSet<String>(Arrays.asList("user")));
 		rolesMap.put("testUser", new HashSet<String>(Arrays.asList("testUser")));
 	}
-
-	public IkanowMockLoginWebSecurityModule(ServletContext sc) {
+*/
+	public IkanowApiSecurityModule(ServletContext sc) {
         super(sc);
     }
 
@@ -99,9 +101,9 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
 
 	@SuppressWarnings("unchecked")
 	public void addFilterChains(){
-		 bindConstant().annotatedWith(Names.named("shiro.loginUrl")).to("/login.jsp");
-     	addFilterChain("/login.jsp", AUTHC);
-     	addFilterChain("/logout", LOGOUT);
+//		 bindConstant().annotatedWith(Names.named("shiro.loginUrl")).to("/login.jsp");
+//     	addFilterChain("/login.jsp", AUTHC);
+//     	addFilterChain("/logout", LOGOUT);
         addFilterChain("/rest/**", USER);
 	}
 	
@@ -130,7 +132,7 @@ public class IkanowMockLoginWebSecurityModule extends ShiroWebModule {
     }
 	
 	protected void bindCredentialsMatcher() {
- 		bind(CredentialsMatcher.class).to(SimpleCredentialsMatcher.class);
+ 		bind(CredentialsMatcher.class).to(ActiveSessionCredentialMatcher.class);
 	}
 
 	@Override

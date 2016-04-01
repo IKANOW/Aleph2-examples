@@ -17,12 +17,12 @@
   ~ under the License.
   --%>
 <%@ include file="include.jsp" %>
+<html>
 <p>Hi <shiro:guest>Guest</shiro:guest><shiro:user><shiro:principal/></shiro:user>!
     ( <shiro:user><a href="logout">Log out</a></shiro:user>
-    <shiro:guest><a href="login.jsp">Log in</a> (sample accounts provided)</shiro:guest> )
+    <shiro:guest><a href="login.jsp">Log in</a></shiro:guest> )
 </p>
 
-<html>
 
 <form name="loginform" action="login.jsp" method="post" >
     <table align="left" border="0" cellspacing="0" cellpadding="3">
