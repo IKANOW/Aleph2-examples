@@ -70,11 +70,11 @@ function Aleph2Api() {
 	this.to_json = _a2_global_to_json;
 	this.list_to_js = _a2_global_list_to_js;
 	this.logger = _a2_bucket_logger;
-	this.log_trace = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.TRACE); }
-	this.log_debug = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.DEBUG); }
-	this.log_info = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.INFO); }
-	this.log_warn = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.WARN); }
-	this.log_error = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.ERROR); }
+	this.log_trace = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.TRACE, msg); }
+	this.log_debug = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.DEBUG, msg); }
+	this.log_info = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.INFO, msg); }
+	this.log_warn = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.WARN, msg); }
+	this.log_error = function(msg) { _a2_bucket_log(org.apache.logging.log4j.Level.ERROR, msg); }
 }
 var _a2 = new Aleph2Api();
 
