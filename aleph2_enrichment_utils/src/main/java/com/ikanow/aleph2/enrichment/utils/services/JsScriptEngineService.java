@@ -58,7 +58,11 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 	final protected SetOnce<ScriptEngine> _engine = new SetOnce<>();
 	final protected SetOnce<ScriptContext> _script_context = new SetOnce<>();
 	
+	final protected SetOnce<EnrichmentControlMetadataBean> _control = new SetOnce<>();
+	
 	final protected SetOnce<IBucketLogger> _bucket_logger = new SetOnce<>();
+	
+	protected final SetOnce<Boolean> _mutable_first_error = new SetOnce<>();
 	
 	/* (non-Javadoc)
 	 * @see com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentBatchModule#onStageInitialize(com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentModuleContext, com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean, com.ikanow.aleph2.data_model.objects.data_import.EnrichmentControlMetadataBean, boolean)
@@ -74,6 +78,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 		final JsScriptEngineBean config_bean = BeanTemplateUtils.from(Optional.ofNullable(control.config()).orElse(Collections.emptyMap()), JsScriptEngineBean.class).get();
 		_config.trySet(config_bean);
 		_context.trySet(context);
+		_control.trySet(control);
 		
 		// Initialize script engine:
 		ScriptEngineManager manager = new ScriptEngineManager();
@@ -149,8 +154,29 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 					batch_size.orElse(null), 
 					grouping_key.orElse(null));
 		}
-		catch (Exception e) {
+		catch (Throwable e) {		
 			_logger.error(ErrorUtils.getLongForm("onObjectBatch: {0}", e));
+			
+			final Level level = Lambdas.get(() -> {
+				if (_mutable_first_error.isSet()) {
+					return Level.TRACE;
+				}
+				else {
+					_mutable_first_error.set(false);
+					return Level.ERROR;
+				}
+			});
+			_bucket_logger.optional().ifPresent(l -> l.log(level, 
+					ErrorUtils.lazyBuildMessage(false, () -> this.getClass().getSimpleName(), 
+							() -> Optional.ofNullable(_control.get().name()).orElse("no_name") + ".onObjectBatch", 
+							() -> null, 
+							() -> ErrorUtils.get("Error on batch: {1} (first_seen={2})", Optional.ofNullable(_control.get().name()).orElse("(no name)"), e.getMessage(), (level == Level.ERROR)), 
+							() -> ImmutableMap.<String, Object>of("full_error", ErrorUtils.getLongForm("{0}", e)))
+					));
+			
+			if (_config.get().exit_on_error()) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 	
@@ -172,6 +198,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 		final JsScriptEngineService clone = new JsScriptEngineService();
 		clone._context.set(this._context.get());
 		clone._config.set(this._config.get());
+		clone._control.set(this._control.get());
 		
 		clone.java_api.set(this.java_api.get());
 		clone._engine.set(this._engine.get());
