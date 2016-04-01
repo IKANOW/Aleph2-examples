@@ -167,7 +167,7 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 				}
 			});
 			_bucket_logger.optional().ifPresent(l -> l.log(level, 
-					ErrorUtils.lazyBuildMessage(false, () -> this.getClass().getSimpleName(), 
+					ErrorUtils.lazyBuildMessage(false, () -> this.getClass().getSimpleName() + "." + Optional.ofNullable(_control.get().name()).orElse("no_name"), 
 							() -> Optional.ofNullable(_control.get().name()).orElse("no_name") + ".onObjectBatch", 
 							() -> null, 
 							() -> ErrorUtils.get("Error on batch in job {0}: {1} (first_seen={2})", Optional.ofNullable(_control.get().name()).orElse("(no name)"), e.getMessage(), (level == Level.ERROR)), 
