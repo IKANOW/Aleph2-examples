@@ -54,10 +54,18 @@ import fj.data.Either;
 public class TestJsScriptEngineService {
 
 	@Test
-	public void test_end2end() throws IOException {
+	public void test_end2end_json() throws IOException {
+		test_end2end("js_engine_test.js");
+	}
+	@Test
+	public void test_end2end_record() throws IOException {
+		test_end2end("js_engine_record_test.js");
+	}
+	
+	public void test_end2end(final String js_name) throws IOException {
 		final ObjectMapper mapper = BeanTemplateUtils.configureMapper(Optional.empty());
 		
-		final String user_script = Resources.toString(Resources.getResource("js_engine_test.js"), Charsets.UTF_8);
+		final String user_script = Resources.toString(Resources.getResource(js_name), Charsets.UTF_8);
 		
 		final JsScriptEngineService service_under_test = new JsScriptEngineService();
 		

@@ -18,6 +18,7 @@ package com.ikanow.aleph2.enrichment.utils.services;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.script.Invocable;
@@ -148,9 +149,12 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 	public void onObjectBatch(Stream<Tuple2<Long, IBatchRecord>> batch,
 			Optional<Integer> batch_size, Optional<JsonNode> grouping_key) {		
 		try {
+			final Supplier<Object> get_batch = () -> batch;
+			final Supplier<Object> get_batch_record = () -> batch.map(x -> x._2().getJson());
+			
 			((Invocable)_engine.get()).invokeFunction("aleph2_global_handle_batch",
-					batch,
-					batch.map(x -> x._2().getJson()), 
+					get_batch,
+					get_batch_record, 
 					batch_size.orElse(null), 
 					grouping_key.orElse(null));
 		}
