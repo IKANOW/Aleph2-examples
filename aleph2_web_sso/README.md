@@ -133,4 +133,19 @@ Change the host and port of the url pointing to the form used by ldap to login:
     
     formClient.loginUrl = http://localhost:8080/aleph2_web_sso/loginForm.jsp
     
-    
+##Integrating with the Legacy V1 UI
+
+_(Note: this only applies to the "Manager UI", the "Analyst UI" does not have any plans to be integrated, this simply means users should initially connect to one or the other depending on how they want to/can log on)_
+
+Overwrite the `AppConstants.js.TEMPLATE` file in `/opt/tomcat-infinite/interface-engine/templates`, adding the following functions at the bottom:
+
+```
+function getSsoLogin() {
+    return "/aleph2_web_sso/saml/index.jsp?return_url=$curr_page_enc";
+}
+function getSsoLogout() {
+    return "/aleph2_web_sso/logout.jsp";
+}
+```
+
+Finally run the `/opt/tomcat-infinite/interface-engine/scripts/create_appconstants.sh` script to reload.
