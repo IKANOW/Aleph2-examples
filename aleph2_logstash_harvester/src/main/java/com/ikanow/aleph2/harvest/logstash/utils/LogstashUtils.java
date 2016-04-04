@@ -26,9 +26,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -231,7 +232,11 @@ public class LogstashUtils {
 	private static final String logstash_colon_replace = "=>\"$1\"";
 	private static final String logstash_arrow_search = ":(\\w+)=>";
 	private static final String logstash_arrow_replace = "\"$1\":";
+	private static final String logstash_newline_search = "\\\\n";
+	private static final String logstash_newline_replace = " ";
+	private static final String logstash_plugin_search = "plugin\":(.*)>,";
 	private static final ObjectMapper _mapper = new ObjectMapper();
+	final static Pattern logstash_plugin_pattern = Pattern.compile(logstash_plugin_search); //i dont think pattern is threadsafe, so recreate everytime
 	/**
 	 * Reads the given output file and outputs it to the logger with the spec'd log level.
 	 * @param logger
@@ -244,8 +249,9 @@ public class LogstashUtils {
 		Files.lines(output_file.toPath()).forEach(line -> {
 			try {
 				//convert line to valid json, then parse json, build BMB object from it
-				final String fixed_line = line.replaceAll(logstash_colon_search, logstash_colon_replace).replaceAll(logstash_arrow_search, logstash_arrow_replace); //replace => with :
-				final ObjectNode line_object = (ObjectNode) _mapper.readTree(fixed_line);
+				final String fixed_line = line.replaceAll(logstash_colon_search, logstash_colon_replace).replaceAll(logstash_arrow_search, logstash_arrow_replace).replaceAll(logstash_newline_search, logstash_newline_replace);
+				final String plugin_fixed = fixPlugin(fixed_line);								
+				final ObjectNode line_object = (ObjectNode) _mapper.readTree(plugin_fixed);
 				//move specific fields we want into BMB
 				final Date date = parseLogstashDate(line_object.remove("timestamp").asText());
 				final Level logstash_level = Level.valueOf(line_object.remove("level").asText());				
@@ -259,6 +265,21 @@ public class LogstashUtils {
 			}						
 		});
 		//TODO should we delete log file after we've read it?
+	}
+
+	/**
+	 * @param fixed_line
+	 * @return
+	 */
+	private static String fixPlugin(final String fixed_line) {
+		if ( fixed_line.contains("\"plugin\":")) {			
+			final Matcher m = logstash_plugin_pattern.matcher(fixed_line);
+			if ( m.find() ) {
+				final String to_replace = "plugin\":\"" + m.group(1).replaceAll("\"", "\\\\\\\\\"") + ">\",";
+				return fixed_line.replaceAll(logstash_plugin_search, to_replace);
+			}
+		}
+		return fixed_line; //was no plugin, just return line
 	}
 
 	private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"); 
