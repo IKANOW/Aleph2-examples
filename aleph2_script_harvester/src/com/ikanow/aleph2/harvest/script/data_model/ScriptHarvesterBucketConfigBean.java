@@ -32,6 +32,7 @@ public class ScriptHarvesterBucketConfigBean {
 	public Map<String, String> args() { return Optional.ofNullable(args).orElse(new HashMap<String,String>()); }
 	public List<String> required_assets() { return Optional.ofNullable(required_assets).orElse(new ArrayList<String>());}
 	public boolean watchdog_enabled() { return Optional.ofNullable(watchdog_enabled).orElse(true); }
+	public Long max_runtime_s() { return max_runtime_s; }	
 	
 	private String script;
 	private String local_script_url;
@@ -39,4 +40,5 @@ public class ScriptHarvesterBucketConfigBean {
 	private Map<String, String> args;
 	private List<String> required_assets;
 	private Boolean watchdog_enabled;
+	private Long max_runtime_s;
 }

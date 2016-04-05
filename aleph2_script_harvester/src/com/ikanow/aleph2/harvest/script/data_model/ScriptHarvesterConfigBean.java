@@ -26,5 +26,5 @@ public class ScriptHarvesterConfigBean {
 	
 	public String working_dir() { return Optional.ofNullable(working_dir).orElse(WORKING_DIR); }
 	
-	private String working_dir;
+	private String working_dir;	
 }

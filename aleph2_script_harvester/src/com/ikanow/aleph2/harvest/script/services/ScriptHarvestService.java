@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,7 +78,12 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 						.map(cfg -> BeanTemplateUtils.from(cfg.config(), ScriptHarvesterBucketConfigBean.class).get())
 					.orElse(BeanTemplateUtils.build(ScriptHarvesterBucketConfigBean.class).done().get());	
 						
-			return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			final BasicMessageBean bmb = ScriptUtils.startScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onNewSource", _globals.get().working_dir(), Optional.empty(), Optional.ofNullable(config.max_runtime_s()));
+
+			Optional.ofNullable(context.getLogger(Optional.of(new_bucket))).ifPresent(l -> l.inefficientLog(Level.INFO, 
+					ErrorUtils.buildMessage(bmb.success(), this.getClass().getSimpleName(), "onNewSource", bmb.message())));
+			
+			return CompletableFuture.completedFuture(bmb);
 		}
 		else {		
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onNewSource", "Bucket {0} created but suspended", new_bucket.full_name()));
@@ -101,7 +107,13 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onUpdatedSource", "No change to bucket"));			
 		}
 		if (is_enabled) {
-			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			
+			final BasicMessageBean bmb = ScriptUtils.restartScriptProcess(new_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onDelete", _globals.get().working_dir(), Optional.empty(), Optional.ofNullable(config.max_runtime_s()));
+			
+			Optional.ofNullable(context.getLogger(Optional.of(new_bucket))).ifPresent(l -> l.inefficientLog(Level.INFO, 
+					ErrorUtils.buildMessage(bmb.success(), this.getClass().getSimpleName(), "onUpdatedSource", bmb.message())));
+			
+			return CompletableFuture.completedFuture(bmb);
 		}
 		else { // Just stop
 			//(this does nothing if the bucket isn't actually running)
@@ -152,7 +164,13 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 			return CompletableFuture.completedFuture(ErrorUtils.buildSuccessMessage(this.getClass().getSimpleName(), "onPeriodicPoll", "is process still running: " + is_running));			
 		}
 		else { // isn't running AND watch dog enabled, so restart
-			return CompletableFuture.completedFuture(ScriptUtils.restartScriptProcess(polled_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onPeriodicPoll", _globals.get().working_dir(), Optional.empty(), Optional.empty()));
+			
+			final BasicMessageBean bmb = ScriptUtils.restartScriptProcess(polled_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onPeriodicPoll", _globals.get().working_dir(), Optional.empty(), Optional.ofNullable(config.max_runtime_s()));
+			
+			Optional.ofNullable(context.getLogger(Optional.of(polled_bucket))).ifPresent(l -> l.inefficientLog(Level.INFO, 
+					ErrorUtils.buildMessage(bmb.success(), this.getClass().getSimpleName(), "onPeriodicPoll", bmb.message())));
+			
+			return CompletableFuture.completedFuture(bmb);
 		}
 	}
 
@@ -176,7 +194,12 @@ public class ScriptHarvestService implements IHarvestTechnologyModule {
 		//kill any already running scripts
 		ScriptUtils.stopScriptProcess(test_bucket, config, "onTestSource", _globals.get().working_dir(), _global_propertes.get().local_root_dir());
 		
-		return CompletableFuture.completedFuture(ScriptUtils.startScriptProcess(test_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs())));
+		final BasicMessageBean bmb = ScriptUtils.startScriptProcess(test_bucket, context, _global_propertes.get().local_root_dir(), _global_propertes.get().distributed_root_dir(), config, "onTestSource", _globals.get().working_dir(), Optional.of(test_spec.requested_num_objects()), Optional.of(test_spec.max_run_time_secs()));
+		
+		Optional.ofNullable(context.getLogger(Optional.of(test_bucket))).ifPresent(l -> l.inefficientLog(Level.INFO, 
+				ErrorUtils.buildMessage(bmb.success(), this.getClass().getSimpleName(), "onTestSource", bmb.message())));
+		
+		return CompletableFuture.completedFuture(bmb);
 	}
 
 }
