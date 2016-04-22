@@ -68,13 +68,44 @@
             "mode": "javascript"
           }
         }
+      },
+      {
+        "type": "multiInput",
+        "templateOptions": {
+          "inputOptions": {
+            "type": "input",
+            "templateOptions": {
+              "placeholder": "A list of enrichment jobs/inputs that must be completed before this one is run (\"$previous\" to follow on from the last, [] to listen for all inputs)"
+            }
+          },
+          "label": "Dependencies"
+        },
+        "key": "dependencies"
+      },
+      {
+        "type": "multiInput",
+        "templateOptions": {
+          "inputOptions": {
+            "type": "input",
+            "templateOptions": {
+              "placeholder": "The incoming input from this jobs dependencies is grouped according to these fields (\"?\" for code-generated)"
+            }
+          },
+          "label": "Grouping Fields"
+        },
+        "key": "grouping_fields"
       }
     ],
     "building_function": {
-      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.name = template.element.form_model.name;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }"
+      "$fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.name = template.element.form_model.name;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n        config_obj.dependencies = template.element.form_model.dependencies;\n        config_obj.grouping_fields = template.element.form_model.grouping_fields;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }"
     },
     "post_building_function": {
       "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+    },
+    "default_model": {
+      "dependencies": [
+        "$previous"
+      ]
     }
   },
   {

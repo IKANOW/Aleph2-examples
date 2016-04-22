@@ -134,7 +134,7 @@
             "expandable": false,
             "deletable": true,
             "form_model": {
-              "pre_fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.name = template.element.form_model.name;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }",
+              "pre_fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.name = template.element.form_model.name;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n        config_obj.dependencies = template.element.form_model.dependencies;\n        config_obj.grouping_fields = template.element.form_model.grouping_fields;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }",
               "post_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
             },
             "template": {
@@ -451,6 +451,218 @@
             "col": 1,
             "short_name": "JS code to run",
             "summary": "Type: code_input"
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Multi Text Input",
+          "element": {
+            "enabled": true,
+            "short_name": "Dependencies",
+            "summary": "A list of enrichment jobs/inputs that must be completed before this one is run (\"$previous\" to follow on from the last, [] to listen for all inputs)",
+            "row": 2,
+            "col": 0,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "key": "dependencies",
+              "pattern": ""
+            },
+            "template": {
+              "display_name": "Multi Text Input",
+              "form_info": "A variable list of text fields",
+              "filters": [
+                "Template/template_builder",
+                "Template/template_builder/**"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Text"
+              ],
+              "schema": [
+                {
+                  "key": "_short_name",
+                  "type": "horizontalInput",
+                  "templateOptions": {
+                    "label": "Label",
+                    "placeholder": "The label displayed next to the input",
+                    "required": true
+                  }
+                },
+                {
+                  "key": "_summary",
+                  "type": "horizontalTextArea",
+                  "templateOptions": {
+                    "label": "Placeholder",
+                    "placeholder": "The placeholder text displayed when the input is empty",
+                    "required": true
+                  }
+                },
+                {
+                  "key": "key",
+                  "type": "horizontalInput",
+                  "templateOptions": {
+                    "label": "Key",
+                    "pattern": "[a-zA-Z0-9_]+",
+                    "placeholder": "The key for this input",
+                    "required": true
+                  }
+                },
+                {
+                  "key": "pattern",
+                  "type": "horizontalInput",
+                  "templateOptions": {
+                    "label": "Pattern",
+                    "placeholder": "Optional validation regular expression",
+                    "required": false
+                  }
+                }
+              ],
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  var obj = { type: 'multiInput', templateOptions: { inputOptions: { type: 'input', templateOptions: {} } } };\n  obj.key = template.element.form_model.key;\n  obj.templateOptions.label = template.element.short_name; \n  if ((template.element.form_model.pattern || '').length > 0) {\n    obj.templateOptions.inputOptions.templateOptions.pattern = template.element.form_model.pattern;\n  }\n  obj.templateOptions.inputOptions.templateOptions.placeholder = template.element.summary;\n  curr_obj.schema.push(obj)\n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Multi Text Input",
+          "element": {
+            "enabled": true,
+            "short_name": "Grouping Fields",
+            "summary": "The incoming input from this jobs dependencies is grouped according to these fields (\"?\" for code-generated)",
+            "row": 2,
+            "col": 1,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "key": "grouping_fields"
+            },
+            "template": {
+              "display_name": "Multi Text Input",
+              "form_info": "A variable list of text fields",
+              "filters": [
+                "Template/template_builder",
+                "Template/template_builder/**"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Text"
+              ],
+              "schema": [
+                {
+                  "key": "_short_name",
+                  "type": "horizontalInput",
+                  "templateOptions": {
+                    "label": "Label",
+                    "placeholder": "The label displayed next to the input",
+                    "required": true
+                  }
+                },
+                {
+                  "key": "_summary",
+                  "type": "horizontalTextArea",
+                  "templateOptions": {
+                    "label": "Placeholder",
+                    "placeholder": "The placeholder text displayed when the input is empty",
+                    "required": true
+                  }
+                },
+                {
+                  "key": "key",
+                  "type": "horizontalInput",
+                  "templateOptions": {
+                    "label": "Key",
+                    "pattern": "[a-zA-Z0-9_]+",
+                    "placeholder": "The key for this input",
+                    "required": true
+                  }
+                },
+                {
+                  "key": "pattern",
+                  "type": "horizontalInput",
+                  "templateOptions": {
+                    "label": "Pattern",
+                    "placeholder": "Optional validation regular expression",
+                    "required": false
+                  }
+                }
+              ],
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  var obj = { type: 'multiInput', templateOptions: { inputOptions: { type: 'input', templateOptions: {} } } };\n  obj.key = template.element.form_model.key;\n  obj.templateOptions.label = template.element.short_name; \n  if ((template.element.form_model.pattern || '').length > 0) {\n    obj.templateOptions.inputOptions.templateOptions.pattern = template.element.form_model.pattern;\n  }\n  obj.templateOptions.inputOptions.templateOptions.placeholder = template.element.summary;\n  curr_obj.schema.push(obj)\n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Raw Default Values",
+          "element": {
+            "enabled": true,
+            "short_name": "Raw Default Values",
+            "summary": "depdencencies",
+            "row": 1,
+            "col": 2,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "json": "{\n\t\"dependencies\": [ \"$previous\" ]\n}"
+            },
+            "template": {
+              "display_name": "Raw Default Values",
+              "form_info": "Type raw JSON into here to create default values for the different schemas (referenced by key)",
+              "filters": [
+                "Template/template_builder"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Generic"
+              ],
+              "schema": [
+                {
+                  "key": "json",
+                  "type": "code_input",
+                  "templateOptions": {
+                    "label": "Model JSON",
+                    "codemirror": {
+                      "lineNumbers": true,
+                      "smartIndent": true,
+                      "mode": "javascript"
+                    }
+                  }
+                }
+              ],
+              "default_model": {
+                "json": "{\n\n}"
+              },
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n curr_obj.default_model = eval('(' + template.element.form_model.json + ')'); \n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
           },
           "children": []
         }
