@@ -7,7 +7,10 @@
     <urlrewrite>
 
         <rule>
+            <from>/saml/.*</from>
+            <!-- 
             <from>/saml/index.jsp.*</from>
+             -->
             <set type="cookie" name="return_url">%{query-string}:%{server-name}:100:/</set>
         </rule>
 
