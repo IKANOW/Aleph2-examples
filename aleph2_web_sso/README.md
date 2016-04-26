@@ -70,11 +70,12 @@ example location:
 
 	/usr/share/tomcat7/sp-metadata.xml
 
+Note that if present it has to be deleted before tomcat is restarted to update it following changes to `shiro.ini`.
 
-
+Two things need to happen with the `sp-metadata.xml` file:
+* It has to be present on the client nodes as per the `shiro.ini` line (eg): ```saml2Config.serviceProviderMetadataPath = sp-metadata.xml```
+* It has to be provided to the IDP and then configured eg as below:
    
-It can then be supplied to the the IDP server for configuration. 
-
     saml2Config.serviceProviderMetadataPath = sp-metadata.xml
 
 ####SSO urls and OIDs in shiro.ini
