@@ -15,6 +15,7 @@ if(cookies!=null){
         }
     }
 }
+request.getSession(false).invalidate();
 %>
 
 <%
