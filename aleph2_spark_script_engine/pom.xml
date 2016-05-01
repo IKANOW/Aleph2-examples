@@ -211,7 +211,7 @@
        		<artifactId>scala-library</artifactId>
        		<groupId>org.scala-lang</groupId>
 			<version>2.10.4</version>
-       		<scope>compile</scope>
+       		<scope>provided</scope>
         </dependency>
     </dependencies>
 	

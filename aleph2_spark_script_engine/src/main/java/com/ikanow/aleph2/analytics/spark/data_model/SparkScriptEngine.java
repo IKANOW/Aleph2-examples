@@ -19,7 +19,6 @@ package com.ikanow.aleph2.analytics.spark.data_model;
 import java.util.Optional;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import scala.Tuple2;
