@@ -17,6 +17,7 @@ package com.ikanow.aleph2.analytics.spark.assets;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -42,6 +43,9 @@ import scala.Tuple2;
 
 
 import scala.collection.JavaConverters;
+import scala.tools.nsc.Global;
+import scala.tools.nsc.Global.Run;
+import scala.tools.nsc.Settings;
 
 import com.google.common.collect.Multimap;
 import com.ikanow.aleph2.analytics.spark.data_model.SparkScriptEngine;
@@ -83,16 +87,17 @@ public class SparkScalaInterpreterTopology {
 			
 			final String scala_script = Optional.ofNullable(job_config.script()).orElse("");
 			
-			final String wrapper_script = IOUtils.toString(SparkScalaInterpreterTopology.class.getClassLoader().getResourceAsStream("SparkWrapper.scala"), "UTF-8");
 
 			test_spec.ifPresent(spec -> System.out.println("OPTIONS: test_spec = " + BeanTemplateUtils.toJson(spec).toString()));
 
+			SparkConf spark_context = new SparkConf().setAppName("SparkPassthroughTopology");
+			
 			// MAIN PROCESSING
 			
 			//INFO:
 			System.out.println("Starting SparkScalaInterpreterTopology");
 			
-			final SparkILoop spark_shell = new SparkILoop();
+			//final SparkILoop spark_shell = new SparkILoop();
 			
 			//TODO: have to call process to finish everything...
 			
@@ -103,15 +108,36 @@ public class SparkScalaInterpreterTopology {
 			//spark_shell.initializeSpark();
 			//final SparkContext spark_context = spark_shell.createSparkContext();
 			
-			final File temp = File.createTempFile("temp-file-name", ".tmp"); 
+			final Settings s = new Settings();
+			s.classpath().value_$eq(System.getProperty("java.class.path"));
+			//s.usejavacp().
+			//classpath().append("");
+			final Global g = new Global(s);
+			final Run r = g.new Run();
+			final String wrapper_script = IOUtils.toString(SparkScalaInterpreterTopology.class.getClassLoader().getResourceAsStream("SparkWrapper.scala"), "UTF-8");
+			final String to_compile = wrapper_script.replace("USER_SCRIPT", scala_script);
+			final File temp = new File("ScriptRunner.scala") ;
+			FileUtils.writeStringToFile(temp, to_compile);
+			r.compile(JavaConverters.asScalaBufferConverter(Arrays.<String>asList("ScriptRunner.scala")).asScala().toList());
 			
-			FileUtils.writeStringToFile(temp, "jsc = new org.apache.spark.api.java.JavaSparkContext(sc)\n", false);
-			FileUtils.writeStringToFile(temp, "aleph2_tuple = com.ikanow.aleph2.analytics.spark.utils.SparkTechnologyUtils.initializeAleph2(args)\n", true);
-			FileUtils.writeStringToFile(temp, "exit()\n", true);
+//			final URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File(".").toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader());
+			final URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File(".").toURI().toURL()).toArray(new URL[0]), r.getClass().getClassLoader());
+			Object o = cl.loadClass("ScriptRunner").newInstance();
+			
+			System.out.println(o);
+
+			//ERROR: [ScriptRunner: ClassNotFoundException]:[URLClassLoader.java:372:java.net.URLClassLoader$1:run][ClassLoader.java:357:java.lang.ClassLoader:loadClass]
+			//[SparkScalaInterpreterTopology.java:124:com.ikanow.aleph2.analytics.spark.assets.SparkScalaInterpreterTopology:main]
+
+			
+//			
+//			FileUtils.writeStringToFile(temp, "jsc = new org.apache.spark.api.java.JavaSparkContext(sc)\n", false);
+//			FileUtils.writeStringToFile(temp, "aleph2_tuple = com.ikanow.aleph2.analytics.spark.utils.SparkTechnologyUtils.initializeAleph2(args)\n", true);
+//			FileUtils.writeStringToFile(temp, "exit()\n", true);
 			
 			//spark_shell.settings_$eq(new SparkCommandLine(JavaConverters.asScalaBufferConverter(Arrays.<String>asList("-i", temp.toString())).asScala().toList()).settings());			
 			
-			spark_shell.process(Arrays.<String>asList("-i", temp.toString()).toArray(new String[0]));
+			//spark_shell.process(Arrays.<String>asList("-i", temp.toString()).toArray(new String[0]));
 			//TODO: this runs into a bunch of issues:
 			//NPE x2
 			//at org.apache.spark.repl.SparkIMain$ReadEvalPrint.call(SparkIMain.scala:1065)
@@ -135,7 +161,13 @@ public class SparkScalaInterpreterTopology {
 			
 			//DEBUG
 			//final boolean test_mode = test_spec.isPresent(); // (serializable thing i can pass into the map)
-			
+
+			try (final JavaSparkContext jsc = new JavaSparkContext(spark_context)) {
+				final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs = SparkTechnologyUtils.buildBatchSparkInputs(context, test_spec, jsc, Collections.emptySet());
+				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, spark_context, job_config);
+
+//				final String to_compile = wrapper_script.replace("USER_SCRIPT", scala_script);
+						
 //			try (final JavaSparkContext jsc = new JavaSparkContext(spark_context)) {
 //	
 //				final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs = SparkTechnologyUtils.buildBatchSparkInputs(context, test_spec, jsc, Collections.emptySet());
@@ -299,11 +331,11 @@ public class SparkScalaInterpreterTopology {
 //				/**/
 //				interpreter.interpret("println(inputs.entries().iterator().next().getValue().count())");
 //
-//				jsc.stop();
-//				
-//				//INFO:
-//				System.out.println("Finished interpreter");
-//			}
+				jsc.stop();
+				
+				//INFO:
+				System.out.println("Finished interpreter");
+			}
 		}
 		catch (Throwable t) {
 			System.out.println(ErrorUtils.getLongForm("ERROR: {0}", t));

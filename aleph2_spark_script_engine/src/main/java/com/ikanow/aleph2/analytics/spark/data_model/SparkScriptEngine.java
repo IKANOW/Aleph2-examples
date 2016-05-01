@@ -18,6 +18,7 @@ package com.ikanow.aleph2.analytics.spark.data_model;
 
 import java.util.Optional;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 
@@ -38,7 +39,7 @@ public class SparkScriptEngine {
 			IAnalyticsContext aleph2_context,
 			Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs,
 			Optional<ProcessingTestSpecBean> test_spec,
-			SparkContext spark_context, SparkTopologyConfigBean job_config) {
+			SparkConf spark_context, SparkTopologyConfigBean job_config) {
 		super();
 		this.aleph2_context = aleph2_context;
 		this.inputs = inputs;
@@ -49,6 +50,6 @@ public class SparkScriptEngine {
 	public IAnalyticsContext aleph2_context;
 	public Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs;
 	public Optional<ProcessingTestSpecBean> test_spec;
-	public SparkContext spark_context;
+	public SparkConf spark_context;
 	public SparkTopologyConfigBean job_config;
 }

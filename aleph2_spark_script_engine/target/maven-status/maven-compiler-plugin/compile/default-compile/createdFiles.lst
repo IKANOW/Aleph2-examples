@@ -1,2 +1,1 @@
-com\ikanow\aleph2\analytics\spark\data_model\SparkScriptEngine.class
-com\ikanow\aleph2\analytics\spark\assets\SparkScalaInterpreterTopology.class
+com\ikanow\aleph2\analytics\spark\services\SparkCompilerService.class
