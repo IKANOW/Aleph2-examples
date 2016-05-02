@@ -20,11 +20,16 @@ import java.util.Collections;
 import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
+
+
+
+
 
 
 
@@ -44,9 +49,12 @@ import com.ikanow.aleph2.analytics.spark.services.SparkCompilerService;
 import com.ikanow.aleph2.analytics.spark.utils.SparkTechnologyUtils;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IAnalyticsContext;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IBatchRecord;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
+import com.ikanow.aleph2.data_model.utils.Optionals;
+import com.ikanow.aleph2.data_model.utils.SetOnce;
 
 /** Very simple spark topology, runs the compiled script
  * /app/aleph2/library/spark_script.jar
@@ -61,6 +69,8 @@ public class SparkScalaInterpreterTopology {
 	
 	public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 
+		final SetOnce<IBucketLogger> logger = new SetOnce<>();
+		
 		try {			
 			
 			
@@ -68,6 +78,8 @@ public class SparkScalaInterpreterTopology {
 			final IAnalyticsContext context = aleph2_tuple._1();
 			final Optional<ProcessingTestSpecBean> test_spec = aleph2_tuple._2();
 
+			logger.set(context.getLogger(context.getBucket()));
+			
 			// Optional: make really really sure it exists after the specified timeout
 			SparkTechnologyUtils.registerTestTimeout(test_spec, () -> {
 				System.exit(0);
@@ -93,6 +105,11 @@ public class SparkScalaInterpreterTopology {
 			//INFO:
 			System.out.println("Starting SparkScalaInterpreterTopology");
 			
+			logger.optional().ifPresent(l -> {
+				l.inefficientLog(Level.INFO, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
+						"main", "Starting SparkScalaInterpreterTopology.{0}", Optionals.of(() -> context.getJob().get().name()).orElse("no_name")));
+			});
+			
 			final Method m = o._2().getClass().getMethod("runScript", SparkScriptEngine.class);			
 			
 			//DEBUG
@@ -107,11 +124,21 @@ public class SparkScalaInterpreterTopology {
 
 				jsc.stop();
 				
+				logger.optional().ifPresent(l -> {
+					l.inefficientLog(Level.INFO, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
+							"main", "Stopping SparkScalaInterpreterTopology.{0}", Optionals.of(() -> context.getJob().get().name()).orElse("no_name")));
+				});
+				
 				//INFO:
 				System.out.println("Finished interpreter");
 			}
 		}
 		catch (Throwable t) {
+			logger.optional().ifPresent(l -> {
+				l.inefficientLog(Level.ERROR, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
+						"main", ErrorUtils.getLongForm("Error executing SparkScalaInterpreterTopology.unknown: {0}", t)));
+			});
+			
 			System.out.println(ErrorUtils.getLongForm("ERROR: {0}", t));
 		}
 	}
