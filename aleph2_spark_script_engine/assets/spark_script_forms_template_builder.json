@@ -135,7 +135,7 @@
             "configurable": true,
             "deletable": true,
             "form_model": {
-              "json": "{\n    \"analytic_type\": \"batch\",\n    \"lock_to_nodes\": true,\n    \"analytic_technology_name_or_id\": \"/app/aleph2/library/spark_technology.jar\",\n    \"job_config\": \"{\\n}\",\n    \"entry_point\": \"com.ikanow.aleph2.analytics.spark.assets.SparkScalaInterpreterTopology\",\n    \"module_name_or_id\": \"/app/aleph2/library/spark_script_engine.jar\",\n    \"cluster_mode\": \"yarn-cluster\",\n    \"include_job_config_in_spark_config\": true,\n\t\"script\": \"// Like spark-shell, with the following built in args:\\n// _a2.aleph2_context (IAnalyticsContext) - the Aleph2 context interface\\n// _a2.inputs (Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>>) - a list of input (java) RDDs\\n// _a2.spark_context (SparkConf)\\n// _a2.job_config (SparkTopologyConfigBean) - the full configuration object\\n\\n//eg:\\nprintln(_a2.inputs.entries().iterator().next().getValue().count())\"\n}"
+              "json": "{\n    \"analytic_type\": \"batch\",\n    \"lock_to_nodes\": true,\n    \"analytic_technology_name_or_id\": \"/app/aleph2/library/spark_technology.jar\",\n    \"job_config\": \"{\\n}\",\n    \"entry_point\": \"com.ikanow.aleph2.analytics.spark.assets.SparkScalaInterpreterTopology\",\n    \"module_name_or_id\": \"/app/aleph2/library/spark_script_engine.jar\",\n    \"cluster_mode\": \"yarn-cluster\",\n    \"include_job_config_in_spark_config\": true,\n\t\"script\": \"// Like spark-shell, with the following built in args:\\n// _a2.aleph2_context (IAnalyticsContext) - the Aleph2 context interface\\n// _a2.inputs (Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>>) - a list of input (java) RDDs\\n// _a2.spark_context (SparkConf)\\n// _a2.job_config (SparkTopologyConfigBean) - the full configuration object\\n\\n//eg:\\nval logger = _a2.aleph2_context.getLogger(_a2.aleph2_context.getBucket());\\nval count = _a2.inputs.entries().iterator().next().getValue().count()); //(count the number of objects in the first input)\\nlogger.log(Level.INFO, true, { () => \\\"Count = \\\" + count }.asJava, { () -> \\\"SparkScriptEngine\\\" }.asJava);\\n\"\n}"
             },
             "template": {
               "display_name": "Raw Default Values",
@@ -181,7 +181,7 @@
           "element": {
             "enabled": true,
             "short_name": "Misc files",
-            "summary": "Provide the python script with miscellaneous files from the shared library",
+            "summary": "Provide the scala script with miscellaneous files from the shared library",
             "row": 2,
             "col": 3,
             "sizeX": 1,
@@ -1722,142 +1722,6 @@
             },
             {
               "root": false,
-              "label": "Code Editor",
-              "element": {
-                "enabled": true,
-                "short_name": "Script",
-                "summary": "Arbitrary text block that may be executed depending on the particular module executed (eg might be a SQL statement)",
-                "row": 0,
-                "col": 3,
-                "sizeX": 1,
-                "sizeY": 1,
-                "expandable": false,
-                "configurable": true,
-                "deletable": true,
-                "form_model": {
-                  "type": "code_input",
-                  "templateOptions": {
-                    "codemirror": {
-                      "lineNumbers": true,
-                      "smartIndent": true,
-                      "mode": "properties"
-                    },
-                    "label": "Script"
-                  },
-                  "key": "script",
-                  "mode": "properties"
-                },
-                "template": {
-                  "display_name": "Code Editor",
-                  "form_info": "Write code in various languages (or JSON/XML/HTML)",
-                  "filters": [
-                    "Template/template_builder",
-                    "Template/template_builder/**"
-                  ],
-                  "expandable": false,
-                  "key": "simple_input",
-                  "categories": [
-                    "Text"
-                  ],
-                  "schema": [
-                    {
-                      "key": "_short_name",
-                      "type": "horizontalInput",
-                      "templateOptions": {
-                        "label": "Label",
-                        "placeholder": "The label displayed next to the input",
-                        "required": true
-                      }
-                    },
-                    {
-                      "key": "key",
-                      "type": "horizontalInput",
-                      "templateOptions": {
-                        "label": "Key",
-                        "pattern": "[a-zA-Z0-9_]+",
-                        "placeholder": "The key for this input",
-                        "required": true
-                      }
-                    },
-                    {
-                      "key": "required",
-                      "type": "horizontalCheckbox",
-                      "templateOptions": {
-                        "label": "Is this element required?"
-                      }
-                    },
-                    {
-                      "templateOptions": {
-                        "required": true,
-                        "label": "Language",
-                        "options": [
-                          {
-                            "value": "clike",
-                            "name": "Scala"
-                          },
-                          {
-                            "value": "javascript",
-                            "name": "Javascript/JSON"
-                          },
-                          {
-                            "value": "r",
-                            "name": "R"
-                          },
-                          {
-                            "value": "python",
-                            "name": "Python"
-                          },
-                          {
-                            "value": "xml",
-                            "name": "XML"
-                          },
-                          {
-                            "value": "lua",
-                            "name": "Lua"
-                          },
-                          {
-                            "value": "yaml",
-                            "name": "YAML"
-                          },
-                          {
-                            "value": "properties",
-                            "name": "Properties"
-                          },
-                          {
-                            "value": "htmlembedded",
-                            "name": "HTML (embedded)"
-                          },
-                          {
-                            "value": "htmlmixed",
-                            "name": "HTML (mixed)"
-                          }
-                        ]
-                      },
-                      "type": "horizontalSelect",
-                      "key": "mode"
-                    }
-                  ],
-                  "default_model": {
-                    "type": "code_input",
-                    "templateOptions": {
-                      "codemirror": {
-                        "lineNumbers": true,
-                        "smartIndent": true
-                      }
-                    }
-                  },
-                  "building_function": {
-                    "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  var obj = { \n    key: template.element.form_model.key,\n    type: template.element.form_model.type,\n    templateOptions: template.element.form_model.templateOptions \n  };\n  obj.templateOptions.codemirror.mode = template.element.form_model.mode;\n  obj.templateOptions.label = template.element.short_name;\n  obj.templateOptions.required = template.element.form_model.required;\n  curr_obj.schema.push(obj);\n}"
-                  },
-                  "post_building_function": {
-                    "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
-                  }
-                }
-              },
-              "children": []
-            },
-            {
-              "root": false,
               "label": "Horizontal Input",
               "element": {
                 "enabled": true,
@@ -2174,7 +2038,7 @@
               "element": {
                 "enabled": true,
                 "short_name": "External misc files",
-                "summary": "Provide the python script with miscellaneous files from the local file system",
+                "summary": "Provide the scala script with miscellaneous files from the local file system",
                 "row": 1,
                 "col": 2,
                 "sizeX": 1,
@@ -2416,7 +2280,7 @@
           "element": {
             "enabled": true,
             "short_name": "JAR libraries",
-            "summary": "Add jar files to the python path from the shared library",
+            "summary": "Add jar files to the scala path from the shared library",
             "row": 2,
             "col": 2,
             "sizeX": 1,
@@ -2802,10 +2666,10 @@
                   "mode": "clike"
                 },
                 "label": "Scala Spark Script",
-                "required": true
+                "required": false
               },
               "mode": "clike",
-              "required": true,
+              "required": false,
               "key": "script"
             },
             "template": {

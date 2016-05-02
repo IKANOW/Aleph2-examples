@@ -62,6 +62,8 @@ import com.ikanow.aleph2.data_model.utils.SetOnce;
  */
 public class SparkScalaInterpreterTopology {
 
+	//TODO: logging not working?
+	
 	// Params:
 	
 	//(not needed)
