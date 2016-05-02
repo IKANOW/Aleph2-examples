@@ -72,8 +72,6 @@ public class SparkScalaInterpreterTopology {
 		final SetOnce<IBucketLogger> logger = new SetOnce<>();
 		
 		try {			
-			
-			
 			final Tuple2<IAnalyticsContext, Optional<ProcessingTestSpecBean>> aleph2_tuple = SparkTechnologyUtils.initializeAleph2(args);
 			final IAnalyticsContext context = aleph2_tuple._1();
 			final Optional<ProcessingTestSpecBean> test_spec = aleph2_tuple._2();

@@ -205,6 +205,14 @@
             <artifactId>aleph2_analytic_services_spark</artifactId>
             <version>${aleph2.version}</version>
             <scope>${aleph2.scope}</scope>
+            <exclusions>
+            	<exclusion>
+            		<artifactId>
+            			aleph2_analytic_services_hadoop
+            		</artifactId>
+            		<groupId>com.ikanow.aleph2</groupId>
+            	</exclusion>
+            </exclusions>
         </dependency>
         <!-- Don't want to include this since can either run in 2.10 or 2.11 depending on context: -->
         <dependency>
