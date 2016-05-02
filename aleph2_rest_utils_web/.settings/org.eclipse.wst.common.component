@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="aleph2_rest_utils_web">
+        <wb-resource deploy-path="/" source-path="/target/m2e-wtp/web-resources"/>
+        <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <dependent-module archiveName="aleph2_web_utils-2.9.0.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_web_utils/aleph2_web_utils">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="aleph2_rest_utils-2.9.0.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/aleph2_rest_utils/aleph2_rest_utils">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <property name="context-root" value="aleph2_rest_utils_web"/>
+        <property name="java-output-path" value="/aleph2_rest_utils_web/build/classes"/>
+    </wb-module>
+</project-modules>

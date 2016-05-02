@@ -14,6 +14,7 @@
         <module>aleph2_logstash_harvester</module>
         <module>aleph2_script_harvester</module>
         <module>aleph2_storm_script_topo</module>
+        <module>aleph2_spark_script_engine</module>
         <module>aleph2_web_utils</module>
         <module>aleph2_web_sso</module>
     </modules>
