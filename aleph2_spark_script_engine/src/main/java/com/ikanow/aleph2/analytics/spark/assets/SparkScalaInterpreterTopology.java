@@ -140,6 +140,7 @@ public class SparkScalaInterpreterTopology {
 			});
 			
 			System.out.println(ErrorUtils.getLongForm("ERROR: {0}", t));
+			System.exit(-1);
 		}
 	}
 }
