@@ -45,11 +45,14 @@ import scala.Tuple2;
 
 
 
+
+
 import com.google.common.collect.Multimap;
 import com.ikanow.aleph2.analytics.spark.data_model.SparkScriptEngine;
 import com.ikanow.aleph2.analytics.spark.data_model.SparkTopologyConfigBean;
 import com.ikanow.aleph2.analytics.spark.services.SparkCompilerService;
 import com.ikanow.aleph2.analytics.spark.utils.SparkTechnologyUtils;
+import com.ikanow.aleph2.core.shared.utils.LiveInjector;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IAnalyticsContext;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IBatchRecord;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
@@ -89,6 +92,13 @@ public class SparkScalaInterpreterTopology {
 				System.exit(0);
 			});
 			
+			//INFO:
+			System.out.println("Starting SparkScalaInterpreterTopology logging=" + logger.optional().isPresent());
+			
+			logger.optional().ifPresent(l -> {
+				l.inefficientLog(Level.INFO, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
+						"main", "Starting SparkScalaInterpreterTopology.{0}", Optionals.of(() -> context.getJob().get().name()).orElse("no_name")));
+			});
 			
 			final SparkTopologyConfigBean job_config = BeanTemplateUtils.from(context.getJob().map(job -> job.config()).orElse(Collections.emptyMap()), SparkTopologyConfigBean.class).get();			
 			final String scala_script = Optional.ofNullable(job_config.script()).orElse("");
@@ -96,7 +106,7 @@ public class SparkScalaInterpreterTopology {
 			final String wrapper_script = IOUtils.toString(SparkScalaInterpreterTopology.class.getClassLoader().getResourceAsStream("ScriptRunner.scala"), "UTF-8");
 			final String to_compile = wrapper_script.replace("USER_SCRIPT", scala_script);
 			final SparkCompilerService scs = new SparkCompilerService();
-			final Tuple2<ClassLoader, Object> o = scs.buildClass(to_compile, "ScriptRunner");			
+			final Tuple2<ClassLoader, Object> o = scs.buildClass(to_compile, "ScriptRunner", logger.optional());			
 			
 			Thread.currentThread().setContextClassLoader(o._1());
 
@@ -106,14 +116,6 @@ public class SparkScalaInterpreterTopology {
 			
 			// MAIN PROCESSING
 			
-			//INFO:
-			System.out.println("Starting SparkScalaInterpreterTopology logging=" + logger.optional().isPresent());
-			
-			logger.optional().ifPresent(l -> {
-				l.inefficientLog(Level.INFO, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
-						"main", "Starting SparkScalaInterpreterTopology.{0}", Optionals.of(() -> context.getJob().get().name()).orElse("no_name")));
-			});
-			
 			final Method m = o._2().getClass().getMethod("runScript", SparkScriptEngine.class);			
 			
 			//DEBUG
@@ -122,8 +124,23 @@ public class SparkScalaInterpreterTopology {
 			try (final JavaSparkContext jsc = new JavaSparkContext(spark_context)) {
 				final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs = SparkTechnologyUtils.buildBatchSparkInputs(context, test_spec, jsc, Collections.emptySet());
 				
-				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, spark_context, job_config);
+				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, jsc, job_config);
 
+				// Add driver and generated JARs to path:
+				jsc.addJar(LiveInjector.findPathJar(scs.getClass()));
+				/**/
+				try {
+					java.net.URLClassLoader cl = ((java.net.URLClassLoader)o._1());
+					cl.loadClass("ScriptRunner$$anonfun$1");
+				}
+				catch (Throwable t) {
+					
+					logger.optional().ifPresent(l -> {
+						l.inefficientLog(Level.ERROR, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
+							"main", ErrorUtils.getLongForm("{0}", t), Optionals.of(() -> context.getJob().get().name()).orElse("no_name")));
+					});
+				}
+				
 				m.invoke(o._2(), script_engine_bridge);
 
 				jsc.stop();
@@ -136,6 +153,7 @@ public class SparkScalaInterpreterTopology {
 				//INFO:
 				System.out.println("Finished interpreter");
 			}
+			logger.optional().ifPresent(Lambdas.wrap_consumer_u(l -> l.flush().get(10, TimeUnit.SECONDS)));
 		}
 		catch (Throwable t) {
 			logger.optional().ifPresent(l -> {
@@ -144,10 +162,8 @@ public class SparkScalaInterpreterTopology {
 			});
 			
 			System.out.println(ErrorUtils.getLongForm("ERROR: {0}", t));
-			System.exit(-1);
-		}
-		finally {
 			logger.optional().ifPresent(Lambdas.wrap_consumer_u(l -> l.flush().get(10, TimeUnit.SECONDS)));
+			System.exit(-1);
 		}
 	}
 }

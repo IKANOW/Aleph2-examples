@@ -16,18 +16,28 @@
 
 package com.ikanow.aleph2.analytics.spark.services;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Level;
 
 import com.ikanow.aleph2.analytics.spark.assets.SparkScalaInterpreterTopology;
 import com.ikanow.aleph2.core.shared.utils.LiveInjector;
+import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.data_model.utils.Tuples;
 
@@ -36,6 +46,7 @@ import scala.collection.JavaConverters;
 import scala.tools.nsc.Global;
 import scala.tools.nsc.Settings;
 import scala.tools.nsc.Global.Run;
+import scala.tools.nsc.reporters.StoreReporter;
 
 /** Service for compiling scala
  * @author Alex
@@ -52,7 +63,7 @@ public class SparkCompilerService {
 	 * @throws IllegalAccessException
 	 * @throws ClassNotFoundException
 	 */
-	public Tuple2<ClassLoader, Object> buildClass(final String script, final String clazz_name) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+	public Tuple2<ClassLoader, Object> buildClass(final String script, final String clazz_name, final Optional<IBucketLogger> logger) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		final String relative_dir =  "./script_classpath/";
 		new File(relative_dir).mkdirs();
 		
@@ -69,14 +80,58 @@ public class SparkCompilerService {
 		s.classpath().value_$eq(System.getProperty("java.class.path") +  classpath);
 		
 		s.usejavacp().scala$tools$nsc$settings$AbsSettings$AbsSetting$$internalSetting_$eq(true);
-		final Global g = new Global(s);
+		final StoreReporter reporter = new StoreReporter();
+		final Global g = new Global(s, reporter);
 		final Run r = g.new Run();
 		r.compile(JavaConverters.asScalaBufferConverter(Arrays.<String>asList(source_file.toString())).asScala().toList());
+
+		if (reporter.hasErrors() || reporter.hasWarnings()) {
+			final String errors = "Compiler: Errors/warnings (**to get to user script line substract 22**): " + JavaConverters.asJavaSetConverter(reporter.infos()).asJava().stream().map(info -> info.toString()).collect(Collectors.joining(" ;; "));
+			logger.ifPresent(l -> l.log(reporter.hasErrors() ? Level.ERROR : Level.DEBUG, false, () -> errors, () -> "SparkScalaInterpreterTopology", () -> "compile"));
+
+			//ERROR:
+			if (reporter.hasErrors()) {
+				System.err.println(errors);
+			}
+		}
+		// Move any class files (eg including sub-classes)
+		Arrays.stream(fp.listFiles()).filter(ff -> ff.toString().endsWith(".class")).forEach(Lambdas.wrap_consumer_u(ff -> {			
+			FileUtils.moveFile(ff, new File(relative_dir + ff.getName()));
+		}));
+
+		// Create a JAR file...
 		
-		FileUtils.moveFile(new File(clazz_name + ".class"), new File(relative_dir + clazz_name + ".class"));
+		  Manifest manifest = new Manifest();
+		  manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+		final JarOutputStream target = new JarOutputStream(new FileOutputStream("./script_classpath.jar"), manifest);
+		Arrays.stream(new File(relative_dir).listFiles()).forEach(Lambdas.wrap_consumer_i(ff -> {
+			JarEntry entry = new JarEntry(ff.getName());
+			target.putNextEntry(entry);
+			try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(ff))) {
+			    byte[] buffer = new byte[1024];
+			    while (true)
+			    {
+			      int count = in.read(buffer);
+			      if (count == -1)
+			        break;
+			      target.write(buffer, 0, count);
+			    }
+			    target.closeEntry();			 				
+			}
+		}));
+		target.close();
+		
+		/**/
+		FileUtils.copyFile(new File("./script_classpath.jar"), new File("/tmp/alex.jar"));
+		
+		/**/
+		//TODO; move to DEBUG
+		final String created = "Created = " + new File("./script_classpath.jar").toURI().toURL() + " ... " + Arrays.stream(new File(relative_dir).listFiles()).map(ff -> ff.toString()).collect(Collectors.joining(";"));
+		logger.ifPresent(l -> l.log(Level.INFO, false, () -> created, () -> "SparkScalaInterpreterTopology", () -> "compile"));
 		
 		final Tuple2<ClassLoader, Object> o = Lambdas.get(Lambdas.wrap_u(() -> {
-			try (URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File(relative_dir).toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader())) {
+			try (URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File("./script_classpath.jar").toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader())) {
+//			try (URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File(relative_dir).toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader())) {
 				Object o_ = cl.loadClass("ScriptRunner").newInstance();
 				return Tuples._2T(cl, o_);
 			}
@@ -91,7 +146,7 @@ public class SparkCompilerService {
 		final String to_compile = wrapper_script.replace("USER_SCRIPT", scala_script);
 		
 		final SparkCompilerService scs = new SparkCompilerService();
-		final Tuple2<ClassLoader, Object> t2 = scs.buildClass(to_compile, "ScriptRunner");
+		final Tuple2<ClassLoader, Object> t2 = scs.buildClass(to_compile, "ScriptRunner", Optional.empty());
 		System.out.println(t2._2().getClass().getClassLoader());
 	}
 	
