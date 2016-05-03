@@ -22,7 +22,7 @@
 </servlet-mapping>
   <context-param>
          <param-name>aleph2.config</param-name>
-         <param-value>G:\\Ikanow\\j8 workspace\\ikanowV2\\aleph2_rest_utils_web\\example_config\\v1_sync_service.properties</param-value>
+         <param-value>C:\\Users\\Burch\\git\\Aleph2-examples\\aleph2_rest_utils_web\\example_config\\v1_sync_service.properties</param-value>
     </context-param>
     <context-param>
          <param-name>aleph2.application_class</param-name>
