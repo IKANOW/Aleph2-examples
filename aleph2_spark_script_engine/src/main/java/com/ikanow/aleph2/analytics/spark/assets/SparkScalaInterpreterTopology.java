@@ -18,6 +18,7 @@ package com.ikanow.aleph2.analytics.spark.assets;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
@@ -26,6 +27,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
+
+
 
 
 
@@ -53,6 +56,7 @@ import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
+import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.SetOnce;
 
@@ -62,7 +66,7 @@ import com.ikanow.aleph2.data_model.utils.SetOnce;
  */
 public class SparkScalaInterpreterTopology {
 
-	//TODO: logging not working?
+	//TODO (ALEPH-63): logging not working?
 	
 	// Params:
 	
@@ -103,7 +107,7 @@ public class SparkScalaInterpreterTopology {
 			// MAIN PROCESSING
 			
 			//INFO:
-			System.out.println("Starting SparkScalaInterpreterTopology");
+			System.out.println("Starting SparkScalaInterpreterTopology logging=" + logger.optional().isPresent());
 			
 			logger.optional().ifPresent(l -> {
 				l.inefficientLog(Level.INFO, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
@@ -141,6 +145,9 @@ public class SparkScalaInterpreterTopology {
 			
 			System.out.println(ErrorUtils.getLongForm("ERROR: {0}", t));
 			System.exit(-1);
+		}
+		finally {
+			logger.optional().ifPresent(Lambdas.wrap_consumer_u(l -> l.flush().get(10, TimeUnit.SECONDS)));
 		}
 	}
 }
