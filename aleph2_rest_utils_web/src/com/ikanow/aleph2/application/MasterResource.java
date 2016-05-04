@@ -17,8 +17,6 @@ package com.ikanow.aleph2.application;
 
 import java.io.InputStream;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -31,21 +29,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.ikanow.aleph2.aleph2_rest_utils.FileDescriptor;
 import com.ikanow.aleph2.aleph2_rest_utils.RestCrudFunctions;
 import com.ikanow.aleph2.aleph2_rest_utils.RestCrudFunctions.FunctionType;
 import com.ikanow.aleph2.aleph2_rest_utils.RestUtils;
-import com.ikanow.aleph2.data_model.interfaces.shared_services.ICrudService;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IServiceContext;
-import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean;
-import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 
 @Path("/aleph2_api")
 public class MasterResource {
@@ -167,13 +162,16 @@ public class MasterResource {
 			@PathParam("identifier") String identifier,
 			@QueryParam("buckets") String buckets,
 			String json) {
-		_logger.error("READ COUNT request: sn: " + service_name +
+		_logger.error("CREATE request: sn: " + service_name +
 				" rw: " + read_write +
 				" i: " + identifier + 
 				" b: " + buckets +
 				" j: " + json
 				);
-		return RestCrudFunctions.createFunction(service_context, service_name, read_write, identifier, Optional.ofNullable(buckets), RestUtils.getOptional(json));
+		//if json sent in body, sent create request, otherwise return error
+		return RestUtils.getOptional(json).map(j->RestCrudFunctions.createFunction(service_context, service_name, read_write, identifier, Optional.ofNullable(buckets), j))
+		.orElse(Response.status(Status.BAD_REQUEST).entity("POST requires json in the body").build());
+		
 	}
 	
 	//file + (maybe) json post
@@ -184,36 +182,29 @@ public class MasterResource {
 	@Path("/upload/{service_name}/{read_write}/{identifier}")
 	@Consumes({MediaType.MULTIPART_FORM_DATA})
 	@Produces(MediaType.TEXT_PLAIN)
-	public String post(
+	public Response post(
 			@PathParam("service_name") String service_name,
 			@PathParam("read_write") String read_write,
 			@PathParam("identifier") String identifier,
-			@FormDataParam("entry") String entry, 
+			@FormDataParam("json") String json, 
 			@FormDataParam("file") InputStream uploadedInputStream,
 			@FormDataParam("file") FormDataContentDisposition fileDetail,
-			@QueryParam("bucket") String bucket_full_name) {		
-		_logger.error("param: " + service_name + " input: " + entry);
-		try {
-			final JsonNode json = RestUtils.convertStringToJson(entry);
-			//save file to storage service somewhere
-			final DataBucketBean bucket = RestUtils.convertToBucketFullName(service_context, bucket_full_name);
-			final ICrudService<FileDescriptor> crud_service = RestUtils.getBucketDataStore(this.service_context, bucket);			
-			CompletableFuture<Supplier<Object>> fut = crud_service.storeObject(new FileDescriptor(uploadedInputStream, fileDetail.getFileName()));
-			String res = fut.handle((ok, ex) -> {
-				if ( ok != null )
-					return "ok";
-				else if ( ex != null) 
-					return ErrorUtils.getLongForm("Exception storing object: {0}",ex);
-				else
-					return "something broke";
-			}).get();
-			
-			return "hello" + json.toString() + " bucket is: " + bucket_full_name + " file is: " + fileDetail.getSize() + fileDetail.getFileName() + " result: " + res;
-		} catch (Exception e) {
-			return ErrorUtils.getLongForm("Error: {0}", e);
+			@QueryParam("buckets") String buckets) {
+		//bail out if file was not set, entry is optional
+		if ( fileDetail == null ) {
+			return Response.status(Status.BAD_REQUEST).entity("POST UPLOAD requires a multipart form data item named 'file'").build();
 		}
+		_logger.error("CREATE request: sn: " + service_name +
+				" rw: " + read_write +
+				" i: " + identifier + 
+				" b: " + buckets +
+				" j: " + json +
+				" f: " + fileDetail.getFileName()
+				);			
+		return RestCrudFunctions.createFunction(service_context, service_name, read_write, identifier, Optional.ofNullable(buckets), new FileDescriptor(uploadedInputStream, fileDetail.getFileName()), RestUtils.getOptional(json));		
 	}
-	
+
+
 	////////////////////////////////////UPDATE METHODS//////////////////////////////////////
 	//regular update request
 	@PUT
