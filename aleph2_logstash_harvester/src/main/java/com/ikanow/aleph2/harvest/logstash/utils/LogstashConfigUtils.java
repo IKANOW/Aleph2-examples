@@ -166,6 +166,7 @@ public class LogstashConfigUtils {
 	//		closing block
 	public static Pattern _navigateLogstash = Pattern.compile("(?:([a-z0-9_]+)\\s*(=>)?\\s*([a-z0-9_]+)?\\s*\\{)|(?:([a-z0-9_]+)\\s*=>\\s*[\\[a-z0-9])|(?:if\\s*[^{]+\\s*\\{)|}", Pattern.CASE_INSENSITIVE);
 	
+	@SuppressWarnings("deprecation")
 	public static ObjectNode parseLogstashConfig(String configFile, StringBuffer error) {
 		
 		ObjectNode tree = _mapper.createObjectNode();

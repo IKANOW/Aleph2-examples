@@ -115,7 +115,7 @@
           "element": {
             "enabled": true,
             "short_name": "Logstash Destination",
-            "summary": "todo",
+            "summary": "todo - allow stream/batch input queue",
             "row": 0,
             "col": 1,
             "sizeX": 1,
@@ -128,7 +128,7 @@
               "key": "output_override",
               "options": [
                 {
-                  "name": "HDFS",
+                  "name": "Input Queue",
                   "value": "hdfs"
                 },
                 {

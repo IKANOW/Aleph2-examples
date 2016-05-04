@@ -30,7 +30,7 @@
           "label": "Logstash Destination",
           "options": [
             {
-              "name": "HDFS",
+              "name": "Input Queue",
               "value": "hdfs"
             },
             {
