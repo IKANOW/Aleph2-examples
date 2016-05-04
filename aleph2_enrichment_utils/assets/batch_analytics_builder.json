@@ -128,13 +128,13 @@
             "short_name": "Builder Functions",
             "summary": "Creating the element from JSON",
             "row": 0,
-            "col": 0,
+            "col": 4,
             "sizeX": 1,
             "sizeY": 1,
             "expandable": false,
             "deletable": true,
             "form_model": {
-              "pre_fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.name = template.element.form_model.name;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n        config_obj.dependencies = template.element.form_model.dependencies;\n        config_obj.grouping_fields = template.element.form_model.grouping_fields;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }",
+              "pre_fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {             \n        var config_obj = {};\n  \t\tconfig_obj.name = template.element.short_name; \n        config_obj.entry_point = template.element.form_model.entry_point;\n        config_obj.module_name_or_id = template.element.form_model.module_name_or_id;\n        config_obj.enabled = true;\n        config_obj.library_names_or_ids = template.element.form_model.library_names_or_ids;\n        var script_obj = {};\n        script_obj.script = template.element.form_model.js_script;\n        config_obj.config = script_obj;\n        config_obj.dependencies = template.element.form_model.dependencies;\n        config_obj.grouping_fields = template.element.form_model.grouping_fields;\n         a2_inject_enrichment(curr_obj, config_obj); \n      }",
               "post_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
             },
             "template": {
@@ -200,7 +200,7 @@
             "configurable": true,
             "deletable": true,
             "form_model": {
-              "json": "[{\"key\":\"name\",\"type\":\"horizontalInput\",\"templateOptions\":{\"label\":\"Unique Job Name\",\"pattern\":\"[a-zA-Z0-9_]+\",\"placeholder\":\"A Short Name For This Element (Alphanumeric/_ only, no spaces - used for dependencies etc)\",\"required\":true}}]"
+              "json": "[{\n  \"key\":\"_short_name\",\n  \"type\":\"horizontalInput\",\n  \"templateOptions\":\n  {\n    \"label\":\"Unique Job Name\",\"pattern\":\"[a-zA-Z0-9_]+\",\"placeholder\":\"A Short Name For This Element (Alphanumeric/_ only, no spaces - used for dependencies etc)\",\"required\":true}}]"
             },
             "template": {
               "display_name": "Raw Form JSON",
@@ -236,7 +236,7 @@
               ]
             },
             "row": 0,
-            "col": 1,
+            "col": 0,
             "short_name": "Unique Job Name",
             "summary": "Type: horizontalInput"
           },
@@ -288,8 +288,8 @@
                 }
               ]
             },
-            "row": 0,
-            "col": 2,
+            "row": 3,
+            "col": 1,
             "short_name": "Module Name or ID",
             "summary": "Type: horizontalInput"
           },
@@ -341,8 +341,8 @@
                 }
               ]
             },
-            "row": 0,
-            "col": 3,
+            "row": 3,
+            "col": 2,
             "short_name": "Entry Point",
             "summary": "Type: horizontalInput"
           },
@@ -394,8 +394,8 @@
                 }
               ]
             },
-            "row": 1,
-            "col": 0,
+            "row": 2,
+            "col": 2,
             "short_name": "Additional javascript libraries",
             "summary": "Type: multiInput"
           },
@@ -447,8 +447,8 @@
                 }
               ]
             },
-            "row": 1,
-            "col": 1,
+            "row": 2,
+            "col": 0,
             "short_name": "JS code to run",
             "summary": "Type: code_input"
           },
@@ -461,7 +461,7 @@
             "enabled": true,
             "short_name": "Dependencies",
             "summary": "A list of enrichment jobs/inputs that must be completed before this one is run (\"$previous\" to follow on from the last, [] to listen for all inputs)",
-            "row": 2,
+            "row": 1,
             "col": 0,
             "sizeX": 1,
             "sizeY": 1,
@@ -540,7 +540,7 @@
             "enabled": true,
             "short_name": "Grouping Fields",
             "summary": "The incoming input from this jobs dependencies is grouped according to these fields (\"?\" for code-generated)",
-            "row": 2,
+            "row": 1,
             "col": 1,
             "sizeX": 1,
             "sizeY": 1,
@@ -618,8 +618,8 @@
             "enabled": true,
             "short_name": "Raw Default Values",
             "summary": "depdencencies",
-            "row": 1,
-            "col": 2,
+            "row": 0,
+            "col": 5,
             "sizeX": 1,
             "sizeY": 1,
             "expandable": false,
@@ -658,6 +658,183 @@
               },
               "building_function": {
                 "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n curr_obj.default_model = eval('(' + template.element.form_model.json + ')'); \n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Horizontal Line",
+          "element": {
+            "enabled": true,
+            "short_name": "Horizontal Line",
+            "summary": "",
+            "row": 1,
+            "col": 2,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "html": "<hr/>"
+            },
+            "template": {
+              "display_name": "Horizontal Line",
+              "form_info": "Insert horizontal line",
+              "filters": [
+                "Template/template_builder",
+                "Template/template_builder/**"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Layout"
+              ],
+              "schema": [],
+              "default_model": {
+                "html": "<hr/>"
+              },
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n curr_obj.schema.push({template: template.element.form_model.html}); \n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Horizontal Line",
+          "element": {
+            "enabled": true,
+            "short_name": "Horizontal Line",
+            "summary": "",
+            "row": 2,
+            "col": 3,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "html": "<hr/>"
+            },
+            "template": {
+              "display_name": "Horizontal Line",
+              "form_info": "Insert horizontal line",
+              "filters": [
+                "Template/template_builder",
+                "Template/template_builder/**"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Layout"
+              ],
+              "schema": [],
+              "default_model": {
+                "html": "<hr/>"
+              },
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n curr_obj.schema.push({template: template.element.form_model.html}); \n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Horizontal Line",
+          "element": {
+            "enabled": true,
+            "short_name": "Horizontal Line",
+            "summary": "",
+            "row": 2,
+            "col": 1,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "html": "<hr/>"
+            },
+            "template": {
+              "display_name": "Horizontal Line",
+              "form_info": "Insert horizontal line",
+              "filters": [
+                "Template/template_builder",
+                "Template/template_builder/**"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Layout"
+              ],
+              "schema": [],
+              "default_model": {
+                "html": "<hr/>"
+              },
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n curr_obj.schema.push({template: template.element.form_model.html}); \n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Section header",
+          "element": {
+            "enabled": true,
+            "short_name": "Advanced options",
+            "summary": "",
+            "row": 3,
+            "col": 0,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {},
+            "template": {
+              "display_name": "Section header",
+              "form_info": "Provides a section header",
+              "filters": [
+                "Template/template_builder",
+                "Template/template_builder/**"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Layout"
+              ],
+              "schema": [
+                {
+                  "templateOptions": {
+                    "required": true,
+                    "label": "Horizontal Input",
+                    "placeholder": "The section header title (in HTML)"
+                  },
+                  "key": "_short_name",
+                  "type": "horizontalInput"
+                }
+              ],
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  obj = { \n    \"className\": \"section-label\",\n    \"template\": \"<hr /><div><strong>\" + template.element.short_name + \"</strong></div>\"    \n        };\n  curr_obj.schema.push(obj);\n  \n}"
               },
               "post_building_function": {
                 "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
@@ -793,14 +970,14 @@
             "enabled": true,
             "short_name": "Builder Functions",
             "summary": "Creating the element from JSON",
-            "row": 0,
+            "row": 2,
             "col": 0,
             "sizeX": 1,
             "sizeY": 1,
             "expandable": false,
             "deletable": true,
             "form_model": {
-              "pre_fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj = {};\n        obj.data_service = template.element.form_model.data_service;\n        obj.enabled = true;\n        obj.resource_name_or_id = (template.element.form_model.resource_name_or_id || \"\");\n        var config_obj = {};\n        config_obj.time_max = template.element.form_model.time_max;\n        config_obj.time_min = template.element.form_model.time_min;\n        obj.config = config_obj;\n  \t\tif (template.element.form_model.filter_input) {\n          obj.filter = JSON.parse(template.element.form_model.filter);\n        }\n        curr_obj.inputs.push(obj);\n      }",
+              "pre_fn": "function (errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {               \n        var obj = {};\n\t\tobj.name = template.element.short_name; \n        obj.data_service = template.element.form_model.data_service;\n        obj.enabled = true;\n        obj.resource_name_or_id = (template.element.form_model.resource_name_or_id || \"\");\n        var config_obj = {};\n        config_obj.time_max = template.element.form_model.time_max;\n        config_obj.time_min = template.element.form_model.time_min;\n        obj.config = config_obj;\n  \t\tif (template.element.form_model.filter_input) {\n          obj.filter = JSON.parse(template.element.form_model.filter);\n        }\n        curr_obj.inputs.push(obj);\n      }",
               "post_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
             },
             "template": {
@@ -866,7 +1043,7 @@
             "configurable": true,
             "deletable": true,
             "form_model": {
-              "json": "[{\"key\":\"data_service\",\"type\":\"horizontalInput\",\"defaultValue\":\"search_index_service\",\"templateOptions\":{\"label\":\"Data Service\",\"placeholder\":\"Name of the data service you want to read from (search_index_service, storage_service, document_service.V1DocumentService)\",\"required\":true}}]"
+              "json": "[{\"key\":\"data_service\",\"type\":\"horizontalInput\",\"defaultValue\":\"search_index_service\",\"templateOptions\":{\"label\":\"Data Service\",\"placeholder\":\"Name of the data service you want to read from (eg batch, stream, search_index_service, storage_service)\",\"required\":true}}]"
             },
             "template": {
               "display_name": "Raw Form JSON",
@@ -919,7 +1096,7 @@
             "configurable": true,
             "deletable": true,
             "form_model": {
-              "json": "[{\"key\":\"resource_name_or_id\",\"type\":\"horizontalInput\",\"defaultValue\":\"/some/other/bucket\",\"templateOptions\":{\"label\":\"Resource Name\",\"placeholder\":\"Path or ID of the data service you want e.g. bucket full name\",\"required\":false}}]"
+              "json": "[{\"key\":\"resource_name_or_id\",\"type\":\"horizontalInput\",\"defaultValue\":\"/some/other/bucket\",\"templateOptions\":{\"label\":\"Resource Name\",\"placeholder\":\"Path or ID of the data service you want e.g. bucket full name (blank for input queue)\",\"required\":false}}]"
             },
             "template": {
               "display_name": "Raw Form JSON",
@@ -972,7 +1149,7 @@
             "configurable": true,
             "deletable": true,
             "form_model": {
-              "json": "[{\n  \"key\":\"time_max\",\n  \"type\":\"horizontalInput\",\n  \"templateOptions\":{\"label\":\"Time Max\",\"placeholder\":\"Oldest selected data (eg '4 days')\",\"required\":false}\n}]"
+              "json": "[{\n  \"key\":\"time_max\",\n  \"type\":\"horizontalInput\",\n  \"templateOptions\":{\"label\":\"Time Max\",\"placeholder\":\"Newest selected data (eg '2 days')\",\"required\":false}\n}]"
             },
             "template": {
               "display_name": "Raw Form JSON",
@@ -1025,7 +1202,7 @@
             "configurable": true,
             "deletable": true,
             "form_model": {
-              "json": "[{\n  \"key\":\"time_min\",\n  \"type\":\"horizontalInput\",\n  \"templateOptions\":{\"label\":\"Time Min\",\"placeholder\":\"Newest selected data (eg '2 days')\",\"required\":false}\n}]"
+              "json": "[{\n  \"key\":\"time_min\",\n  \"type\":\"horizontalInput\",\n  \"templateOptions\":{\"label\":\"Time Min\",\"placeholder\":\"Oldest selected data (eg '4 days')\",\"required\":false}\n}]"
             },
             "template": {
               "display_name": "Raw Form JSON",
@@ -1117,8 +1294,8 @@
             "enabled": true,
             "short_name": "Filter Input?",
             "summary": "",
-            "row": 2,
-            "col": 0,
+            "row": 1,
+            "col": 1,
             "sizeX": 1,
             "sizeY": 1,
             "expandable": false,
@@ -1182,8 +1359,8 @@
             "enabled": true,
             "short_name": "Filter Input",
             "summary": "",
-            "row": 2,
-            "col": 1,
+            "row": 1,
+            "col": 2,
             "sizeX": 1,
             "sizeY": 1,
             "expandable": true,
@@ -1373,7 +1550,7 @@
             "short_name": "Raw Default Values",
             "summary": "filter",
             "row": 2,
-            "col": 2,
+            "col": 1,
             "sizeX": 1,
             "sizeY": 1,
             "expandable": false,
@@ -1412,6 +1589,62 @@
               },
               "building_function": {
                 "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n curr_obj.default_model = eval('(' + template.element.form_model.json + ')'); \n}"
+              },
+              "post_building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
+              }
+            }
+          },
+          "children": []
+        },
+        {
+          "root": false,
+          "label": "Raw Form JSON",
+          "element": {
+            "enabled": true,
+            "short_name": "Unique name override",
+            "summary": "",
+            "row": 0,
+            "col": 0,
+            "sizeX": 1,
+            "sizeY": 1,
+            "expandable": false,
+            "configurable": true,
+            "deletable": true,
+            "form_model": {
+              "json": "[{\n  \"key\":\"_short_name\",\n  \"type\":\"horizontalInput\",\n  \"templateOptions\":\n  {\n    \"label\":\"Unique Input Name\",\"pattern\":\"[a-zA-Z0-9_]+\",\"placeholder\":\"A Short Name For This Element (Alphanumeric/_ only, no spaces - used for dependencies etc)\",\"required\":true}}]"
+            },
+            "template": {
+              "display_name": "Raw Form JSON",
+              "form_info": "Type raw JSON objects into here to insert them into the schema",
+              "filters": [
+                "Template/template_builder",
+                "Template/**/template_builder"
+              ],
+              "expandable": false,
+              "key": "template_element",
+              "categories": [
+                "Generic"
+              ],
+              "schema": [
+                {
+                  "key": "json",
+                  "type": "code_input",
+                  "templateOptions": {
+                    "label": "Raw Form JSON",
+                    "codemirror": {
+                      "lineNumbers": true,
+                      "smartIndent": true,
+                      "mode": "javascript"
+                    }
+                  }
+                }
+              ],
+              "default_model": {
+                "json": "[\n  {\n    \n  }\n]"
+              },
+              "building_function": {
+                "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n\tvar obj = eval('(' + template.element.form_model.json + ')'); \n \tfor (i in obj) curr_obj.schema.push(obj[i]); \n}"
               },
               "post_building_function": {
                 "_fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
