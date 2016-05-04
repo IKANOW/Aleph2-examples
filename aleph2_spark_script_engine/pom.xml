@@ -9,6 +9,8 @@
         <aleph2.hadoop>2.7.1</aleph2.hadoop>
         <aleph2.spark>1.5.2</aleph2.spark>
 		<maven.test.skip>true</maven.test.skip>
+		<!-- provided normally, compile for internal testing -->
+		<testing.mode>provided</testing.mode>
     </properties>
 
     <build>
@@ -219,7 +221,7 @@
        		<artifactId>scala-library</artifactId>
        		<groupId>org.scala-lang</groupId>
 			<version>2.10.4</version>
-       		<scope>provided</scope>
+       		<scope>${testing.mode}</scope>
         </dependency>
     </dependencies>
 	

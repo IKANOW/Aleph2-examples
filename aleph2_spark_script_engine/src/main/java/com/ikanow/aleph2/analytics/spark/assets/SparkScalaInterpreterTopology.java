@@ -69,8 +69,6 @@ import com.ikanow.aleph2.data_model.utils.SetOnce;
  */
 public class SparkScalaInterpreterTopology {
 
-	//TODO (ALEPH-63): logging not working?
-	
 	// Params:
 	
 	//(not needed)
@@ -127,19 +125,7 @@ public class SparkScalaInterpreterTopology {
 				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, jsc, job_config);
 
 				// Add driver and generated JARs to path:
-				jsc.addJar(LiveInjector.findPathJar(scs.getClass()));
-				/**/
-				try {
-					java.net.URLClassLoader cl = ((java.net.URLClassLoader)o._1());
-					cl.loadClass("ScriptRunner$$anonfun$1");
-				}
-				catch (Throwable t) {
-					
-					logger.optional().ifPresent(l -> {
-						l.inefficientLog(Level.ERROR, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
-							"main", ErrorUtils.getLongForm("{0}", t), Optionals.of(() -> context.getJob().get().name()).orElse("no_name")));
-					});
-				}
+				jsc.addJar(LiveInjector.findPathJar(o._2().getClass()));
 				
 				m.invoke(o._2(), script_engine_bridge);
 

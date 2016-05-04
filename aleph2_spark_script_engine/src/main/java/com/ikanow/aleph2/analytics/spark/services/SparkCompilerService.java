@@ -39,6 +39,7 @@ import com.ikanow.aleph2.analytics.spark.assets.SparkScalaInterpreterTopology;
 import com.ikanow.aleph2.core.shared.utils.LiveInjector;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
+import com.ikanow.aleph2.data_model.utils.SetOnce;
 import com.ikanow.aleph2.data_model.utils.Tuples;
 
 import scala.Tuple2;
@@ -54,6 +55,8 @@ import scala.tools.nsc.reporters.StoreReporter;
  */
 public class SparkCompilerService {
 
+	final SetOnce<URLClassLoader> _cl = new SetOnce<>();
+	
 	/** Compiles a scala class
 	 * @param script
 	 * @param clazz_name
@@ -70,7 +73,8 @@ public class SparkCompilerService {
 		final File source_file = new File(relative_dir + clazz_name + ".scala") ;
 		FileUtils.writeStringToFile(source_file, script);
 		
-		final File f = new File(LiveInjector.findPathJar(this.getClass()));
+		final String this_path = LiveInjector.findPathJar(this.getClass(), "./dummy.jar");
+		final File f = new File(this_path);
 		final File fp = new File(f.getParent());
 		final String classpath = Arrays.stream(fp.listFiles()).map(ff -> ff.toString()).filter(ff -> ff.endsWith(".jar")).collect(Collectors.joining(":"));
 		
@@ -78,7 +82,6 @@ public class SparkCompilerService {
 		
 		final Settings s = new Settings();
 		s.classpath().value_$eq(System.getProperty("java.class.path") +  classpath);
-		
 		s.usejavacp().scala$tools$nsc$settings$AbsSettings$AbsSetting$$internalSetting_$eq(true);
 		final StoreReporter reporter = new StoreReporter();
 		final Global g = new Global(s, reporter);
@@ -95,7 +98,7 @@ public class SparkCompilerService {
 			}
 		}
 		// Move any class files (eg including sub-classes)
-		Arrays.stream(fp.listFiles()).filter(ff -> ff.toString().endsWith(".class")).forEach(Lambdas.wrap_consumer_u(ff -> {			
+		Arrays.stream(fp.listFiles()).filter(ff -> ff.toString().endsWith(".class")).forEach(Lambdas.wrap_consumer_u(ff -> {
 			FileUtils.moveFile(ff, new File(relative_dir + ff.getName()));
 		}));
 
@@ -120,21 +123,14 @@ public class SparkCompilerService {
 			}
 		}));
 		target.close();
-		
-		/**/
-		FileUtils.copyFile(new File("./script_classpath.jar"), new File("/tmp/alex.jar"));
-		
-		/**/
-		//TODO; move to DEBUG
+
 		final String created = "Created = " + new File("./script_classpath.jar").toURI().toURL() + " ... " + Arrays.stream(new File(relative_dir).listFiles()).map(ff -> ff.toString()).collect(Collectors.joining(";"));
-		logger.ifPresent(l -> l.log(Level.INFO, false, () -> created, () -> "SparkScalaInterpreterTopology", () -> "compile"));
+		logger.ifPresent(l -> l.log(Level.DEBUG, false, () -> created, () -> "SparkScalaInterpreterTopology", () -> "compile"));
 		
 		final Tuple2<ClassLoader, Object> o = Lambdas.get(Lambdas.wrap_u(() -> {
-			try (URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File("./script_classpath.jar").toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader())) {
-//			try (URLClassLoader cl = new java.net.URLClassLoader(Arrays.asList(new File(relative_dir).toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader())) {
-				Object o_ = cl.loadClass("ScriptRunner").newInstance();
-				return Tuples._2T(cl, o_);
-			}
+			_cl.set(new java.net.URLClassLoader(Arrays.asList(new File("./script_classpath.jar").toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader()));
+			Object o_ = _cl.get().loadClass("ScriptRunner").newInstance();
+			return Tuples._2T(_cl.get(), o_);
 		}));
 		return o;
 	}
@@ -148,6 +144,13 @@ public class SparkCompilerService {
 		final SparkCompilerService scs = new SparkCompilerService();
 		final Tuple2<ClassLoader, Object> t2 = scs.buildClass(to_compile, "ScriptRunner", Optional.empty());
 		System.out.println(t2._2().getClass().getClassLoader());
+		
+		//OK so java -cp "jar1;jar2;.." works here, BUT java -cp "./;jar1;./jar2" *doesn't*
+		
+		java.net.URLClassLoader cl = ((java.net.URLClassLoader)t2._1());
+		System.out.println(t2._2().getClass().getClassLoader());
+		
+		cl.loadClass("ScriptRunner$$anon$1");
 	}
 	
 }
