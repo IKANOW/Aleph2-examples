@@ -216,13 +216,44 @@ public class MasterResource {
 			@PathParam("identifier") String identifier,
 			@QueryParam("buckets") String buckets,
 			String json) {
-		_logger.error("READ COUNT request: sn: " + service_name +
+		_logger.error("UPDATE request: sn: " + service_name +
 				" rw: " + read_write +
 				" i: " + identifier + 
 				" b: " + buckets +
 				" j: " + json
 				);
 		return RestCrudFunctions.updateFunction(service_context, service_name, read_write, identifier, Optional.ofNullable(buckets), RestUtils.getOptional(json));
+	}
+	
+	//file + (maybe) json post
+	//this is specifically for 2 end points:
+	//management_db | write | bucket file uploads (no json)
+	//management_db | write | shared lib uploads (json)
+	@PUT
+	@Path("/upload/{service_name}/{read_write}/{identifier}")
+	@Consumes({MediaType.MULTIPART_FORM_DATA})
+	@Produces(MediaType.TEXT_PLAIN)
+	public Response put(
+			@PathParam("service_name") String service_name,
+			@PathParam("read_write") String read_write,
+			@PathParam("identifier") String identifier,
+			@FormDataParam("json") String json, 
+			@FormDataParam("file") InputStream uploadedInputStream,
+			@FormDataParam("file") FormDataContentDisposition fileDetail,
+			@QueryParam("buckets") String buckets) {
+		return Response.status(Status.BAD_REQUEST).entity("PUT UPLOAD is not yet implemented, perform a delete/create call instead for now.").build();
+		//bail out if file was not set, entry is optional
+//		if ( fileDetail == null ) {
+//			return Response.status(Status.BAD_REQUEST).entity("POST UPLOAD requires a multipart form data item named 'file'").build();
+//		}
+//		_logger.error("UPDATE request: sn: " + service_name +
+//				" rw: " + read_write +
+//				" i: " + identifier + 
+//				" b: " + buckets +
+//				" j: " + json +
+//				" f: " + fileDetail.getFileName()
+//				);			
+//		return RestCrudFunctions.updateFunction(service_context, service_name, read_write, identifier, Optional.ofNullable(buckets), new FileDescriptor(uploadedInputStream, fileDetail.getFileName()), RestUtils.getOptional(json));		
 	}
 	
 	////////////////////////////////////DELETE METHODS//////////////////////////////////////
@@ -249,7 +280,7 @@ public class MasterResource {
 			@PathParam("identifier") String identifier,
 			@PathParam("id") String id,
 			@QueryParam("buckets") String buckets) {
-		return delete(service_name, read_write, identifier, null, buckets, null);
+		return delete(service_name, read_write, identifier, id, buckets, null);
 	}
 	
 	//delete helper function
