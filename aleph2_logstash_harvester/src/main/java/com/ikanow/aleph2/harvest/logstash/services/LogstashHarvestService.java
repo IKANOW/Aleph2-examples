@@ -134,7 +134,7 @@ public class LogstashHarvestService implements IHarvestTechnologyModule {
 			//log any output (don't crash if something goes wrong, this is just icing)
 			try {
 				final String log_file = System.getProperty("java.io.tmpdir") + File.separator + BucketUtils.getUniqueSignature(new_bucket.full_name(), Optional.empty());
-				LogstashUtils.sendOutputToLogger(context.getLogger(Optional.empty()), Level.DEBUG, new File(log_file));
+				LogstashUtils.sendOutputToLogger(context.getLogger(Optional.empty()), Level.INFO, new File(log_file));
 			} catch ( Exception ex) {
 				context.getLogger(Optional.empty()).log(Level.ERROR, ErrorUtils.lazyBuildMessage(false, ()->this.getClass().getSimpleName(), ()->"onUpdatedSource", ()->null, ()->ErrorUtils.getLongForm("Error getting logstash test output: {0}", ex), ()->Collections.emptyMap()));
 			}
