@@ -25,8 +25,11 @@ import org.apache.logging.log4j.Level;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import scala.Tuple2;
+
+
 
 
 
@@ -62,6 +65,8 @@ import com.ikanow.aleph2.data_model.utils.ErrorUtils;
 import com.ikanow.aleph2.data_model.utils.Lambdas;
 import com.ikanow.aleph2.data_model.utils.Optionals;
 import com.ikanow.aleph2.data_model.utils.SetOnce;
+
+import fj.data.Either;
 
 /** Very simple spark topology, runs the compiled script
  * /app/aleph2/library/spark_script.jar
@@ -119,17 +124,26 @@ public class SparkScalaInterpreterTopology {
 			//DEBUG
 			//final boolean test_mode = test_spec.isPresent(); // (serializable thing i can pass into the map)
 
-			try (final JavaSparkContext jsc = new JavaSparkContext(spark_context)) {
-				final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs = SparkTechnologyUtils.buildBatchSparkInputs(context, test_spec, jsc, Collections.emptySet());
+			final Either<JavaSparkContext, JavaStreamingContext> jsc = Lambdas.get(() -> {				
+				//TODO check if streaming
+				return Either.left(new JavaSparkContext(spark_context));
+			});			
+			try {
+				final JavaSparkContext jsc_batch = jsc.either(l->l, r->r.sparkContext());
 				
-				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, jsc, job_config);
+				final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs = 
+						SparkTechnologyUtils.buildBatchSparkInputs(context, test_spec, jsc_batch, Collections.emptySet());
+				
+				//TODO: add streaming inputs
+				
+				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, jsc_batch, jsc.either(l->null, r->r), job_config);
 
 				// Add driver and generated JARs to path:
-				jsc.addJar(LiveInjector.findPathJar(o._2().getClass()));
+				jsc_batch.addJar(LiveInjector.findPathJar(o._2().getClass()));
 				
 				m.invoke(o._2(), script_engine_bridge);
 
-				jsc.stop();
+				jsc.either(l -> { l.stop(); return null; }, r -> { r.stop(); return null; });
 				
 				logger.optional().ifPresent(l -> {
 					l.inefficientLog(Level.INFO, ErrorUtils.buildSuccessMessage("SparkScalaInterpreterTopology", 
@@ -138,6 +152,9 @@ public class SparkScalaInterpreterTopology {
 				
 				//INFO:
 				System.out.println("Finished interpreter");
+			}
+			finally {
+				jsc.either(l -> { l.close(); return null; }, r -> { r.close(); return null; });
 			}
 			logger.optional().ifPresent(Lambdas.wrap_consumer_u(l -> l.flush().get(10, TimeUnit.SECONDS)));
 		}

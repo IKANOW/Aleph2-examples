@@ -22,6 +22,8 @@ import java.util.Optional;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.streaming.StreamingContext;
+import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import scala.Tuple2;
 
@@ -51,6 +53,7 @@ public class SparkScriptEngine implements Serializable {
 			final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs,
 			final Optional<ProcessingTestSpecBean> test_spec,
 			final JavaSparkContext java_spark_context,
+			final JavaStreamingContext java_spark_stream_context,
 			final SparkTopologyConfigBean job_config) {
 		super();
 		this.aleph2_context = aleph2_context;
@@ -58,14 +61,18 @@ public class SparkScriptEngine implements Serializable {
 		this.test_spec = test_spec;
 		this.spark_context = java_spark_context.sc();
 		this.java_spark_context = java_spark_context;
+		this.spark_stream_context = java_spark_stream_context.ssc();
+		this.java_spark_stream_context = java_spark_stream_context;
 		this.job_config = job_config;
 	}
 	public final IAnalyticsContext aleph2_context;
 	public final transient Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs;
 	public final transient Optional<ProcessingTestSpecBean> test_spec;
-	public final transient SparkContext spark_context;
 	public final transient SparkTopologyConfigBean job_config;
+	public final transient SparkContext spark_context;
 	public final transient JavaSparkContext java_spark_context;
+	public final transient StreamingContext spark_stream_context;
+	public final transient JavaStreamingContext java_spark_stream_context;
 	public final transient ObjectMapper mapper = _mapper;
 	/** Returns the union of all the provided inputs
 	 * @return
