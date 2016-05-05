@@ -83,7 +83,7 @@ public class TestLogstashUtils {
 	@Test
 	public void test_sendOutputToLogger() throws IOException {
 		final TestBucketLogger bucket_logger = new TestBucketLogger();		
-		LogstashUtils.sendOutputToLogger(bucket_logger, Level.ERROR, new File("src/test/resources/ls_output.test"));
+		LogstashUtils.sendOutputToLogger(bucket_logger, Level.ERROR, new File("src/test/resources/ls_output.test"), Optional.empty());
 		assertEquals(66, bucket_logger.logged_messages.size());
 	}
 	

@@ -244,9 +244,9 @@ public class LogstashUtils {
 	 * @param output_file
 	 * @throws IOException 
 	 */
-	public static void sendOutputToLogger(final IBucketLogger logger, final Level level, final File output_file) throws IOException {
+	public static void sendOutputToLogger(final IBucketLogger logger, final Level level, final File output_file, final Optional<Long> max_lines) throws IOException {
 //		_logger.error("Reading output file: " + output_file + " to send to logger at level: " + level);
-		Files.lines(output_file.toPath()).forEach(line -> {
+		Files.lines(output_file.toPath()).limit(max_lines.orElse(10000L)).forEach(line -> {
 			try {
 				//convert line to valid json, then parse json, build BMB object from it
 				final String fixed_line = line.replaceAll(logstash_colon_search, logstash_colon_replace).replaceAll(logstash_arrow_search, logstash_arrow_replace).replaceAll(logstash_newline_search, logstash_newline_replace);
