@@ -32,7 +32,6 @@ import java.util.concurrent.ExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import backtype.storm.LocalCluster;
@@ -91,6 +90,7 @@ public class TestJavaScriptTopology {
 		}
 	}
 	
+	@org.junit.Ignore
 	@Test
 	public void testJavaScriptTopology() throws InterruptedException, ExecutionException {
 		// PHASE 1: GET AN IN-TECHNOLOGY CONTEXT

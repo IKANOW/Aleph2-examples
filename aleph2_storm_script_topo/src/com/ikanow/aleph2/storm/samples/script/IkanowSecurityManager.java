@@ -34,6 +34,7 @@ public class IkanowSecurityManager
 {
 	private AccessControlContext _accessControlContext;	//not needed, is null always
 	private static InternalSecurityManager ssm;
+	@SuppressWarnings("unused")
 	private boolean _disabled = false;
 
 	protected static Logger logger = Logger.getLogger(IkanowSecurityManager.class);
