@@ -25,6 +25,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.streaming.Durations;
+import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import scala.Tuple2;
@@ -50,6 +52,13 @@ import scala.Tuple2;
 
 
 
+
+
+
+
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.ikanow.aleph2.analytics.spark.data_model.SparkScriptEngine;
 import com.ikanow.aleph2.analytics.spark.data_model.SparkTopologyConfigBean;
@@ -59,6 +68,7 @@ import com.ikanow.aleph2.core.shared.utils.LiveInjector;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IAnalyticsContext;
 import com.ikanow.aleph2.data_model.interfaces.data_analytics.IBatchRecord;
 import com.ikanow.aleph2.data_model.interfaces.shared_services.IBucketLogger;
+import com.ikanow.aleph2.data_model.objects.data_import.DataBucketBean.MasterEnrichmentType;
 import com.ikanow.aleph2.data_model.objects.shared.ProcessingTestSpecBean;
 import com.ikanow.aleph2.data_model.utils.BeanTemplateUtils;
 import com.ikanow.aleph2.data_model.utils.ErrorUtils;
@@ -73,7 +83,7 @@ import fj.data.Either;
  * @author Alex
  */
 public class SparkScalaInterpreterTopology {
-
+	
 	// Params:
 	
 	//(not needed)
@@ -117,6 +127,8 @@ public class SparkScalaInterpreterTopology {
 
 			SparkConf spark_context = new SparkConf().setAppName("SparkPassthroughTopology");
 			
+			final long streaming_batch_interval = (long) spark_context.getInt(SparkTopologyConfigBean.STREAMING_BATCH_INTERVAL, 10);
+			
 			// MAIN PROCESSING
 			
 			final Method m = o._2().getClass().getMethod("runScript", SparkScriptEngine.class);			
@@ -124,9 +136,12 @@ public class SparkScalaInterpreterTopology {
 			//DEBUG
 			//final boolean test_mode = test_spec.isPresent(); // (serializable thing i can pass into the map)
 
-			final Either<JavaSparkContext, JavaStreamingContext> jsc = Lambdas.get(() -> {				
-				//TODO check if streaming
-				return Either.left(new JavaSparkContext(spark_context));
+			boolean is_streaming = context.getJob().map(j -> j.analytic_type()).map(t -> MasterEnrichmentType.streaming == t).orElse(false);
+			final Either<JavaSparkContext, JavaStreamingContext> jsc = Lambdas.get(() -> {		
+				return is_streaming 
+						? Either.<JavaSparkContext, JavaStreamingContext>right(new JavaStreamingContext(spark_context, Durations.seconds(streaming_batch_interval))) 
+						: Either.<JavaSparkContext, JavaStreamingContext>left(new JavaSparkContext(spark_context))
+						;
 			});			
 			try {
 				final JavaSparkContext jsc_batch = jsc.either(l->l, r->r.sparkContext());
@@ -134,9 +149,13 @@ public class SparkScalaInterpreterTopology {
 				final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs = 
 						SparkTechnologyUtils.buildBatchSparkInputs(context, test_spec, jsc_batch, Collections.emptySet());
 				
-				//TODO: add streaming inputs
+				final Multimap<String, JavaPairDStream<String, Tuple2<Long, IBatchRecord>>> streaming_inputs =
+						jsc.<Multimap<String, JavaPairDStream<String, Tuple2<Long, IBatchRecord>>>>either(
+								l -> HashMultimap.<String, JavaPairDStream<String, Tuple2<Long, IBatchRecord>>>create()
+								, 
+								r -> SparkTechnologyUtils.buildStreamingSparkInputs(context, test_spec, r, Collections.emptySet()));
 				
-				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, test_spec, jsc_batch, jsc.either(l->null, r->r), job_config);
+				final SparkScriptEngine script_engine_bridge = new SparkScriptEngine(context, inputs, streaming_inputs, test_spec, jsc_batch, jsc.either(l->null, r->r), job_config);
 
 				// Add driver and generated JARs to path:
 				jsc_batch.addJar(LiveInjector.findPathJar(o._2().getClass()));

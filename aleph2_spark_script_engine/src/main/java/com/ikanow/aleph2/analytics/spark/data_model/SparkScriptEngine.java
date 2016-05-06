@@ -23,6 +23,7 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.streaming.StreamingContext;
+import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import scala.Tuple2;
@@ -51,6 +52,7 @@ public class SparkScriptEngine implements Serializable {
 	public SparkScriptEngine(
 			final IAnalyticsContext aleph2_context,
 			final Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs,
+			final Multimap<String, JavaPairDStream<String, Tuple2<Long, IBatchRecord>>> stream_inputs,
 			final Optional<ProcessingTestSpecBean> test_spec,
 			final JavaSparkContext java_spark_context,
 			final JavaStreamingContext java_spark_stream_context,
@@ -58,6 +60,7 @@ public class SparkScriptEngine implements Serializable {
 		super();
 		this.aleph2_context = aleph2_context;
 		this.inputs = inputs;
+		this.stream_inputs = stream_inputs;
 		this.test_spec = test_spec;
 		this.spark_context = java_spark_context.sc();
 		this.java_spark_context = java_spark_context;
@@ -67,6 +70,7 @@ public class SparkScriptEngine implements Serializable {
 	}
 	public final IAnalyticsContext aleph2_context;
 	public final transient Multimap<String, JavaPairRDD<Object, Tuple2<Long, IBatchRecord>>> inputs;
+	public final transient Multimap<String, JavaPairDStream<String, Tuple2<Long, IBatchRecord>>> stream_inputs;
 	public final transient Optional<ProcessingTestSpecBean> test_spec;
 	public final transient SparkTopologyConfigBean job_config;
 	public final transient SparkContext spark_context;
