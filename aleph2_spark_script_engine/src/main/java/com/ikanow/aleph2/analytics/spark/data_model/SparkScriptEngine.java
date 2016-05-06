@@ -62,9 +62,9 @@ public class SparkScriptEngine implements Serializable {
 		this.inputs = inputs;
 		this.stream_inputs = stream_inputs;
 		this.test_spec = test_spec;
-		this.spark_context = java_spark_context.sc();
+		this.spark_context = (java_spark_context != null) ? java_spark_context.sc() : null;
 		this.java_spark_context = java_spark_context;
-		this.spark_stream_context = java_spark_stream_context.ssc();
+		this.spark_stream_context = (java_spark_stream_context != null) ? java_spark_stream_context.ssc() : null;
 		this.java_spark_stream_context = java_spark_stream_context;
 		this.job_config = job_config;
 	}

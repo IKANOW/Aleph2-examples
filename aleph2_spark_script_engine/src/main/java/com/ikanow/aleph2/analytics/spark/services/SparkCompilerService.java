@@ -125,7 +125,7 @@ public class SparkCompilerService {
 		target.close();
 
 		final String created = "Created = " + new File("./script_classpath.jar").toURI().toURL() + " ... " + Arrays.stream(new File(relative_dir).listFiles()).map(ff -> ff.toString()).collect(Collectors.joining(";"));
-		logger.ifPresent(l -> l.log(Level.DEBUG, false, () -> created, () -> "SparkScalaInterpreterTopology", () -> "compile"));
+		logger.ifPresent(l -> l.log(Level.DEBUG, true, () -> created, () -> "SparkScalaInterpreterTopology", () -> "compile"));
 		
 		final Tuple2<ClassLoader, Object> o = Lambdas.get(Lambdas.wrap_u(() -> {
 			_cl.set(new java.net.URLClassLoader(Arrays.asList(new File("./script_classpath.jar").toURI().toURL()).toArray(new URL[0]), Thread.currentThread().getContextClassLoader()));
