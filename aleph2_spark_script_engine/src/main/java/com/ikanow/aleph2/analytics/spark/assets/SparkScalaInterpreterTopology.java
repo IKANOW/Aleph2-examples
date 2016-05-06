@@ -57,7 +57,6 @@ import scala.Tuple2;
 
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.ikanow.aleph2.analytics.spark.data_model.SparkScriptEngine;
