@@ -119,6 +119,12 @@
       "dependencies": [
         "$previous"
       ]
+    },
+    "validation_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n    a2_must_edit(template, errs);\n}"
+    },
+    "post_validation_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
     }
   },
   {
@@ -218,6 +224,12 @@
     },
     "default_model": {
       "filter": "{\n   \"technology_override\": {}\n}"
+    },
+    "validation_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n    a2_must_edit(template, errs);\n}"
+    },
+    "post_validation_function": {
+      "$fn": "function(errs, template, curr_obj, all_templates, root_obj, hierarchy, rows, cols) {\n  \n}"
     }
   },
   {
