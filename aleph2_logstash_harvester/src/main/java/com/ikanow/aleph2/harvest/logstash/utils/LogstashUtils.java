@@ -261,7 +261,7 @@ public class LogstashUtils {
 						StreamSupport.stream(Spliterators.spliteratorUnknownSize(line_object.fields(), Spliterator.ORDERED), true).collect(Collectors.toMap(e->e.getKey(), e->e.getValue().asText()))));
 			} catch (Exception ex) {
 				//fallback on conversion failure
-				logger.inefficientLog(level, ErrorUtils.buildSuccessMessage(LogstashHarvestService.class.getSimpleName(), line, ""));
+				logger.inefficientLog(level, ErrorUtils.buildSuccessMessage(LogstashHarvestService.class.getSimpleName(), "test_output", line));
 			}						
 		});
 		//TODO should we delete log file after we've read it?
