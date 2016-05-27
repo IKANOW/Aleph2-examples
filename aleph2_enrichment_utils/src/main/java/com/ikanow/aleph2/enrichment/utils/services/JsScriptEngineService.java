@@ -194,20 +194,23 @@ public class JsScriptEngineService implements IEnrichmentBatchModule {
 		}
 	}
 
+	// DISABLE THIS, DON'T BELIEVE THERE'S ANY REASON TO CLONE
 	/* (non-Javadoc)
 	 * @see com.ikanow.aleph2.data_model.interfaces.data_import.IEnrichmentBatchModule#cloneForNewGrouping()
 	 */
-	@Override
-	public IEnrichmentBatchModule cloneForNewGrouping() {
-		final JsScriptEngineService clone = new JsScriptEngineService();
-		clone._context.set(this._context.get());
-		clone._config.set(this._config.get());
-		clone._control.set(this._control.get());
-		
-		clone.java_api.set(this.java_api.get());
-		clone._engine.set(this._engine.get());
-		clone._script_context.set(this._script_context.get());
-
-		return clone;
-	}	
+//	@Override
+//	public IEnrichmentBatchModule cloneForNewGrouping() {
+//		final JsScriptEngineService clone = new JsScriptEngineService();
+//		clone._context.set(this._context.get());
+//		clone._config.set(this._config.get());
+//		clone._control.set(this._control.get());
+//		clone._bucket_logger.set(this._bucket_logger.get());
+//		if (this._mutable_first_error.isSet()) clone._mutable_first_error.set(false);
+//		
+//		clone.java_api.set(this.java_api.get());
+//		clone._engine.set(this._engine.get());
+//		clone._script_context.set(this._script_context.get());
+//
+//		return clone;
+//	}	
 }
