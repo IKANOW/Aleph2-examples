@@ -160,11 +160,13 @@ public class LogstashConfigUtils {
 	//		"fieldname {" - (object field, not sure this is allowed)
 	// 2) (?:[a-z0-9_]+)\\s*=>\\s*[\\[a-z0-9])
 	//		"fieldname => value" - sub-field or array of sub-fields
+	// 3a) (?:if [(]?.*[=!][~]\\s*[/][^/]+[/]\\s*[)]?\\s*\\{)
+	//		if statement with regex
 	// 3) (?:if\\s*[^{]+\\s*\\{)
 	//		if statement
 	// 4) }
 	//		closing block
-	public static Pattern _navigateLogstash = Pattern.compile("(?:([a-z0-9_]+)\\s*(=>)?\\s*([a-z0-9_]+)?\\s*\\{)|(?:([a-z0-9_]+)\\s*=>\\s*[\\[a-z0-9])|(?:if\\s*[^{]+\\s*\\{)|}", Pattern.CASE_INSENSITIVE);
+	public static Pattern _navigateLogstash = Pattern.compile("(?:([a-z0-9_]+)\\s*(=>)?\\s*([a-z0-9_]+)?\\s*\\{)|(?:([a-z0-9_]+)\\s*=>\\s*[\\[a-z0-9])|(?:if [(]?.*[=!][~]\\s*[/][^/]+[/]\\s*[)]?\\s*\\{)|(?:if\\s*[^{]+\\s*\\{)|}", Pattern.CASE_INSENSITIVE);
 	
 	@SuppressWarnings("deprecation")
 	public static ObjectNode parseLogstashConfig(String configFile, StringBuffer error) {

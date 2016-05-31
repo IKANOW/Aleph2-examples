@@ -271,6 +271,15 @@ public class TestLogstashConfigUtils {
 			fail("**** FAIL " + testName + ": " + errors.toString());				
 		}
 		
+		// e) filter w/ regex that has { } in it
+		// (USE filters_3_2e for this)
+		errors.setLength(0);
+		testName = "filters_3_2e";
+		inputName = "filters_3_2e";		
+		if (null == (output = LogstashConfigUtils.validateLogstashInput(globals, testName, getTestFile(inputName), errors, true))) {
+			fail("**** FAIL " + testName + ": " + errors.toString());				
+		}
+		
 	}
 	private static String getTestFile(String name) throws IOException {
 		File testFile = new File("src/test/resources/config_building/logstashtest_" + name + ".txt");
