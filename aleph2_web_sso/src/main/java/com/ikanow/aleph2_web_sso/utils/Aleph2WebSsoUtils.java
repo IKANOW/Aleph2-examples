@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.pac4j.ldap.profile.LdapProfile;
 import org.pac4j.saml.profile.SAML2Profile;
 
 public class Aleph2WebSsoUtils {
@@ -38,6 +39,29 @@ public class Aleph2WebSsoUtils {
 					attribute = (String)listAttributes.get(0);
 				}
 			}			
+		} catch (Exception e) {
+			logger.error("extractAttribute caught exception extracting "+attributeOid,e);
+		}
+		}
+		return attribute;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static String extractAttribute(LdapProfile lp, String attributeOid){
+		String attribute = null;
+		if(lp!=null){
+		try {
+			Object rawAttribute = lp.getAttribute(attributeOid);
+			if(rawAttribute instanceof ArrayList){
+				ArrayList listAttributes = (ArrayList)rawAttribute;
+				if(listAttributes.size()>0){
+					attribute = (String)listAttributes.get(0);
+				}
+			}
+			else
+			{
+				attribute = rawAttribute.toString();
+			}
 		} catch (Exception e) {
 			logger.error("extractAttribute caught exception extracting "+attributeOid,e);
 		}
