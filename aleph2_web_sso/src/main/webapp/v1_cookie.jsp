@@ -27,6 +27,7 @@
 <%@page import="org.apache.shiro.subject.Subject"%>
 <%@page import="org.apache.shiro.SecurityUtils"%>
 <%@page import="java.util.ArrayList"%>
+<%@ page import="com.ikanow.aleph2.security.web.CSCACookieAuthentication"%>
 <%@ page import="com.ikanow.aleph2_web_sso.utils.*"%>
 
 <shiro:authenticated>
@@ -37,7 +38,7 @@ String toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"m
 
 ServletContext sc = session.getServletContext();
 Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
-IkanowV1CookieAuthentication cookieAuth = IkanowV1CookieAuthentication.getInstance(injector);
+CSCACookieAuthentication cookieAuth = CSCACookieAuthentication.getInstance(injector);
 
 Subject subject = SecurityUtils.getSubject();
 String email = "";
@@ -47,6 +48,9 @@ LdapProfile lp = null;
 String firstName = null;
 String lastName = null;
 String phone = null;
+String adminAttribute = null;
+String adminAttributeContainsValue = null;
+String userType	= "user";
 
 int nClientPort = request.getServerPort();
 if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
@@ -75,7 +79,22 @@ if(Aleph2WebSsoConfig.getInstance().isUseAttributes()){
 		email = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getEmailOid());
 		firstName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getFirstNameOid());
 		lastName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getLastnameOid());
-		phone = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getPhoneOid());	
+		//try {
+		//	phone = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getPhoneOid());
+		//} catch (NullPointerException npe) {}
+		
+		try {
+			adminAttribute = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getAdminAttribute());
+			adminAttributeContainsValue = Aleph2WebSsoConfig.getInstance().getAdminAttributeContainsValue();
+		} catch (NullPointerException npe) {}
+			
+		if (null != adminAttribute && null != adminAttributeContainsValue)
+		{
+			if (adminAttribute.contains(adminAttributeContainsValue))
+			{
+				userType = "admin";
+			}
+		}
 	}
 	
 	if (null != lp)
@@ -84,7 +103,22 @@ if(Aleph2WebSsoConfig.getInstance().isUseAttributes()){
 		email = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getEmailOid());
 		firstName = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getFirstNameOid());
 		lastName = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getLastnameOid());
-		phone = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getPhoneOid());
+		//try {
+		//	phone = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getPhoneOid());
+		//} catch (NullPointerException npe) {}
+		
+		try {
+			adminAttribute = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getAdminAttribute());
+			adminAttributeContainsValue = Aleph2WebSsoConfig.getInstance().getAdminAttributeContainsValue();
+		} catch (NullPointerException npe) {}
+			
+		if (null != adminAttribute && null != adminAttributeContainsValue)
+		{
+			if (adminAttribute.contains(adminAttributeContainsValue))
+			{
+				userType = "admin";
+			}
+		}
 	}
 	
 }
@@ -95,7 +129,7 @@ if(cb==null){
 	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
 		// second attempt, creating user
 		cookieAuth.setApiRootUrl(Aleph2WebSsoConfig.getInstance().getApiRootUrl());
-		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone);
+		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone, userType);
 		if(cb!=null){
 		//out.print("<h3>User created!</h3>");
 		toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success: <shiro:principal/>. New User Created.\"}}";
@@ -103,6 +137,22 @@ if(cb==null){
 		else{
 			//out.print("<h3>User Not created check the logs!</h3>");	
 			toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Failed to Create User\"}}";		
+		}
+	}
+}
+else
+{
+	if(Aleph2WebSsoConfig.getInstance().isCreateUser()){
+		cookieAuth.setApiRootUrl(Aleph2WebSsoConfig.getInstance().getApiRootUrl());
+		// update cookie in case admin status changed
+		cb = cookieAuth.updateUser(uid, email, firstName, lastName, phone, userType);
+		if(cb!=null){
+		//out.print("<h3>User updated!</h3>");
+		//toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success: <shiro:principal/>. User Existed.\"}}";
+		}
+		else{
+			//out.print("<h3>User Not created check the logs!</h3>");	
+			toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Failed to Update User\"}}";		
 		}
 	}
 }
@@ -121,12 +171,12 @@ if(cb!=null){
 	// Add both the cookies in the response header.
 	response.addCookie( infiniteCookie );
 	//out.print("<h3>V1 cookie created!</h3>");
-	toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success. Cookie Created Successfully.\"}}";
+	//toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success. Cookie Created Successfully.\"}}";
 
 }// if cb
 else{
 	//out.print("<h3>Sorry, V1 cookie not created, check the log!</h3>");
-	toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Error: Unable to create cookie\"}}";
+	toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Error: Unable to create session\"}}";
 }
  //out.print("profile :"+subject.getPrincipals());
  

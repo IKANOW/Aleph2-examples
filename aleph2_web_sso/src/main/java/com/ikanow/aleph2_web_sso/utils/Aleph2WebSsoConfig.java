@@ -23,7 +23,10 @@ public class Aleph2WebSsoConfig {
 	private String firstNameOid = "urn:oid:2.5.4.42";
 	private String lastnameOid = "urn:oid:2.5.4.4";
 	private String fullNameOid = "urn:oid:2.16.840.1.113730.3.1.241";
-	private String phoneOid = " urn:oid:2.5.4.20";
+	private String phoneOid = "urn:oid:2.5.4.20";
+	private String adminAttribute = "";
+	private String adminAttributeContainsValue = "";
+	
 
 	public static Aleph2WebSsoConfig getInstance() {
 		if(_instance == null){
@@ -135,6 +138,34 @@ public class Aleph2WebSsoConfig {
 
 	public void setApiRootUrl(String apiRootUrl) {
 		this.apiRootUrl = apiRootUrl;
+	}
+
+	/**
+	 * @return the adminAttribute
+	 */
+	public String getAdminAttribute() {
+		return adminAttribute;
+	}
+
+	/**
+	 * @param adminAttribute the adminAttribute to set
+	 */
+	public void setAdminAttribute(String adminAttribute) {
+		this.adminAttribute = adminAttribute;
+	}
+
+	/**
+	 * @return the adminAttributeContainsValue
+	 */
+	public String getAdminAttributeContainsValue() {
+		return adminAttributeContainsValue;
+	}
+
+	/**
+	 * @param adminAttributeContainsValue the adminAttributeContainsValue to set
+	 */
+	public void setAdminAttributeContainsValue(String adminAttributeContainsValue) {
+		this.adminAttributeContainsValue = adminAttributeContainsValue;
 	}
 
 	
