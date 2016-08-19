@@ -21,7 +21,10 @@
 <%@ page import="com.google.inject.Injector"%>
 <%-- page import="org.apache.shiro.subject.support.DefaultSubjectContext"--%>
 <%-- page import="org.apache.shiro.subject.SimplePrincipalCollection"--%>
+<%@ page import="org.apache.logging.log4j.Logger"%>
+<%@ page import="org.apache.logging.log4j.LogManager"%>
 <%@ page import="com.ikanow.aleph2.security.web.*"%>
+<%@ page import="org.pac4j.core.profile.CommonProfile" %>
 <%@ page import="org.pac4j.saml.profile.SAML2Profile" %>
 <%@ page import="org.pac4j.ldap.profile.LdapProfile" %>
 <%@page import="org.apache.shiro.subject.Subject"%>
@@ -39,12 +42,13 @@ String toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"m
 ServletContext sc = session.getServletContext();
 Injector injector = (Injector)sc.getAttribute("com.google.inject.Injector");
 CSCACookieAuthentication cookieAuth = CSCACookieAuthentication.getInstance(injector);
+final Logger logger = LogManager.getLogger(this.getClass());
 
 Subject subject = SecurityUtils.getSubject();
 String email = "";
 String uid = null;
-SAML2Profile sp = null;
 LdapProfile lp = null;
+SAML2Profile sp = null;
 String firstName = null;
 String lastName = null;
 String phone = null;
@@ -54,73 +58,83 @@ String userType	= "user";
 
 int nClientPort = request.getServerPort();
 if(subject.getPrincipals()!=null && subject.getPrincipals().asList().size()>1){
-	Object pP = 	subject.getPrincipals().asList().get(1);
+	Object pP = subject.getPrincipals().asList().get(1);
 	if(pP instanceof SAML2Profile){
+		logger.debug("SAML Profile Received");
 		sp = (SAML2Profile)pP;
 	}
 	else if (pP instanceof LdapProfile)
 	{
+		logger.debug("LDAP Profile Received");
 		lp = (LdapProfile)pP;
 	}
+	else
+	{
+		logger.error("Unrecognized Principal Type: " + pP.getClass());
+	}
+}
+else
+{
+	logger.error("User had no Principals");
 }
 
 if(Aleph2WebSsoConfig.getInstance().isUseProfile()){	
-	uid = sp.getUsername();
-	email = sp.getEmail();
-	firstName = sp.getFirstName();
-	lastName = sp.getFamilyName();
+	logger.debug("isUseProfile enabled");
+	uid = lp.getUsername();
+	email = lp.getEmail();
+	firstName = lp.getFirstName();
+	lastName = lp.getFamilyName();
 }
 
 if(Aleph2WebSsoConfig.getInstance().isUseAttributes()){
-	
-	if (null != sp)
-	{
-		uid = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getUidOid());
-		email = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getEmailOid());
-		firstName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getFirstNameOid());
-		lastName = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getLastnameOid());
-		//try {
-		//	phone = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getPhoneOid());
-		//} catch (NullPointerException npe) {}
-		
-		try {
-			adminAttribute = Aleph2WebSsoUtils.extractAttribute(sp, Aleph2WebSsoConfig.getInstance().getAdminAttribute());
-			adminAttributeContainsValue = Aleph2WebSsoConfig.getInstance().getAdminAttributeContainsValue();
-		} catch (NullPointerException npe) {}
-			
-		if (null != adminAttribute && null != adminAttributeContainsValue)
-		{
-			if (adminAttribute.contains(adminAttributeContainsValue))
-			{
-				userType = "admin";
-			}
-		}
-	}
-	
+	logger.debug("isUseAttributes enabled");
 	if (null != lp)
 	{
 		uid = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getUidOid());
+		logger.debug("Result from " + Aleph2WebSsoConfig.getInstance().getUidOid() + " was: " + uid);
 		email = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getEmailOid());
+		logger.debug("Result from " + Aleph2WebSsoConfig.getInstance().getEmailOid() + " was: " + email);
 		firstName = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getFirstNameOid());
+		logger.debug("Result from " + Aleph2WebSsoConfig.getInstance().getFirstNameOid() + " was: " + firstName);
 		lastName = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getLastnameOid());
+		logger.debug("Result from " + Aleph2WebSsoConfig.getInstance().getLastnameOid() + " was: " + lastName);
 		//try {
-		//	phone = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getPhoneOid());
+		//	phone = Aleph2WebSsoUtils.extractAttribute(cp, Aleph2WebSsoConfig.getInstance().getPhoneOid());
 		//} catch (NullPointerException npe) {}
 		
 		try {
-			adminAttribute = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getAdminAttribute());
-			adminAttributeContainsValue = Aleph2WebSsoConfig.getInstance().getAdminAttributeContainsValue();
-		} catch (NullPointerException npe) {}
+			if (null != Aleph2WebSsoConfig.getInstance().getAdminAttribute() && null != Aleph2WebSsoConfig.getInstance().getAdminAttributeContainsValue())
+			{
+				adminAttribute = Aleph2WebSsoUtils.extractAttribute(lp, Aleph2WebSsoConfig.getInstance().getAdminAttribute());
+				logger.debug("Result from " + Aleph2WebSsoConfig.getInstance().getAdminAttribute() + " was: " + adminAttribute);
+				adminAttributeContainsValue = Aleph2WebSsoConfig.getInstance().getAdminAttributeContainsValue();
+				logger.debug("AdminAttributeContainsValue = " + adminAttributeContainsValue);
+			}
+			else
+			{
+				logger.debug("Missing Admin Attribute information. No Admin election will be performed.");
+			}
+		} catch (NullPointerException npe) {
+			logger.debug("NPE: Missing Admin Attribute information. No Admin election will be performed.");
+		}
 			
 		if (null != adminAttribute && null != adminAttributeContainsValue)
 		{
 			if (adminAttribute.contains(adminAttributeContainsValue))
 			{
 				userType = "admin";
+				logger.debug("User matches Admin Attribute");
+			}
+			else
+			{
+				logger.debug("User does not match Admin Attribute");
 			}
 		}
 	}
-	
+	else
+	{
+		logger.warn("Profile was NULL");
+	}	
 }
 
 CookieBean cb = cookieAuth.createCookieByEmail(email);
@@ -131,11 +145,10 @@ if(cb==null){
 		cookieAuth.setApiRootUrl(Aleph2WebSsoConfig.getInstance().getApiRootUrl());
 		cb = cookieAuth.createUser(uid, email, firstName, lastName, phone, userType);
 		if(cb!=null){
-		//out.print("<h3>User created!</h3>");
-		toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success: <shiro:principal/>. New User Created.\"}}";
+			logger.debug("New User Created");
 		}
 		else{
-			//out.print("<h3>User Not created check the logs!</h3>");	
+			logger.error("Unable to create user. uid=" + uid + " email=" + email + " firstName=" + firstName + " lastName=" + lastName + " userType=" + userType);	
 			toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Failed to Create User\"}}";		
 		}
 	}
@@ -147,11 +160,10 @@ else
 		// update cookie in case admin status changed
 		cb = cookieAuth.updateUser(uid, email, firstName, lastName, phone, userType);
 		if(cb!=null){
-		//out.print("<h3>User updated!</h3>");
-		//toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success: <shiro:principal/>. User Existed.\"}}";
+			logger.debug("Existing User Updated");
 		}
 		else{
-			//out.print("<h3>User Not created check the logs!</h3>");	
+			logger.error("User not created");	
 			toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Failed to Update User\"}}";		
 		}
 	}
@@ -170,17 +182,16 @@ if(cb!=null){
 	}
 	// Add both the cookies in the response header.
 	response.addCookie( infiniteCookie );
-	//out.print("<h3>V1 cookie created!</h3>");
-	//toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success. Cookie Created Successfully.\"}}";
+	logger.debug("User Cookie Created");
+	toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":true,\"message\":\"LDAP Login Success. Cookie Created Successfully.\"}}";
 
 }// if cb
 else{
-	//out.print("<h3>Sorry, V1 cookie not created, check the log!</h3>");
+	logger.error("User Cookie Not Created");
 	toReturn = "{\"response\":{\"action\":\"LDAP Login\",\"success\":false,\"message\":\"LDAP Login Error: Unable to create session\"}}";
 }
- //out.print("profile :"+subject.getPrincipals());
  
- out.print(toReturn);
+out.print(toReturn);
 String url = null;
 Cookie[] cookies  = request.getCookies();
 if(cookies!=null){

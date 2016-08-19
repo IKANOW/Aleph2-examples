@@ -24,8 +24,8 @@ public class Aleph2WebSsoConfig {
 	private String lastnameOid = "urn:oid:2.5.4.4";
 	private String fullNameOid = "urn:oid:2.16.840.1.113730.3.1.241";
 	private String phoneOid = "urn:oid:2.5.4.20";
-	private String adminAttribute = "";
-	private String adminAttributeContainsValue = "";
+	private String adminAttribute = null;
+	private String adminAttributeContainsValue = null;
 	
 
 	public static Aleph2WebSsoConfig getInstance() {
